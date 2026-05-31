@@ -6,9 +6,21 @@ import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+// Connect to named Firestore database if provided and not '(default)', otherwise use the default database
+export const db = (firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== '(default)')
+    ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
+    : getFirestore(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+
+// Initialize GoogleAuth configuration at startup on native platforms only
+if (Capacitor.isNativePlatform()) {
+    GoogleAuth.initialize({
+        clientId: '259362159478-fl2qsng5b906uac841jvsk5365hs9ck3.apps.googleusercontent.com',
+        scopes: ['profile', 'email'],
+        grantOfflineAccess: true,
+    });
+}
 
 export const loginWithGoogle = async () => {
     try {

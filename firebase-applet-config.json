@@ -1,9 +1,9 @@
 {
   "projectId": "novatrack-19de3",
-  "appId": "1:259362159478:web:56537c50a6691c28b25857",
+  "appId": "1:259362159478:web:b9d55d21018b923db25857",
   "apiKey": "AIzaSyD49Gh9mtV8hJq8iomKhQU7rY2JcJ0pmWI",
   "authDomain": "novatrack-19de3.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-2e0205ee-b6ab-49b4-8a60-3a236ca98a32",
+  "firestoreDatabaseId": "(default)",
   "storageBucket": "novatrack-19de3.firebasestorage.app",
   "messagingSenderId": "259362159478",
   "measurementId": ""

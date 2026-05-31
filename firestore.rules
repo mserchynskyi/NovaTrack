@@ -27,23 +27,20 @@ service cloud.firestore {
     
     // Match userAccounts/{userId}
     match /userAccounts/{userId} {
-       allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+       allow get: if isSignedIn() && request.auth.uid == userId;
        // Prevent list access even for own, not needed.
        allow list: if false; 
        
        allow create: if isSignedIn() 
-                     && isValidId(userId)
                      && request.auth.uid == userId
                      && isValidUserAccount(incoming(), request.auth.uid);
                      
        allow update: if isSignedIn()
-                     && isValidId(userId)
                      && request.auth.uid == userId
                      && isValidUserAccount(incoming(), request.auth.uid)
                      && incoming().userId == existing().userId; // Immutable
                      
        allow delete: if isSignedIn() 
-                     && isValidId(userId)
                      && request.auth.uid == userId;
     }
   }
