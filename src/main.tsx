@@ -7,7 +7,8 @@ import { AuthProvider } from './lib/AuthContext';
 // Register PWA service worker
 if ('serviceWorker' in navigator && (import.meta as any).env.PROD) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    const swUrl = (import.meta as any).env.BASE_URL + 'sw.js';
+    navigator.serviceWorker.register(swUrl)
       .then(reg => console.log('Service Worker registered successfully:', reg.scope))
       .catch(err => console.warn('Service Worker registration failed:', err));
   });

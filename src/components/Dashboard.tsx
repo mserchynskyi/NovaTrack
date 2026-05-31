@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Parcel } from '../types';
-import { Package, Truck, CheckCircle2, AlertCircle, RefreshCw, Box, MapPin, Calendar, Wallet, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
+import { Package, Truck, CheckCircle2, AlertCircle, RefreshCw, Box, MapPin, Calendar, Wallet, SlidersHorizontal, ArrowUpDown, Search, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ParcelDetailsModal } from './ParcelDetailsModal';
 
@@ -15,6 +15,7 @@ interface DashboardProps {
 export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh }: DashboardProps) {
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [sortBy, setSortBy] = useState<string>('Date (Newest)');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null);
   
   const getStatusColorTheme = (statusCode: string) => {
@@ -68,6 +69,23 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh }: D
          return isNaN(ts) ? 0 : ts;
      };
 
+     // Apply Search Filter (real-time filtering by TTN, Recipient phone/last name, or Destination city)
+     if (searchQuery.trim()) {
+         const query = searchQuery.trim().toLowerCase();
+         result = result.filter(p => {
+             const ttnMatch = p.ttn ? p.ttn.toLowerCase().includes(query) : false;
+             const recipientMatch = p.recipient ? p.recipient.toLowerCase().includes(query) : false;
+             const cityMatch = p.cityName ? p.cityName.toLowerCase().includes(query) : false;
+             
+             const phone1 = p.rawStatus?.PhoneRecipient ? String(p.rawStatus.PhoneRecipient).toLowerCase() : '';
+             const phone2 = p.rawDoc?.PhoneRecipient ? String(p.rawDoc.PhoneRecipient).toLowerCase() : '';
+             const senderPhone = p.rawStatus?.PhoneSender ? String(p.rawStatus.PhoneSender).toLowerCase() : '';
+             const phoneMatch = phone1.includes(query) || phone2.includes(query) || senderPhone.includes(query);
+             
+             return ttnMatch || recipientMatch || cityMatch || phoneMatch;
+         });
+     }
+
      // Apply Filter
      if (filterStatus !== 'All') {
          result = result.filter(p => {
@@ -102,7 +120,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh }: D
      });
 
      return result;
-  }, [parcels, filterStatus, sortBy]);
+  }, [parcels, filterStatus, sortBy, searchQuery]);
 
 
   return (
@@ -118,38 +136,65 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh }: D
       )}
 
       {/* Controls & Filters */}
-      <div className="flex flex-col landscape:flex-row lg:flex-row justify-between items-stretch landscape:items-center lg:items-center gap-3 shrink-0 bg-transparent lg:bg-white p-4 pb-2 lg:p-3 lg:pb-3 rounded-none lg:rounded border-none lg:border lg:border-gray-200 shadow-none lg:shadow-sm">
-        <div className="flex items-center gap-3 flex-nowrap w-full lg:w-auto">
-           <h2 className="text-[14px] font-bold text-gray-900 uppercase tracking-tight hidden lg:block">Active Tracking</h2>
-           <div className="flex items-center gap-2 text-xs flex-1 lg:flex-none">
-              <SlidersHorizontal className="w-4 h-4 text-gray-400 hidden lg:block" />
-              <select 
-                  className="w-full bg-[#262c33] lg:bg-gray-50 border border-[#30373e] lg:border-gray-200 rounded-lg lg:rounded px-3 py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 lg:focus:border-red-400 text-gray-200 lg:text-gray-700 font-medium"
-                  value={filterStatus}
-                  onChange={e => setFilterStatus(e.target.value)}
-              >
-                  <option value="All">Всі статуси</option>
-                  <option value="Pending">Очікують</option>
-                  <option value="In Transit">В дорозі</option>
-                  <option value="At Branch">У відділенні</option>
-                  <option value="Stored 5+ Days">Зберігається 5+ днів</option>
-                  <option value="Delivered">Отримані</option>
-                  <option value="Issues">Проблемні</option>
-              </select>
+      <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3 shrink-0 bg-transparent lg:bg-white p-4 pb-2 lg:p-3 lg:pb-3 rounded-none lg:rounded border-none lg:border lg:border-gray-200 shadow-none lg:shadow-sm">
+        
+        {/* Left Side: Search + Filters group */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+           {/* Real-time Search Box */}
+           <div className="relative w-full sm:w-72 md:w-80 lg:w-96 shrink-0">
+             <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+               <Search className="h-4 w-4 text-gray-400" />
+             </span>
+             <input
+               type="text"
+               placeholder="Пошук за ТТН, телефоном, прізвищем, містом..."
+               className="w-full pl-9 pr-8 bg-[#262c33] lg:bg-gray-50 border border-[#30373e] lg:border-gray-200 rounded-lg lg:rounded py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 lg:focus:border-red-400 text-gray-200 lg:text-gray-700 font-medium text-xs placeholder:text-gray-500 lg:placeholder:text-gray-400"
+               value={searchQuery}
+               onChange={e => setSearchQuery(e.target.value)}
+             />
+             {searchQuery && (
+               <button
+                 type="button"
+                 onClick={() => setSearchQuery('')}
+                 className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400 hover:text-white lg:hover:text-gray-600"
+               >
+                 <X className="h-4 w-4" />
+               </button>
+             )}
            </div>
-           
-           <div className="flex items-center gap-2 text-xs flex-1 lg:flex-none">
-              <ArrowUpDown className="w-4 h-4 text-gray-400 hidden lg:block" />
-              <select 
-                  className="w-full bg-[#262c33] lg:bg-gray-50 border border-[#30373e] lg:border-gray-200 rounded-lg lg:rounded px-3 py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 lg:focus:border-red-400 text-gray-200 lg:text-gray-700 font-medium"
-                  value={sortBy}
-                  onChange={e => setSortBy(e.target.value)}
-              >
-                  <option value="Date (Newest)">Новіші</option>
-                  <option value="Date (Oldest)">Старіші</option>
-                  <option value="Tracking (Asc)">ТТН (зрост)</option>
-                  <option value="Tracking (Desc)">ТТН (спад)</option>
-              </select>
+
+           {/* Select Dropdowns */}
+           <div className="flex items-center gap-3 flex-nowrap w-full sm:w-auto">
+              <div className="flex items-center gap-2 text-xs flex-1 sm:flex-none">
+                 <SlidersHorizontal className="w-4 h-4 text-gray-400 hidden lg:block" />
+                 <select 
+                     className="w-full bg-[#262c33] lg:bg-gray-50 border border-[#30373e] lg:border-gray-200 rounded-lg lg:rounded px-3 py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 lg:focus:border-red-400 text-gray-200 lg:text-gray-700 font-medium"
+                     value={filterStatus}
+                     onChange={e => setFilterStatus(e.target.value)}
+                 >
+                     <option value="All">Всі статуси</option>
+                     <option value="Pending">Очікують</option>
+                     <option value="In Transit">В дорозі</option>
+                     <option value="At Branch">У відділенні</option>
+                     <option value="Stored 5+ Days">Зберігається 5+ днів</option>
+                     <option value="Delivered">Отримані</option>
+                     <option value="Issues">Проблемні</option>
+                 </select>
+              </div>
+              
+              <div className="flex items-center gap-2 text-xs flex-1 sm:flex-none">
+                 <ArrowUpDown className="w-4 h-4 text-gray-400 hidden lg:block" />
+                 <select 
+                     className="w-full bg-[#262c33] lg:bg-gray-50 border border-[#30373e] lg:border-gray-200 rounded-lg lg:rounded px-3 py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 lg:focus:border-red-400 text-gray-200 lg:text-gray-700 font-medium"
+                     value={sortBy}
+                     onChange={e => setSortBy(e.target.value)}
+                 >
+                     <option value="Date (Newest)">Новіші</option>
+                     <option value="Date (Oldest)">Старіші</option>
+                     <option value="Tracking (Asc)">ТТН (зрост)</option>
+                     <option value="Tracking (Desc)">ТТН (спад)</option>
+                 </select>
+              </div>
            </div>
         </div>
 
