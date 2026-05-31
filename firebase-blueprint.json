@@ -1,0 +1,42 @@
+{
+  "entities": {
+    "account": {
+      "title": "Account",
+      "description": "Nova Poshta API tokens for a user",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who owns this account entry"
+        },
+        "tokens": {
+          "type": "array",
+          "description": "List of stored NP Accounts (name, token, selected)",
+          "items": {
+             "type": "object",
+             "properties": {
+                 "id": { "type": "string" },
+                 "name": { "type": "string" },
+                 "token": { "type": "string" },
+                 "selected": { "type": "boolean" }
+             },
+             "required": ["id", "name", "token", "selected"]
+          }
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last updated timestamp in Firestore Timestamp format (or ISO string)"
+        }
+      },
+      "required": ["userId", "tokens"]
+    }
+  },
+  "firestore": {
+    "userAccounts/{userId}": {
+      "schema": {
+        "$ref": "#/entities/account"
+      },
+      "description": "Stores user API tokens. The document ID is the userId."
+    }
+  }
+}

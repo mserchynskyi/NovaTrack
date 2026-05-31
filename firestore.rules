@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Primitives
+    function isSignedIn() { return request.auth != null; }
+    function existing() { return resource.data; }
+    function incoming() { return request.resource.data; }
+    function isValidId(id) { 
+       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    
+    // Validation for UserAccount
+    function isValidUserAccount(data, uid) {
+       return data.keys().hasAll(['userId', 'tokens'])
+       // we can't easily validate the tokens array structure in rules, but we ensure it's a list.
+       && data.tokens is list
+       // check userId matches uid
+       && data.userId == uid
+       && data.userId is string;
+    }
+    
+    // Match userAccounts/{userId}
+    match /userAccounts/{userId} {
+       allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+       // Prevent list access even for own, not needed.
+       allow list: if false; 
+       
+       allow create: if isSignedIn() 
+                     && isValidId(userId)
+                     && request.auth.uid == userId
+                     && isValidUserAccount(incoming(), request.auth.uid);
+                     
+       allow update: if isSignedIn()
+                     && isValidId(userId)
+                     && request.auth.uid == userId
+                     && isValidUserAccount(incoming(), request.auth.uid)
+                     && incoming().userId == existing().userId; // Immutable
+                     
+       allow delete: if isSignedIn() 
+                     && isValidId(userId)
+                     && request.auth.uid == userId;
+    }
+  }
+}

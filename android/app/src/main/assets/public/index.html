@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Google AI Studio App</title>
+    <script>
+      try {
+        const originalFetch = window.fetch;
+        Object.defineProperty(window, 'fetch', {
+          get: function() { return originalFetch; },
+          set: function(v) { console.warn("Ignored fetch reassignment"); },
+          configurable: true,
+          enumerable: true
+        });
+      } catch(e) {}
+    </script>
+    <script type="module" crossorigin src="/assets/index-DzDXA3UC.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-GIX1Ygts.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+

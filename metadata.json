@@ -1,0 +1,8 @@
+{
+  "name": "NovaTrack",
+  "description": "Єдина панель відстеження посилок Нової Пошти для кількох акаунтів (через API-токени).",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
