@@ -4,4 +4,5 @@
     <string name="title_activity_main">Nova Track</string>
     <string name="package_name">com.novatrack.app</string>
     <string name="custom_url_scheme">com.novatrack.app</string>
+    <string name="server_client_id">259362159478-fl2qsng5b906uac841jvsk5365hs9ck3.apps.googleusercontent.com</string>
 </resources>

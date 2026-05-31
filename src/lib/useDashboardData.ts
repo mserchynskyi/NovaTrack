@@ -22,13 +22,22 @@ export function useDashboardData(accounts: NpAccount[]) {
         setLoading(true);
         setError(null);
         try {
-            const allParcelsPromises = accounts.map(account => fetchAccountParcels(account).catch(e => {
-                console.error(`Error fetching for ${account.name}:`, e);
-                return []; 
-            }));
-            const results = await Promise.all(allParcelsPromises);
+            const flatParcels: Parcel[] = [];
+            const fetchErrors: string[] = [];
+
+            for (const account of accounts) {
+                try {
+                    const accountParcels = await fetchAccountParcels(account);
+                    flatParcels.push(...accountParcels);
+                } catch (e: any) {
+                    console.error(`Error fetching for ${account.name}:`, e);
+                    fetchErrors.push(`Error fetching for ${account.name}: ${e.message}`);
+                }
+            }
             
-            const flatParcels = results.flat();
+            if (fetchErrors.length > 0) {
+                setError(fetchErrors.join('\n'));
+            }
             
             // Notification Logic
             const newStatuses = new Map<string, string>();

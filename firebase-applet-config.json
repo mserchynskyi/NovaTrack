@@ -1,10 +1,10 @@
 {
-  "projectId": "civil-linker-pwh20",
-  "appId": "1:3891776963:web:d61d18c77c11b962944176",
-  "apiKey": "AIzaSyDn3iVmZxaa1NoM1mxpt3DCqW7VQ9ZWFX4",
-  "authDomain": "civil-linker-pwh20.firebaseapp.com",
+  "projectId": "novatrack-19de3",
+  "appId": "1:259362159478:web:56537c50a6691c28b25857",
+  "apiKey": "AIzaSyD49Gh9mtV8hJq8iomKhQU7rY2JcJ0pmWI",
+  "authDomain": "novatrack-19de3.firebaseapp.com",
   "firestoreDatabaseId": "ai-studio-2e0205ee-b6ab-49b4-8a60-3a236ca98a32",
-  "storageBucket": "civil-linker-pwh20.firebasestorage.app",
-  "messagingSenderId": "3891776963",
+  "storageBucket": "novatrack-19de3.firebasestorage.app",
+  "messagingSenderId": "259362159478",
   "measurementId": ""
 }
