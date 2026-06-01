@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nova-track-cache-v2';
+const CACHE_NAME = 'nova-track-cache-v1';
 const ASSETS = [
   './',
   './index.html',
@@ -33,7 +33,7 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch Event (Network First Strategy)
+// Fetch Event
 self.addEventListener('fetch', (event) => {
   // Only handle GET requests and exclude Firebase auth or browser extensions
   if (event.request.method !== 'GET' || event.request.url.startsWith('chrome-extension://')) {
@@ -41,18 +41,22 @@ self.addEventListener('fetch', (event) => {
   }
   
   event.respondWith(
-    fetch(event.request).then((response) => {
-      // Cache successful requests for offline fallback
-      if (response && response.status === 200 && response.type === 'basic' && !event.request.url.includes('/api/')) {
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
       }
-      return response;
-    }).catch(() => {
-      // Fallback to cache if network fails
-      return caches.match(event.request);
+      return fetch(event.request).then((response) => {
+        // Cache successful static requests
+        if (response && response.status === 200 && response.type === 'basic' && !event.request.url.includes('/api/')) {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return response;
+      }).catch(() => {
+        // Fallback or ignore
+      });
     })
   );
 });
