@@ -1,0 +1,1 @@
+# Custom Rules\n\n- **DO NOT MODIFY ICONS**: Never modify, delete, or regenerate any files in the `assets/` folder (such as `icon.png`, `splash.png`, etc.) or inside the `android/app/src/main/res/` folder. They are managed externally on GitHub.\n- **DO NOT RUN CAPACITOR ASSETS**: Do not run `npx capacitor-assets generate` under any circumstances.
