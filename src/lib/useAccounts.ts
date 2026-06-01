@@ -24,42 +24,8 @@ export function useAccounts() {
             const unsubscribe = onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    
-                    // Merge Firestore data with any un-synced localStorage data
-                    const saved = localStorage.getItem('np_accounts');
-                    const savedManual = localStorage.getItem('np_manual_ttns');
-                    const localAccounts = saved ? JSON.parse(saved) : [];
-                    const localManual = savedManual ? JSON.parse(savedManual) : [];
-                    
-                    let mergedAccounts = [...(data.tokens || [])];
-                    let mergedManual = [...(data.manualTtns || [])];
-                    let needsSync = false;
-
-                    console.log("Firestore sync pulled accounts:", mergedAccounts);
-
-                    localAccounts.forEach((la: any) => {
-                        if (!mergedAccounts.some(a => (a as any).apiKey === la.apiKey)) {
-                            mergedAccounts.push(la);
-                            needsSync = true;
-                        }
-                    });
-
-                    localManual.forEach((lm: any) => {
-                        if (!mergedManual.some(m => m.ttn === lm.ttn)) {
-                            mergedManual.push(lm);
-                            needsSync = true;
-                        }
-                    });
-                    
-                    if (needsSync) {
-                        console.log("Pushing local accounts to Firestore (merge)...");
-                        setDoc(docRef, { userId: user.uid, tokens: mergedAccounts, manualTtns: mergedManual }, { merge: true });
-                    }
-                    
-                    setAccounts(mergedAccounts);
-                    setManualTtns(mergedManual);
-                    localStorage.setItem('np_accounts', JSON.stringify(mergedAccounts));
-                    localStorage.setItem('np_manual_ttns', JSON.stringify(mergedManual));
+                    setAccounts(data.tokens || []);
+                    setManualTtns(data.manualTtns || []);
                 } else {
                     // Try to restore from local storage once if Firestore is empty
                     const saved = localStorage.getItem('np_accounts');
