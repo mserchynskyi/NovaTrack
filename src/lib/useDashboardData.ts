@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { NpAccount, Parcel } from '../types';
-import { fetchAccountParcels } from './np-api';
+import { fetchAccountParcels, fetchManualParcels } from './np-api';
+import { ManualTtn } from './useAccounts';
 
-export function useDashboardData(accounts: NpAccount[]) {
+export function useDashboardData(accounts: NpAccount[], manualTtns: ManualTtn[] = []) {
     const [parcels, setParcels] = useState<Parcel[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -32,6 +33,16 @@ export function useDashboardData(accounts: NpAccount[]) {
                 } catch (e: any) {
                     console.error(`Error fetching for ${account.name}:`, e);
                     fetchErrors.push(`Error fetching for ${account.name}: ${e.message}`);
+                }
+            }
+
+            if (manualTtns.length > 0) {
+                try {
+                    const manualParcels = await fetchManualParcels(accounts[0].apiKey, manualTtns);
+                    flatParcels.push(...manualParcels);
+                } catch (e: any) {
+                    console.error("Error fetching manual parcels:", e);
+                    fetchErrors.push(`Помилка завантаження вручну доданих ТТН: ${e.message}`);
                 }
             }
             

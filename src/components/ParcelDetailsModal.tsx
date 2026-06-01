@@ -1,12 +1,15 @@
-import { X, MapPin, Calendar, Box, User, UserCheck, Scale, CreditCard, Phone } from 'lucide-react';
+import { useState } from 'react';
+import { X, MapPin, Calendar, Box, User, UserCheck, Scale, CreditCard, Phone, RefreshCw, Trash2 } from 'lucide-react';
 import { Parcel } from '../types';
 
 interface ParcelDetailsProps {
     parcel: Parcel;
     onClose: () => void;
+    onDeleteManualTtn?: () => void;
 }
 
-export function ParcelDetailsModal({ parcel, onClose }: ParcelDetailsProps) {
+export function ParcelDetailsModal({ parcel, onClose, onDeleteManualTtn }: ParcelDetailsProps) {
+    const [copied, setCopied] = useState(false);
     if (!parcel) return null;
 
     const parsePayer = () => {
@@ -88,6 +91,59 @@ export function ParcelDetailsModal({ parcel, onClose }: ParcelDetailsProps) {
                                 </div>
                             </div>
                         </div>
+
+                        {parcel.basisTtn && (
+                            <div className="bg-[#292D32] p-5 rounded-2xl border border-yellow-500/30 shadow-md">
+                                <div className="text-[10px] font-bold uppercase tracking-widest text-[#febb14] mb-3 flex items-center gap-1.5">
+                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                    <span>Зворотна доставка (Повернення)</span>
+                                </div>
+                                
+                                <div className="font-bold text-lg text-white mb-2 leading-tight">
+                                    {parcel.basisStatus || 'Оформлюється'}
+                                </div>
+                                
+                                <div className="font-mono text-xs text-yellow-400 font-bold bg-[#1b2b35] px-3 py-2 rounded-xl inline-flex items-center gap-2 mb-4 mt-1.5 border border-[#32363b]">
+                                    <span>ТТН: {parcel.basisTtn}</span>
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigator.clipboard.writeText(parcel.basisTtn || '');
+                                            setCopied(true);
+                                            setTimeout(() => setCopied(false), 2000);
+                                        }}
+                                        className="text-white hover:text-yellow-300 ml-1 text-[10px] px-2 py-0.5 bg-[#32363b] rounded border border-gray-700 transition-colors"
+                                    >
+                                        {copied ? 'Скопійовано!' : 'Копіювати'}
+                                    </button>
+                                </div>
+
+                                <div className="space-y-3 text-xs text-[#a5acb5] pt-3.5 border-t border-[#32363b]">
+                                    {parcel.basisChain && parcel.basisChain.length > 0 && (() => {
+                                        const latestBasis = parcel.basisChain[parcel.basisChain.length - 1];
+                                        return (
+                                            <>
+                                                <div className="flex justify-between items-center bg-[#1b2b35]/40 p-2.5 rounded-xl border border-[#32363b]/60">
+                                                    <span>Поточне місце:</span>
+                                                    <span className="font-medium text-white text-right">
+                                                        {latestBasis.cityName || 'В дорозі'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between items-center bg-[#1b2b35]/40 p-2.5 rounded-xl border border-[#32363b]/60">
+                                                    <span>Очікувана дата повернення:</span>
+                                                    <span className="font-bold text-red-400 text-right">
+                                                        {latestBasis.estimatedDeliveryDate || latestBasis.rawStatus?.ScheduledDeliveryDate || '-'}
+                                                    </span>
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
+                                    <div className="text-[11px] text-[#868d96] italic text-center mt-1">
+                                        Подальше відстеження відбувається автоматично
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Route */}
                         <div className="grid grid-cols-1 gap-3 relative">
@@ -177,6 +233,16 @@ export function ParcelDetailsModal({ parcel, onClose }: ParcelDetailsProps) {
                                 {parcel.rawDoc.Description}
                             </div>
                         )}
+
+                        {onDeleteManualTtn && (
+                            <button
+                                onClick={onDeleteManualTtn}
+                                className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider font-bold transition-all flex items-center justify-center gap-2 w-full mt-2 select-none"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                <span>Видалити з відстеження</span>
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -205,6 +271,52 @@ export function ParcelDetailsModal({ parcel, onClose }: ParcelDetailsProps) {
                         <div className="inline-flex px-4 py-1.5 bg-gray-100 text-gray-900 rounded-full text-sm font-bold mb-8 shadow-sm">
                             {parcel.status}
                         </div>
+
+                        {parcel.basisTtn && (
+                            <div className="mb-8 p-6 bg-yellow-50 border border-yellow-200 rounded-2xl shadow-sm">
+                                <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-600 mb-2.5 flex items-center gap-1.5">
+                                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-yellow-500" />
+                                    <span>Зворотна доставка (Повернення)</span>
+                                </div>
+                                <div className="font-bold text-xl text-gray-950 mb-1 leading-snug">
+                                    {parcel.basisStatus || 'Оформлюється'}
+                                </div>
+                                <div className="text-xs text-gray-500 mb-4 font-mono">
+                                    Новий трек-номер: <span className="font-bold text-gray-900">{parcel.basisTtn}</span>
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigator.clipboard.writeText(parcel.basisTtn || '');
+                                            setCopied(true);
+                                            setTimeout(() => setCopied(false), 2000);
+                                        }}
+                                        className="ml-2.5 px-2 py-0.5 text-[10px] bg-white border border-gray-200 text-gray-600 rounded hover:text-gray-900 hover:bg-gray-100 transition-colors font-sans"
+                                    >
+                                        {copied ? 'Скопійовано!' : 'Копіювати'}
+                                    </button>
+                                </div>
+                                
+                                {parcel.basisChain && parcel.basisChain.length > 0 && (() => {
+                                    const latestBasis = parcel.basisChain[parcel.basisChain.length - 1];
+                                    return (
+                                        <div className="grid grid-cols-2 gap-4 text-xs pt-4 border-t border-yellow-200/60">
+                                            <div>
+                                                 <span className="text-gray-500 block mb-0.5">Поточне місце:</span>
+                                                 <span className="font-bold text-gray-900 text-sm">
+                                                     {latestBasis.cityName || 'В дорозі'}
+                                                 </span>
+                                            </div>
+                                            <div>
+                                                 <span className="text-gray-500 block mb-0.5">Очікувана дата отримання:</span>
+                                                 <span className="font-bold text-red-650 text-sm">
+                                                     {latestBasis.estimatedDeliveryDate || latestBasis.rawStatus?.ScheduledDeliveryDate || '-'}
+                                                 </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        )}
                         
                         <div className="relative pl-7 space-y-10 before:absolute before:inset-y-0 before:left-3 before:w-0.5 before:bg-gray-100">
                             
@@ -305,6 +417,18 @@ export function ParcelDetailsModal({ parcel, onClose }: ParcelDetailsProps) {
                                     {parcel.cost} ₴
                                 </div>
                             </div>
+
+                            {onDeleteManualTtn && (
+                                <div className="pt-6 mt-6 border-t border-gray-200">
+                                    <button
+                                        onClick={onDeleteManualTtn}
+                                        className="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-sm select-none"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        <span>Видалити з відстеження</span>
+                                    </button>
+                                </div>
+                            )}
                         </div>
                    </div>
                </div>

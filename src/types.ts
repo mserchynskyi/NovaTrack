@@ -20,4 +20,8 @@ export interface Parcel {
   dateCreated: string;
   rawDoc?: any;
   rawStatus?: any;
+  basisTtn?: string;
+  basisStatus?: string;
+  basisStatusCode?: string;
+  basisChain?: any[];
 }

@@ -4,9 +4,15 @@ import { useAuth } from './AuthContext';
 import { db } from './firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
+export interface ManualTtn {
+  ttn: string;
+  phone?: string;
+}
+
 export function useAccounts() {
     const { user, loading: authLoading } = useAuth();
     const [accounts, setAccounts] = useState<NpAccount[]>([]);
+    const [manualTtns, setManualTtns] = useState<ManualTtn[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
@@ -17,19 +23,18 @@ export function useAccounts() {
             const docRef = doc(db, 'userAccounts', user.uid);
             const unsubscribe = onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
-                    setAccounts(docSnap.data().tokens || []);
+                    const data = docSnap.data();
+                    setAccounts(data.tokens || []);
+                    setManualTtns(data.manualTtns || []);
                 } else {
                     // Try to restore from local storage once if Firestore is empty
                     const saved = localStorage.getItem('np_accounts');
-                    if (saved) {
-                        try {
-                           const localAccounts = JSON.parse(saved);
-                           setAccounts(localAccounts);
-                           setDoc(docRef, { userId: user.uid, tokens: localAccounts });
-                        } catch (e) {}
-                    } else {
-                       setAccounts([]);
-                    }
+                    const savedManual = localStorage.getItem('np_manual_ttns');
+                    const localAccounts = saved ? JSON.parse(saved) : [];
+                    const localManual = savedManual ? JSON.parse(savedManual) : [];
+                    setAccounts(localAccounts);
+                    setManualTtns(localManual);
+                    setDoc(docRef, { userId: user.uid, tokens: localAccounts, manualTtns: localManual });
                 }
                 setIsLoaded(true);
             }, (error) => {
@@ -43,6 +48,10 @@ export function useAccounts() {
             if (saved) {
                 try { setAccounts(JSON.parse(saved)); } catch (e) {}
             }
+            const savedManual = localStorage.getItem('np_manual_ttns');
+            if (savedManual) {
+                try { setManualTtns(JSON.parse(savedManual)); } catch (e) {}
+            }
             setIsLoaded(true);
         }
     }, [user, authLoading]);
@@ -54,12 +63,33 @@ export function useAccounts() {
         if (user) {
             try {
                 const docRef = doc(db, 'userAccounts', user.uid);
-                await setDoc(docRef, { userId: user.uid, tokens: newAccounts });
+                await setDoc(docRef, { userId: user.uid, tokens: newAccounts }, { merge: true });
             } catch (error) {
                 console.error("Failed to save accounts to Firestore:", error);
             }
         }
     };
 
-    return { accounts, saveAccounts, isLoaded: isLoaded && !authLoading };
+    const saveManualTtns = async (newManualTtns: ManualTtn[]) => {
+        setManualTtns(newManualTtns);
+        localStorage.setItem('np_manual_ttns', JSON.stringify(newManualTtns));
+        
+        if (user) {
+            try {
+                const docRef = doc(db, 'userAccounts', user.uid);
+                await setDoc(docRef, { userId: user.uid, manualTtns: newManualTtns }, { merge: true });
+            } catch (error) {
+                console.error("Failed to save manual TTNs to Firestore:", error);
+            }
+        }
+    };
+
+    return { 
+        accounts, 
+        saveAccounts, 
+        manualTtns, 
+        saveManualTtns, 
+        isLoaded: isLoaded && !authLoading 
+    };
 }
+

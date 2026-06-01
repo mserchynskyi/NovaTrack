@@ -1,13 +1,14 @@
 import { ReactNode } from 'react';
-import { Home, MapPin, User, Package as Box, LogOut } from 'lucide-react';
+import { Home, MapPin, User, Package as Box, LogOut, Plus } from 'lucide-react';
 import { useAuth } from '../lib/AuthContext';
 
 interface LayoutProps {
   children: ReactNode;
   onManageAccounts: () => void;
+  onAddTtn: () => void;
 }
 
-export function Layout({ children, onManageAccounts }: LayoutProps) {
+export function Layout({ children, onManageAccounts, onAddTtn }: LayoutProps) {
   const { user, logout } = useAuth();
 
   return (
@@ -25,6 +26,10 @@ export function Layout({ children, onManageAccounts }: LayoutProps) {
              <div className="flex items-center gap-3 px-3 py-2.5 bg-white/10 rounded-lg text-white cursor-pointer font-medium text-sm">
                 <Home className="w-4 h-4" />
                 Головна
+             </div>
+             <div onClick={onAddTtn} className="flex items-center gap-3 px-3 py-2.5 text-[#a5acb5] hover:bg-white/5 hover:text-white rounded-lg cursor-pointer font-medium text-sm transition-colors">
+                <Plus className="w-4 h-4" />
+                Додати ТТН вручну
              </div>
              <div onClick={onManageAccounts} className="flex items-center gap-3 px-3 py-2.5 text-[#a5acb5] hover:bg-white/5 hover:text-white rounded-lg cursor-pointer font-medium text-sm transition-colors">
                 <User className="w-4 h-4" />
@@ -56,6 +61,12 @@ export function Layout({ children, onManageAccounts }: LayoutProps) {
             <div className="flex flex-col items-center gap-1.5 landscape:gap-0.5 w-20 cursor-pointer text-[#e33745]">
               <Home className="w-6 h-6 landscape:w-5 landscape:h-5 stroke-[1.5]" />
               <span>Головна</span>
+            </div>
+            <div className="flex flex-col items-center gap-1.5 landscape:gap-0.5 w-24 cursor-pointer hover:text-gray-300 transition-colors" onClick={onAddTtn}>
+              <div className="w-10 h-10 rounded-full bg-[#e33745] text-white flex items-center justify-center -mt-5 shadow-lg shadow-red-900/40 border border-red-700/50">
+                <Plus className="w-6 h-6 stroke-[2.5]" />
+              </div>
+              <span className="text-[10px] mt-0.5">Додати ТТН</span>
             </div>
             <div className="flex flex-col items-center gap-1.5 landscape:gap-0.5 w-20 cursor-pointer hover:text-gray-300 transition-colors" onClick={onManageAccounts}>
               <User className="w-6 h-6 landscape:w-5 landscape:h-5 stroke-[1.5]" />

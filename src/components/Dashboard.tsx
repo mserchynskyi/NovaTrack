@@ -10,9 +10,10 @@ interface DashboardProps {
   error: string | null;
   onRefresh: () => void;
   lastRefresh: Date | null;
+  onDeleteManualTtn: (ttn: string) => void;
 }
 
-export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh }: DashboardProps) {
+export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onDeleteManualTtn }: DashboardProps) {
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [sortBy, setSortBy] = useState<string>('Date (Newest)');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -21,8 +22,8 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh }: D
   const getStatusColorTheme = (statusCode: string) => {
     const code = Number(statusCode);
     if (code === 1) return "bg-gray-50 text-gray-700";
-    if ([2, 3, 102, 103, 108].includes(code)) return "bg-red-50 text-red-700";
-    if ([9, 10, 11, 14].includes(code)) return "bg-green-50 text-green-700";
+    if ([2, 3, 102, 103].includes(code)) return "bg-red-50 text-red-700";
+    if ([9, 10, 11, 14, 106, 108].includes(code)) return "bg-green-50 text-green-700";
     if ([7, 8].includes(code)) return "bg-orange-50 text-orange-700";
     return "bg-blue-50 text-blue-700";
   };
@@ -91,8 +92,8 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh }: D
          result = result.filter(p => {
              const code = Number(p.statusCode);
              if (filterStatus === 'Pending') return code === 1;
-             if (filterStatus === 'Delivered') return [9, 10, 11, 14].includes(code);
-             if (filterStatus === 'Issues') return [2, 3, 102, 103, 108].includes(code);
+             if (filterStatus === 'Delivered') return [9, 10, 11, 14, 106, 108].includes(code);
+             if (filterStatus === 'Issues') return [2, 3, 102, 103].includes(code);
              if (filterStatus === 'At Branch') return [7, 8].includes(code);
              if (filterStatus === 'Stored 5+ Days') {
                  if (![7, 8].includes(code)) return false;
@@ -105,7 +106,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh }: D
                  const daysDiff = (Date.now() - branchDate) / msInDay;
                  return daysDiff >= 5;
              }
-             if (filterStatus === 'In Transit') return ![1, 2, 3, 7, 8, 9, 10, 11, 14, 102, 103, 108].includes(code);
+             if (filterStatus === 'In Transit') return ![1, 2, 3, 7, 8, 9, 10, 11, 14, 102, 103, 106, 108].includes(code);
              return true;
          });
      }
@@ -276,9 +277,21 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh }: D
                         <div className="font-medium text-gray-900 truncate" title={parcel.recipient}>
                           {parcel.recipient}
                         </div>
-                        <div className="text-[10px] text-gray-500 truncate" title={`${parcel.sender} → ${parcel.cityName}`}>
-                          {parcel.cityName}
+                        <div className="text-[10px] text-gray-500 truncate flex items-center gap-2 flex-wrap" title={`${parcel.sender} → ${parcel.cityName}`}>
+                          <span>{parcel.cityName}</span>
+                          {parcel.basisTtn && (
+                            <span className="px-1.5 py-0.5 rounded bg-yellow-50 text-yellow-700 border border-yellow-200 text-[9px] font-bold tracking-wider uppercase inline-flex items-center gap-1 shrink-0">
+                              <RefreshCw className="w-2 h-2 animate-spin text-yellow-600" />
+                              Повернення
+                            </span>
+                          )}
                         </div>
+                        {parcel.basisTtn && (
+                          <div className="text-[11px] text-yellow-600 font-semibold mt-1 flex items-center gap-1">
+                            <span>🔄 ТТН {parcel.basisTtn}:</span>
+                            <span className="font-bold">{parcel.basisStatus || "Оформлюється"}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Cost */}
@@ -305,7 +318,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh }: D
                  let progress = 50;
                  let progressColor = "bg-[#25c468]";
                  if (code === 1) progress = 10;
-                 else if ([7, 8, 9, 10, 11, 14].includes(code)) progress = 100;
+                 else if ([7, 8, 9, 10, 11, 14, 106, 108].includes(code)) progress = 100;
 
                  // Parse the locations slightly. Assuming "Відправка" -> "CityName" based on usual data.
                  // We don't have true sender city in standard parcel interface without extra fetch, 
@@ -330,8 +343,14 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh }: D
                         </div>
                         
                         <div className="flex-1 min-w-0 flex flex-col justify-center">
-                            <div className="text-[15px] font-semibold text-gray-100 leading-snug drop-shadow-sm mb-1 pr-2 tracking-tight">
-                                {parcel.status}
+                            <div className="text-[15px] font-semibold text-gray-100 leading-snug drop-shadow-sm mb-1 pr-2 tracking-tight flex flex-wrap items-center gap-2">
+                                <span>{parcel.status}</span>
+                                {parcel.basisTtn && (
+                                    <span className="px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400 text-[10px] font-bold tracking-wider uppercase inline-flex items-center gap-1 shrink-0">
+                                        <RefreshCw className="w-2.5 h-2.5 animate-spin duration-3000" />
+                                        Повернення
+                                    </span>
+                                )}
                             </div>
                             <div className="text-[#a5acb5] text-[14px] truncate tracking-tight">
                                 до {parcel.recipient}
@@ -339,6 +358,18 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh }: D
                             <div className="text-[#a5acb5] text-[14px] truncate mb-3 tracking-tight">
                                 {parcel.sender}
                             </div>
+
+                            {parcel.basisTtn && (
+                                <div className="mb-3 mr-4 bg-[#febb14]/10 border border-[#febb14]/20 rounded-xl px-3 py-2 text-[#febb14] flex flex-col gap-0.5">
+                                    <div className="font-semibold flex items-center gap-1.5 text-xs">
+                                        <RefreshCw className="w-3 h-3 animate-spin text-[#febb14]" />
+                                        Зворотна доставка (ТТН {parcel.basisTtn})
+                                    </div>
+                                    <div className="text-[11px] opacity-90 font-medium">
+                                        Статус: <span className="font-bold">{parcel.basisStatus || 'У процесі оформлення'}</span>
+                                    </div>
+                                </div>
+                            )}
                             
                             {/* Progress Bar Container */}
                             <div className="pr-4 mt-1">
@@ -371,7 +402,14 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh }: D
       </div>
 
       {selectedParcel && (
-          <ParcelDetailsModal parcel={selectedParcel} onClose={() => setSelectedParcel(null)} />
+          <ParcelDetailsModal 
+              parcel={selectedParcel} 
+              onClose={() => setSelectedParcel(null)} 
+              onDeleteManualTtn={selectedParcel.accountId === 'manual' ? () => {
+                   onDeleteManualTtn(selectedParcel.ttn);
+                   setSelectedParcel(null);
+              } : undefined}
+          />
       )}
     </div>
   );
