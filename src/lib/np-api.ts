@@ -110,9 +110,9 @@ export async function fetchAccountParcels(account: NpAccount): Promise<Parcel[]>
 
   const statusMap = new Map<string, any>(allStatuses.map((s) => [s.Number, s]));
 
-  // Recursively fetch any additional basis documents (returns/redirections) up to 3 levels deep
+  // Recursively fetch any additional basis documents (returns/redirections) up to 5 levels deep
   let depth = 0;
-  while (depth < 3) {
+  while (depth < 5) {
     const basisTtnList = Array.from(statusMap.values())
       .map(s => s.LastCreatedOnTheBasisNumber)
       .filter((num): num is string => typeof num === "string" && num.trim() !== "" && !statusMap.has(num.trim()));
@@ -156,8 +156,7 @@ export async function fetchAccountParcels(account: NpAccount): Promise<Parcel[]>
   return documents.map((doc: any): Parcel => {
     const statusInfo = statusMap.get(doc.IntDocNumber) || {};
 
-    // Trace the chain of basis documents (each created on the basis of the previous one)
-    const chain: any[] = [];
+    // Trace the chain of basis documents
     let current = statusInfo;
     const visited = new Set<string>([doc.IntDocNumber]);
 
@@ -168,24 +167,40 @@ export async function fetchAccountParcels(account: NpAccount): Promise<Parcel[]>
 
       const nextStatus = statusMap.get(nextTtn);
       if (nextStatus) {
-        chain.push({
-          ttn: nextTtn,
-          status: nextStatus.Status || "Невідомо",
-          statusCode: nextStatus.StatusCode || "0",
-          actualDeliveryDate: nextStatus.ActualDeliveryDate || "",
-          estimatedDeliveryDate: nextStatus.ScheduledDeliveryDate || "",
-          cityName: nextStatus.CityRecipient || "",
-          rawStatus: nextStatus
-        });
         current = nextStatus;
       } else {
         break;
       }
     }
 
-    const basisTtn = statusInfo.LastCreatedOnTheBasisNumber ? String(statusInfo.LastCreatedOnTheBasisNumber).trim() : "";
-    const basisStatusCode = current && current !== statusInfo ? String(current.StatusCode).trim() : "";
-    const basisStatus = current && current !== statusInfo ? getFriendlyStatus(current.Status || "", basisStatusCode) : "";
+    // Now collect all discovered basis documents (excluding the original) and sort chronologically
+    const chain = Array.from(visited)
+      .filter((ttn) => ttn !== doc.IntDocNumber)
+      .map((ttn) => statusMap.get(ttn))
+      .filter(Boolean)
+      .sort((a, b) => {
+        const parseDate = (dstr: string) => {
+          if (!dstr) return 0;
+          const [d, t] = dstr.split(' ');
+          if (!d || !t) return 0;
+          const [D, M, Y] = d.split('-');
+          return new Date(`${Y}-${M}-${D}T${t}`).getTime();
+        };
+        return parseDate(a.DateCreated) - parseDate(b.DateCreated);
+      })
+      .map((nextStatus) => ({
+        ttn: nextStatus.Number,
+        status: nextStatus.Status || "Невідомо",
+        statusCode: nextStatus.StatusCode || "0",
+        actualDeliveryDate: nextStatus.ActualDeliveryDate || "",
+        estimatedDeliveryDate: nextStatus.ScheduledDeliveryDate || "",
+        cityName: nextStatus.CityRecipient || "",
+        rawStatus: nextStatus
+      }));
+
+    let basisTtn = chain.length > 0 ? chain[chain.length - 1].ttn : "";
+    let basisStatus = chain.length > 0 ? chain[chain.length - 1].status : "";
+    let basisStatusCode = chain.length > 0 ? chain[chain.length - 1].statusCode : "";
 
     return {
       ttn: doc.IntDocNumber,
@@ -262,7 +277,7 @@ export async function fetchManualParcels(apiKey: string, manualTtns: { ttn: stri
   const statusMap = new Map<string, any>(allStatuses.map((s) => [s.Number, s]));
 
   let depth = 0;
-  while (depth < 3) {
+  while (depth < 5) {
     const basisTtnList = Array.from(statusMap.values())
       .map(s => s.LastCreatedOnTheBasisNumber)
       .filter((num): num is string => typeof num === "string" && num.trim() !== "" && !statusMap.has(num.trim()));
@@ -317,24 +332,39 @@ export async function fetchManualParcels(apiKey: string, manualTtns: { ttn: stri
 
       const nextStatus = statusMap.get(nextTtn);
       if (nextStatus) {
-        chain.push({
-          ttn: nextTtn,
-          status: nextStatus.Status || "Невідомо",
-          statusCode: nextStatus.StatusCode || "0",
-          actualDeliveryDate: nextStatus.ActualDeliveryDate || "",
-          estimatedDeliveryDate: nextStatus.ScheduledDeliveryDate || "",
-          cityName: nextStatus.CityRecipient || "",
-          rawStatus: nextStatus
-        });
         current = nextStatus;
       } else {
         break;
       }
     }
 
-    const basisTtn = statusInfo.LastCreatedOnTheBasisNumber ? String(statusInfo.LastCreatedOnTheBasisNumber).trim() : "";
-    const basisStatusCode = current && current !== statusInfo ? String(current.StatusCode).trim() : "";
-    const basisStatus = current && current !== statusInfo ? getFriendlyStatus(current.Status || "", basisStatusCode) : "";
+    const sortedChain = Array.from(visited)
+      .filter((ttn) => ttn !== item.ttn.trim())
+      .map((ttn) => statusMap.get(ttn))
+      .filter(Boolean)
+      .sort((a, b) => {
+        const parseDate = (dstr: string) => {
+          if (!dstr) return 0;
+          const [d, t] = dstr.split(' ');
+          if (!d || !t) return 0;
+          const [D, M, Y] = d.split('-');
+          return new Date(`${Y}-${M}-${D}T${t}`).getTime();
+        };
+        return parseDate(a.DateCreated) - parseDate(b.DateCreated);
+      })
+      .map((nextStatus) => ({
+        ttn: nextStatus.Number,
+        status: nextStatus.Status || "Невідомо",
+        statusCode: nextStatus.StatusCode || "0",
+        actualDeliveryDate: nextStatus.ActualDeliveryDate || "",
+        estimatedDeliveryDate: nextStatus.ScheduledDeliveryDate || "",
+        cityName: nextStatus.CityRecipient || "",
+        rawStatus: nextStatus
+      }));
+
+    let basisTtn = sortedChain.length > 0 ? sortedChain[sortedChain.length - 1].ttn : "";
+    let basisStatus = sortedChain.length > 0 ? sortedChain[sortedChain.length - 1].status : "";
+    let basisStatusCode = sortedChain.length > 0 ? sortedChain[sortedChain.length - 1].statusCode : "";
 
     return {
       ttn: item.ttn.trim(),
@@ -355,7 +385,7 @@ export async function fetchManualParcels(apiKey: string, manualTtns: { ttn: stri
       basisTtn,
       basisStatus,
       basisStatusCode,
-      basisChain: chain
+      basisChain: sortedChain
     };
   });
 }

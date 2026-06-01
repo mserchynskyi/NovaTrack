@@ -279,19 +279,31 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                         </div>
                         <div className="text-[10px] text-gray-500 truncate flex items-center gap-2 flex-wrap" title={`${parcel.sender} → ${parcel.cityName}`}>
                           <span>{parcel.cityName}</span>
-                          {parcel.basisTtn && (
-                            <span className="px-1.5 py-0.5 rounded bg-yellow-50 text-yellow-700 border border-yellow-200 text-[9px] font-bold tracking-wider uppercase inline-flex items-center gap-1 shrink-0">
-                              <RefreshCw className="w-2 h-2 animate-spin text-yellow-600" />
-                              Повернення
-                            </span>
-                          )}
+                          {parcel.basisTtn && (() => {
+                            const hasRedirect = parcel.basisChain?.some((b: any) => b.rawStatus?.OwnerDocumentType === 'Redirecting');
+                            const hasReturn = parcel.basisChain?.some((b: any) => b.rawStatus?.OwnerDocumentType === 'CargoReturn');
+                            const parts = [];
+                            if (hasRedirect) parts.push('Переадресація');
+                            if (hasReturn || (!hasRedirect && !hasReturn)) parts.push('Повернення');
+                            const badgeText = parts.join(' / ');
+                            return (
+                              <span className="px-1.5 py-0.5 rounded bg-yellow-50 text-yellow-700 border border-yellow-200 text-[9px] font-bold tracking-wider uppercase inline-flex items-center gap-1 shrink-0">
+                                {badgeText}
+                              </span>
+                            );
+                          })()}
                         </div>
-                        {parcel.basisTtn && (
-                          <div className="text-[11px] text-yellow-600 font-semibold mt-1 flex items-center gap-1">
-                            <span>🔄 ТТН {parcel.basisTtn}:</span>
-                            <span className="font-bold">{parcel.basisStatus || "Оформлюється"}</span>
-                          </div>
-                        )}
+                        {parcel.basisChain && parcel.basisChain.length > 0 && parcel.basisChain.map((basis: any) => {
+                          const isRedirect = basis.rawStatus?.OwnerDocumentType === 'Redirecting';
+                          const isReturn = basis.rawStatus?.OwnerDocumentType === 'CargoReturn';
+                          const title = isRedirect ? 'Переадресація' : (isReturn ? 'Повернення' : 'Переадресація / Повернення');
+                          return (
+                            <div key={basis.ttn} className="text-[11px] text-yellow-600 font-semibold mt-1 flex items-center gap-1">
+                              <span>{title} (ТТН {basis.ttn}):</span>
+                              <span className="font-bold">{basis.status || "Оформлюється"}</span>
+                            </div>
+                          );
+                        })}
                       </div>
 
                       {/* Cost */}
@@ -345,12 +357,19 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                         <div className="flex-1 min-w-0 flex flex-col justify-center">
                             <div className="text-[15px] font-semibold text-gray-100 leading-snug drop-shadow-sm mb-1 pr-2 tracking-tight flex flex-wrap items-center gap-2">
                                 <span>{parcel.status}</span>
-                                {parcel.basisTtn && (
-                                    <span className="px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400 text-[10px] font-bold tracking-wider uppercase inline-flex items-center gap-1 shrink-0">
-                                        <RefreshCw className="w-2.5 h-2.5 animate-spin duration-3000" />
-                                        Повернення
-                                    </span>
-                                )}
+                                {parcel.basisTtn && (() => {
+                                    const hasRedirect = parcel.basisChain?.some((b: any) => b.rawStatus?.OwnerDocumentType === 'Redirecting');
+                                    const hasReturn = parcel.basisChain?.some((b: any) => b.rawStatus?.OwnerDocumentType === 'CargoReturn');
+                                    const parts = [];
+                                    if (hasRedirect) parts.push('Переадресація');
+                                    if (hasReturn || (!hasRedirect && !hasReturn)) parts.push('Повернення');
+                                    const badgeText = parts.join(' / ');
+                                    return (
+                                        <span className="px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400 text-[10px] font-bold tracking-wider uppercase inline-flex items-center gap-1 shrink-0">
+                                            {badgeText}
+                                        </span>
+                                    );
+                                })()}
                             </div>
                             <div className="text-[#a5acb5] text-[14px] truncate tracking-tight">
                                 до {parcel.recipient}
@@ -359,17 +378,21 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                                 {parcel.sender}
                             </div>
 
-                            {parcel.basisTtn && (
-                                <div className="mb-3 mr-4 bg-[#febb14]/10 border border-[#febb14]/20 rounded-xl px-3 py-2 text-[#febb14] flex flex-col gap-0.5">
-                                    <div className="font-semibold flex items-center gap-1.5 text-xs">
-                                        <RefreshCw className="w-3 h-3 animate-spin text-[#febb14]" />
-                                        Зворотна доставка (ТТН {parcel.basisTtn})
+                            {parcel.basisChain && parcel.basisChain.length > 0 && parcel.basisChain.map((basis: any) => {
+                                const isRedirect = basis.rawStatus?.OwnerDocumentType === 'Redirecting';
+                                const isReturn = basis.rawStatus?.OwnerDocumentType === 'CargoReturn';
+                                const title = isRedirect ? 'Переадресація' : (isReturn ? 'Повернення' : 'Переадресація / Повернення');
+                                return (
+                                    <div key={basis.ttn} className="mb-3 mr-4 bg-[#febb14]/10 border border-[#febb14]/20 rounded-xl px-3 py-2 text-[#febb14] flex flex-col gap-0.5">
+                                        <div className="font-semibold flex items-center gap-1.5 text-xs">
+                                            {title} (ТТН {basis.ttn})
+                                        </div>
+                                        <div className="text-[11px] opacity-90 font-medium">
+                                            Статус: <span className="font-bold">{basis.status || 'У процесі оформлення'}</span>
+                                        </div>
                                     </div>
-                                    <div className="text-[11px] opacity-90 font-medium">
-                                        Статус: <span className="font-bold">{parcel.basisStatus || 'У процесі оформлення'}</span>
-                                    </div>
-                                </div>
-                            )}
+                                );
+                            })}
                             
                             {/* Progress Bar Container */}
                             <div className="pr-4 mt-1">
