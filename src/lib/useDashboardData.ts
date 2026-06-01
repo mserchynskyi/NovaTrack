@@ -91,7 +91,7 @@ export function useDashboardData(accounts: NpAccount[], manualTtns: ManualTtn[] 
         } finally {
             setLoading(false);
         }
-    }, [accounts]);
+    }, [accounts, manualTtns]);
 
     useEffect(() => {
         refresh();

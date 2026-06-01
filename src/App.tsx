@@ -12,6 +12,7 @@ export default function App() {
     const { parcels, loading, error, refresh, lastRefresh } = useDashboardData(accounts, manualTtns);
     const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
     const [isAddTtnModalOpen, setIsAddTtnModalOpen] = useState(false);
+    const [autoSelectTtn, setAutoSelectTtn] = useState<string | null>(null);
 
     if (!isLoaded) return null; // wait for hydration from localStorage
 
@@ -33,6 +34,15 @@ export default function App() {
                         const updated = manualTtns.filter(item => item.ttn !== ttn);
                         saveManualTtns(updated);
                     }}
+                    autoSelectTtn={autoSelectTtn}
+                    onAutoSelectClear={() => setAutoSelectTtn(null)}
+                    onAddManualTtn={(ttn) => {
+                        // Avoid adding duplicates
+                        if (!manualTtns.some(m => m.ttn === ttn)) {
+                            saveManualTtns([...manualTtns, { ttn }]);
+                        }
+                        setAutoSelectTtn(ttn);
+                    }}
                />
            )}
            
@@ -47,7 +57,13 @@ export default function App() {
                 isOpen={isAddTtnModalOpen}
                 onClose={() => setIsAddTtnModalOpen(false)}
                 manualTtns={manualTtns}
-                onSave={saveManualTtns}
+                onSave={(newTtns, addedTtn) => {
+                    saveManualTtns(newTtns);
+                    if (addedTtn) {
+                        setAutoSelectTtn(addedTtn);
+                        setIsAddTtnModalOpen(false); // also good to close it
+                    }
+                }}
                 hasAccounts={accounts.length > 0}
            />
         </Layout>

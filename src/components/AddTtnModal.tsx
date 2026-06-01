@@ -6,7 +6,7 @@ interface AddTtnModalProps {
   isOpen: boolean;
   onClose: () => void;
   manualTtns: ManualTtn[];
-  onSave: (newTtns: ManualTtn[]) => void;
+  onSave: (newTtns: ManualTtn[], addedTtn?: string) => void;
   hasAccounts: boolean;
 }
 
@@ -52,7 +52,7 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts }
         }
 
         const updated = [...manualTtns, { ttn: cleanTtn, phone: formattedPhone || undefined }];
-        onSave(updated);
+        onSave(updated, cleanTtn);
         setTtn('');
         setPhone('');
     };

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Parcel } from '../types';
 import { Package, Truck, CheckCircle2, AlertCircle, RefreshCw, Box, MapPin, Calendar, Wallet, SlidersHorizontal, ArrowUpDown, Search, X } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -11,13 +11,30 @@ interface DashboardProps {
   onRefresh: () => void;
   lastRefresh: Date | null;
   onDeleteManualTtn: (ttn: string) => void;
+  autoSelectTtn?: string | null;
+  onAutoSelectClear?: () => void;
+  onAddManualTtn?: (ttn: string) => void;
 }
 
-export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onDeleteManualTtn }: DashboardProps) {
+export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onDeleteManualTtn, autoSelectTtn, onAutoSelectClear, onAddManualTtn }: DashboardProps) {
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [sortBy, setSortBy] = useState<string>('Date (Newest)');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null);
+  const prevLoading = useRef(loading);
+
+  useEffect(() => {
+    if (autoSelectTtn) {
+        const found = parcels.find(p => p.ttn === autoSelectTtn);
+        if (found) {
+            setSelectedParcel(found);
+            if (onAutoSelectClear) onAutoSelectClear();
+        } else if (prevLoading.current && !loading) {
+            if (onAutoSelectClear) onAutoSelectClear();
+        }
+    }
+    prevLoading.current = loading;
+  }, [autoSelectTtn, parcels, loading, onAutoSelectClear]);
   
   const getStatusColorTheme = (statusCode: string) => {
     const code = Number(statusCode);
@@ -35,6 +52,29 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
           return (parts[0][0] + parts[1][0]).toUpperCase();
       }
       return (name[0] || '').toUpperCase();
+  };
+
+  const getAvatarColors = (name: string) => {
+      if (!name) return 'bg-[#96bdd1] text-[#1b2b35]';
+      const firstLetter = name.trim().charAt(0).toUpperCase();
+      const code = firstLetter.charCodeAt(0) || 0;
+      const colors = [
+          'bg-[#ffadad] text-[#8a1c1c]',
+          'bg-[#ffd6a5] text-[#8a4e1c]',
+          'bg-[#fdffb6] text-[#8a8a1c]',
+          'bg-[#caffbf] text-[#1c8a1c]',
+          'bg-[#9bf6ff] text-[#1c648a]',
+          'bg-[#a0c4ff] text-[#1c308a]',
+          'bg-[#bdb2ff] text-[#3e1c8a]',
+          'bg-[#ffc6ff] text-[#8a1c8a]',
+          'bg-[#ffb5a7] text-[#8a1c1c]',
+          'bg-[#fec89a] text-[#8a4a1c]',
+          'bg-[#fbe7c6] text-[#806c1c]',
+          'bg-[#b4f8c8] text-[#1c7e2c]',
+          'bg-[#a0e7e5] text-[#1c6865]',
+          'bg-[#b5ead7] text-[#1c633a]',
+      ];
+      return colors[code % colors.length];
   };
 
   const formatDateDayMonth = (dateStr: string) => {
@@ -299,7 +339,12 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                           const title = isRedirect ? 'Переадресація' : (isReturn ? 'Повернення' : 'Переадресація / Повернення');
                           return (
                             <div key={basis.ttn} className="text-[11px] text-yellow-600 font-semibold mt-1 flex items-center gap-1">
-                              <span>{title} (ТТН {basis.ttn}):</span>
+                              <span>
+                                  {title} (ТТН <span 
+                                      className="underline decoration-dashed cursor-pointer hover:text-yellow-700 transition" 
+                                      onClick={(e) => { e.stopPropagation(); onAddManualTtn?.(basis.ttn); }}
+                                  >{basis.ttn}</span>):
+                              </span>
                               <span className="font-bold">{basis.status || "Оформлюється"}</span>
                             </div>
                           );
@@ -348,7 +393,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                         className="px-4 py-4 flex gap-4 cursor-pointer active:bg-[#32373e] transition-colors"
                     >
                         <div className="flex flex-col items-center gap-1.5 shrink-0 pt-0.5">
-                            <div className="w-12 h-12 rounded-full bg-[#96bdd1] text-[#1b2b35] flex items-center justify-center text-[17px] font-medium tracking-wide">
+                            <div className={`w-12 h-12 rounded-full ${getAvatarColors(parcel.recipient)} flex items-center justify-center text-[17px] font-medium tracking-wide`}>
                                 {initials}
                             </div>
                             <div className="text-[12px] text-[#a5acb5] font-mono tracking-wider">{ttnSuffix}</div>
@@ -374,8 +419,13 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                             <div className="text-[#a5acb5] text-[14px] truncate tracking-tight">
                                 до {parcel.recipient}
                             </div>
-                            <div className="text-[#a5acb5] text-[14px] truncate mb-3 tracking-tight">
-                                {parcel.sender}
+                            <div className="flex items-center gap-2 mb-3 mt-0.5">
+                                <div className="text-[#a5acb5] text-[14px] truncate tracking-tight">
+                                    {parcel.sender}
+                                </div>
+                                <div className="px-1.5 py-0.5 rounded border border-dashed border-blue-500/50 bg-blue-500/5 text-blue-400 text-[10px] font-medium tracking-wide shrink-0" title={`Додано з акаунту: ${parcel.accountName}`}>
+                                    {parcel.accountName}
+                                </div>
                             </div>
 
                             {parcel.basisChain && parcel.basisChain.length > 0 && parcel.basisChain.map((basis: any) => {
@@ -385,7 +435,10 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                                 return (
                                     <div key={basis.ttn} className="mb-3 mr-4 bg-[#febb14]/10 border border-[#febb14]/20 rounded-xl px-3 py-2 text-[#febb14] flex flex-col gap-0.5">
                                         <div className="font-semibold flex items-center gap-1.5 text-xs">
-                                            {title} (ТТН {basis.ttn})
+                                            {title} (ТТН <span 
+                                                className="underline decoration-dashed cursor-pointer hover:opacity-80 transition" 
+                                                onClick={(e) => { e.stopPropagation(); onAddManualTtn?.(basis.ttn); }}
+                                            >{basis.ttn}</span>)
                                         </div>
                                         <div className="text-[11px] opacity-90 font-medium">
                                             Статус: <span className="font-bold">{basis.status || 'У процесі оформлення'}</span>
@@ -408,7 +461,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                                 {/* Bottom texts */}
                                 <div className="mt-2.5 flex justify-between items-center text-[12px] text-[#868d96] font-medium tracking-wide">
                                     <div className="truncate pr-2">
-                                        Відправка · {dateCreated}
+                                        {parcel.rawStatus?.CitySender || 'Відправка'} · {dateCreated}
                                     </div>
                                     <div className="truncate text-right">
                                         {parcel.cityName} · {dateEst}
@@ -433,6 +486,15 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                    setSelectedParcel(null);
               } : undefined}
           />
+      )}
+
+      {autoSelectTtn && loading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
+              <div className="bg-[#292D32] p-8 rounded-2xl border border-[#32363b] shadow-2xl flex flex-col items-center gap-5">
+                  <RefreshCw className="w-10 h-10 text-[#e33745] animate-spin" />
+                  <div className="text-white font-medium text-[15px] tracking-wide">Отримання даних...</div>
+              </div>
+          </div>
       )}
     </div>
   );
