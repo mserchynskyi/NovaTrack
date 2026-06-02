@@ -8,7 +8,7 @@
 				"profile",
 				"email"
 			],
-			"clientId": "259362159478-fl2qsng5b906uac841jvsk5365hs9ck3.apps.googleusercontent.com",
+			"serverClientId": "259362159478-fl2qsng5b906uac841jvsk5365hs9ck3.apps.googleusercontent.com",
 			"forceCodeForRefreshToken": true
 		}
 	}

@@ -1,4 +1,4 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.novatrack.app',
@@ -6,8 +6,8 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   plugins: {
     GoogleAuth: {
-      scopes: ['profile', 'email'],
-      clientId: '259362159478-fl2qsng5b906uac841jvsk5365hs9ck3.apps.googleusercontent.com',
+      scopes: ["profile", "email"],
+      serverClientId: "259362159478-fl2qsng5b906uac841jvsk5365hs9ck3.apps.googleusercontent.com",
       forceCodeForRefreshToken: true
     }
   }
