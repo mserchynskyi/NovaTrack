@@ -12,3 +12,16 @@
         padding-bottom: env(safe-area-inset-bottom, 20px);
     }
 }
+
+/* Base resets & styles to protect mobile select/option styling from transparent layouts */
+select option {
+    background-color: #292d32 !important;
+    color: #ffffff !important;
+}
+
+@media (min-width: 1024px) {
+    select option {
+        background-color: #ffffff !important;
+        color: #111827 !important;
+    }
+}
