@@ -51,6 +51,22 @@ export function ParcelDetailsModal({ parcel, onClose, onDeleteManualTtn }: Parce
         };
     };
 
+    const formatServiceType = (type?: string) => {
+        if (!type) return 'Стандарт';
+        const typeMap: Record<string, string> = {
+            'WarehouseWarehouse': 'Відділення-Відділення',
+            'WarehouseDoors': 'Відділення-Адреса',
+            'DoorsWarehouse': 'Адреса-Відділення',
+            'DoorsDoors': 'Адреса-Адреса',
+            'WarehousePostomat': 'Відділення-Поштомат',
+            'PostomatWarehouse': 'Поштомат-Відділення',
+            'PostomatPostomat': 'Поштомат-Поштомат',
+            'DoorsPostomat': 'Адреса-Поштомат',
+            'Standard': 'Стандарт',
+        };
+        return typeMap[type] || type;
+    };
+
     const backwardInfo = getBackwardDeliveryInfo();
 
     return (
@@ -87,7 +103,7 @@ export function ParcelDetailsModal({ parcel, onClose, onDeleteManualTtn }: Parce
                                 <div className="font-bold text-lg text-white mb-2 leading-tight">{parcel.status}</div>
                                 <div className="flex gap-4 text-xs text-[#a5acb5] pt-3 border-t border-[#32363b]">
                                     <div><span className="font-medium text-gray-400">Створено:</span> <br/>{parcel.dateCreated || '-'}</div>
-                                    <div><span className="font-medium text-gray-400">Тип:</span> <br/>{parcel.rawStatus?.ServiceType || parcel.rawDoc?.ServiceType || 'Standard'}</div>
+                                    <div><span className="font-medium text-gray-400">Тип:</span> <br/>{formatServiceType(parcel.rawStatus?.ServiceType || parcel.rawDoc?.ServiceType)}</div>
                                 </div>
                             </div>
                         </div>
@@ -219,15 +235,31 @@ export function ParcelDetailsModal({ parcel, onClose, onDeleteManualTtn }: Parce
                                 <div className="text-[#a5acb5] flex items-center gap-2">Доставка</div>
                                 <div className="font-medium text-right font-mono text-[15px] text-white">{parcel.cost} ₴</div>
                             </div>
-                            {backwardInfo && (
+                            {parcel.announcedPrice && parseFloat(parcel.announcedPrice) > 0 && (
                                 <div className="grid grid-cols-2 p-4 landscape:p-3 text-[13px]">
-                                    <div className="text-[#a5acb5] flex items-center gap-2">
-                                        <CreditCard className="w-4 h-4 text-emerald-400"/> {backwardInfo.label}
-                                    </div>
-                                    <div className="font-bold text-right text-emerald-400 font-mono text-[15px]">
-                                        {backwardInfo.amount} ₴
-                                    </div>
+                                    <div className="text-[#a5acb5] flex items-center gap-2">Оголошена вартість</div>
+                                    <div className="font-medium text-right font-mono text-[15px] text-white">{parcel.announcedPrice} ₴</div>
                                 </div>
+                            )}
+                            {backwardInfo && (
+                                <>
+                                    <div className="grid grid-cols-2 p-4 landscape:p-3 text-[13px]">
+                                        <div className="text-[#a5acb5] flex items-center gap-2">
+                                            <CreditCard className="w-4 h-4 text-emerald-400"/> {backwardInfo.label}
+                                        </div>
+                                        <div className="font-bold text-right text-emerald-400 font-mono text-[15px]">
+                                            {backwardInfo.amount} ₴
+                                        </div>
+                                    </div>
+                                    {!backwardInfo.isControl && (
+                                        <div className="grid grid-cols-2 p-4 landscape:p-3 text-[13px]">
+                                            <div className="text-[#a5acb5] flex items-center gap-2">Комісія за переказ</div>
+                                            <div className="font-medium text-right text-emerald-400/80 font-mono text-[14px]">
+                                                {parcel.rawStatus?.RedeliveryPaymentCard ? 'Сплачено онлайн' : `~${(backwardInfo.amount * 0.02 + 20).toFixed(2)} ₴`}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
                             )}
                             <div className="grid grid-cols-2 p-4 landscape:p-3 bg-[#32363b]/30 rounded-b-2xl text-[13px]">
                                 <div className="text-[#a5acb5] font-medium flex items-center gap-2">Орієнтовно</div>
@@ -420,15 +452,38 @@ export function ParcelDetailsModal({ parcel, onClose, onDeleteManualTtn }: Parce
                                 </div>
                             </div>
 
-                            {backwardInfo && (
-                                <div className="flex flex-col gap-1.5 align-right">
+                            {parcel.announcedPrice && parseFloat(parcel.announcedPrice) > 0 && (
+                                <div className="flex flex-col gap-1.5">
                                     <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
-                                        <CreditCard className="w-4 h-4 text-emerald-500" />{backwardInfo.label}
+                                        Оголошена вартість
                                     </div>
-                                    <div className="font-semibold text-emerald-600 text-[15px] pl-6 font-mono">
-                                        {backwardInfo.amount} ₴
+                                    <div className="font-semibold text-gray-900 text-[15px] pl-6">
+                                        {parcel.announcedPrice} ₴
                                     </div>
                                 </div>
+                            )}
+
+                            {backwardInfo && (
+                                <>
+                                    <div className="flex flex-col gap-1.5 align-right">
+                                        <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
+                                            <CreditCard className="w-4 h-4 text-emerald-500" />{backwardInfo.label}
+                                        </div>
+                                        <div className="font-semibold text-emerald-600 text-[15px] pl-6 font-mono">
+                                            {backwardInfo.amount} ₴
+                                        </div>
+                                    </div>
+                                    {!backwardInfo.isControl && (
+                                        <div className="flex flex-col gap-1.5 align-right">
+                                            <div className="flex items-center gap-2 text-gray-500 text-sm font-medium pl-6">
+                                                Комісія за переказ
+                                            </div>
+                                            <div className="font-semibold text-emerald-600/80 text-[14px] pl-6 font-mono">
+                                                {parcel.rawStatus?.RedeliveryPaymentCard ? 'Сплачено онлайн' : `~${(backwardInfo.amount * 0.02 + 20).toFixed(2)} ₴`}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
                             )}
 
                             <div className="pt-8 border-t border-gray-200 mt-8">

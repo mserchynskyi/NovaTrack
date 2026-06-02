@@ -13,6 +13,7 @@ export interface Parcel {
   sender: string;
   recipient: string;
   cost: string;
+  announcedPrice?: string;
   cityName: string;
   weight: string;
   estimatedDeliveryDate: string;

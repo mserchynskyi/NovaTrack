@@ -18,7 +18,7 @@ interface DashboardProps {
 
 export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onDeleteManualTtn, autoSelectTtn, onAutoSelectClear, onAddManualTtn }: DashboardProps) {
   const [filterStatus, setFilterStatus] = useState<string>('All');
-  const [sortBy, setSortBy] = useState<string>('Date (Newest)');
+  const [sortBy, setSortBy] = useState<string>('DateCreated (Newest)');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null);
   const prevLoading = useRef(loading);
@@ -153,10 +153,22 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
 
      // Apply Sort
      result = [...result].sort((a, b) => {
-          if (sortBy === 'Date (Newest)') return parseDateString(b.dateCreated) - parseDateString(a.dateCreated);
-          if (sortBy === 'Date (Oldest)') return parseDateString(a.dateCreated) - parseDateString(b.dateCreated);
-          if (sortBy === 'Tracking (Asc)') return a.ttn.localeCompare(b.ttn);
-          if (sortBy === 'Tracking (Desc)') return b.ttn.localeCompare(a.ttn);
+          if (sortBy === 'DateCreated (Newest)') return parseDateString(b.dateCreated) - parseDateString(a.dateCreated);
+          if (sortBy === 'DateCreated (Oldest)') return parseDateString(a.dateCreated) - parseDateString(b.dateCreated);
+          if (sortBy === 'DeliveryDate (Newest)') {
+              const dateB = parseDateString(b.actualDeliveryDate) || parseDateString(b.estimatedDeliveryDate);
+              const dateA = parseDateString(a.actualDeliveryDate) || parseDateString(a.estimatedDeliveryDate);
+              return dateB - dateA;
+          }
+          if (sortBy === 'DeliveryDate (Oldest)') {
+              const dateB = parseDateString(b.actualDeliveryDate) || parseDateString(b.estimatedDeliveryDate);
+              const dateA = parseDateString(a.actualDeliveryDate) || parseDateString(a.estimatedDeliveryDate);
+              return dateA - dateB;
+          }
+          if (sortBy === 'City (A-Z)') return a.cityName.localeCompare(b.cityName);
+          if (sortBy === 'City (Z-A)') return b.cityName.localeCompare(a.cityName);
+          if (sortBy === 'Cost (Highest)') return parseFloat(b.announcedPrice || "0") - parseFloat(a.announcedPrice || "0");
+          if (sortBy === 'Cost (Lowest)') return parseFloat(a.announcedPrice || "0") - parseFloat(b.announcedPrice || "0");
           return 0;
      });
 
@@ -230,10 +242,14 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                      value={sortBy}
                      onChange={e => setSortBy(e.target.value)}
                  >
-                     <option value="Date (Newest)">Новіші</option>
-                     <option value="Date (Oldest)">Старіші</option>
-                     <option value="Tracking (Asc)">ТТН (зрост)</option>
-                     <option value="Tracking (Desc)">ТТН (спад)</option>
+                     <option value="DateCreated (Newest)">Дата відпр. (новіші)</option>
+                     <option value="DateCreated (Oldest)">Дата відпр. (старіші)</option>
+                     <option value="DeliveryDate (Newest)">Дата дост. (новіші)</option>
+                     <option value="DeliveryDate (Oldest)">Дата дост. (старіші)</option>
+                     <option value="City (A-Z)">Місто (А-Я)</option>
+                     <option value="City (Z-A)">Місто (Я-А)</option>
+                     <option value="Cost (Highest)">Вартість (найвища)</option>
+                     <option value="Cost (Lowest)">Вартість (найнижча)</option>
                  </select>
               </div>
            </div>
@@ -256,14 +272,24 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
         {filteredAndSortedParcels.length === 0 && !loading && !error && (
           <div className="text-center py-12 lg:bg-white rounded lg:border lg:border-gray-200">
             <Package className="w-10 h-10 text-gray-500 lg:text-gray-300 mx-auto mb-2" />
-            <p className="text-gray-400 lg:text-gray-500 text-xs">No parcels found matching criteria</p>
+            <p className="text-gray-400 lg:text-gray-500 text-xs">Не знайдено посилок, що відповідають критеріям</p>
           </div>
         )}
         
         {loading && parcels.length === 0 && (
-           <div className="text-center py-12 lg:bg-white rounded lg:border lg:border-gray-200">
-               <RefreshCw className="w-6 h-6 text-gray-400 animate-spin mx-auto mb-2" />
-               <p className="text-gray-500 text-xs">Fetching records...</p>
+           <div className="flex flex-col items-center justify-center py-24 lg:bg-white lg:shadow-sm rounded-2xl lg:border lg:border-gray-100">
+               <div className="w-16 h-16 bg-[#e33745]/5 rounded-2xl flex items-center justify-center mb-5 border border-[#e33745]/10 relative">
+                   <Package className="w-8 h-8 text-[#e33745] animate-pulse" />
+                   <div className="absolute inset-0 rounded-2xl border-2 border-[#e33745]/20 animate-ping opacity-20" />
+               </div>
+               <div className="flex flex-col items-center gap-2">
+                   <p className="text-white lg:text-gray-900 font-medium text-sm">Завантаження даних</p>
+                   <div className="flex gap-1.5">
+                       <div className="w-1.5 h-1.5 rounded-full bg-[#e33745]/60 animate-bounce" style={{ animationDelay: '0ms' }} />
+                       <div className="w-1.5 h-1.5 rounded-full bg-[#e33745]/60 animate-bounce" style={{ animationDelay: '150ms' }} />
+                       <div className="w-1.5 h-1.5 rounded-full bg-[#e33745]/60 animate-bounce" style={{ animationDelay: '300ms' }} />
+                   </div>
+               </div>
            </div>
         )}
 
@@ -273,12 +299,12 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
             <div className="hidden lg:block min-w-[800px]">
               {/* Header Row (fake table) */}
               <div className="bg-gray-50 sticky top-0 border-b border-gray-200 z-10 flex text-[10px] uppercase text-gray-400 font-bold tracking-wider">
-                <div className="px-4 py-3 w-40 shrink-0">Tracking ID</div>
-                <div className="px-4 py-3 w-40 shrink-0">Account</div>
-                <div className="px-4 py-3 w-32 shrink-0">Status</div>
-                <div className="px-4 py-3 flex-1 min-w-[200px]">Recipient / Route</div>
-                <div className="px-4 py-3 w-28 shrink-0">Cost</div>
-                <div className="px-4 py-3 w-28 shrink-0 text-right">Estimated</div>
+                <div className="px-4 py-3 w-40 shrink-0">ТТН</div>
+                <div className="px-4 py-3 w-40 shrink-0">Акаунт</div>
+                <div className="px-4 py-3 w-32 shrink-0">Статус</div>
+                <div className="px-4 py-3 flex-1 min-w-[200px]">Одержувач / Маршрут</div>
+                <div className="px-4 py-3 w-28 shrink-0">Вартість</div>
+                <div className="px-4 py-3 w-28 shrink-0 text-right">Очікується</div>
               </div>
               
               {/* Rows */}

@@ -1,5 +1,29 @@
 import { NpAccount, Parcel } from "../types";
 
+async function safeFetch(url: string, options: RequestInit, retries = 3): Promise<any> {
+  const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (response.status === 429) {
+        await delay(3000 * (i + 1));
+        continue;
+      }
+      const cloned = response.clone();
+      const text = await cloned.text();
+      if (text.toLowerCase().includes("many requests")) {
+        await delay(3000 * (i + 1));
+        continue;
+      }
+      return await response.json();
+    } catch (error: any) {
+      if (i === retries - 1) throw error;
+      await delay(3000 * (i + 1));
+    }
+  }
+  throw new Error("Перевищено ліміт запитів до Нової Пошти. Спробуйте пізніше.");
+}
+
 function getFriendlyStatus(status: string, statusCode: string): string {
   const code = Number(statusCode);
   if (code === 106) return "Одержано (Повернення)";
@@ -20,7 +44,7 @@ export async function fetchAccountParcels(account: NpAccount): Promise<Parcel[]>
   const dateFrom = formatDate(dFrom);
 
   // 1. Get documents list created by this token owner
-  let docListRes = await fetch("https://api.novaposhta.ua/v2.0/json/", {
+  const docListData = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -35,25 +59,6 @@ export async function fetchAccountParcels(account: NpAccount): Promise<Parcel[]>
     }),
   });
 
-  if (docListRes.status === 429 || (await docListRes.clone().text()).includes("many requests")) {
-    await delay(3000);
-    docListRes = await fetch("https://api.novaposhta.ua/v2.0/json/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        apiKey: account.apiKey,
-        modelName: "InternetDocument",
-        calledMethod: "getDocumentList",
-        methodProperties: {
-          DateTimeFrom: dateFrom,
-          DateTimeTo: dateTo,
-          GetFullList: "1",
-        },
-      }),
-    });
-  }
-
-  const docListData = await docListRes.json();
   if (!docListData.success) {
     throw new Error(docListData.errors?.join(", ") || "Failed to fetch document list");
   }
@@ -74,7 +79,7 @@ export async function fetchAccountParcels(account: NpAccount): Promise<Parcel[]>
     if (i > 0) await delay(500); // 500ms delay between chunks to avoid rate limiting
     
     const chunk = documentsQuery.slice(i, i + chunkSize);
-    let statusRes = await fetch("https://api.novaposhta.ua/v2.0/json/", {
+    const statusData = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -87,22 +92,6 @@ export async function fetchAccountParcels(account: NpAccount): Promise<Parcel[]>
       }),
     });
     
-    // Simple retry if rate limited
-    if (statusRes.status === 429 || (await statusRes.clone().text()).includes("many requests")) {
-       await delay(2000);
-       statusRes = await fetch("https://api.novaposhta.ua/v2.0/json/", {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({
-           apiKey: account.apiKey,
-           modelName: "TrackingDocument",
-           calledMethod: "getStatusDocuments",
-           methodProperties: { Documents: chunk },
-         }),
-       });
-    }
-
-    const statusData = await statusRes.json();
     if (statusData.success && statusData.data) {
       allStatuses.push(...statusData.data);
     }
@@ -124,7 +113,7 @@ export async function fetchAccountParcels(account: NpAccount): Promise<Parcel[]>
       Phone: "",
     }));
 
-    let basisStatusRes = await fetch("https://api.novaposhta.ua/v2.0/json/", {
+    const basisStatusData = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -137,7 +126,6 @@ export async function fetchAccountParcels(account: NpAccount): Promise<Parcel[]>
       }),
     });
 
-    const basisStatusData = await basisStatusRes.json();
     if (basisStatusData.success && basisStatusData.data) {
       let addedAny = false;
       basisStatusData.data.forEach((s: any) => {
@@ -211,6 +199,7 @@ export async function fetchAccountParcels(account: NpAccount): Promise<Parcel[]>
       sender: doc.SenderDescription || statusInfo.SenderFullNameEW || "Невідомий відправник",
       recipient: doc.RecipientContactPerson || doc.RecipientDescription || statusInfo.RecipientFullNameEW || "Невідомий отримувач",
       cost: doc.CostOnSite || statusInfo.DocumentCost || "0",
+      announcedPrice: doc.Cost || statusInfo.AnnouncedPrice || "0",
       cityName: statusInfo.CityRecipient || doc.CityRecipientDescription || "",
       weight: doc.Weight || statusInfo.DocumentWeight || "0",
       estimatedDeliveryDate: statusInfo.ScheduledDeliveryDate || doc.EstimatedDeliveryDate || "",
@@ -241,7 +230,7 @@ export async function fetchManualParcels(apiKey: string, manualTtns: { ttn: stri
   for (let i = 0; i < documentsQuery.length; i += chunkSize) {
     if (i > 0) await delay(500);
     const chunk = documentsQuery.slice(i, i + chunkSize);
-    let statusRes = await fetch("https://api.novaposhta.ua/v2.0/json/", {
+    const statusData = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -254,21 +243,6 @@ export async function fetchManualParcels(apiKey: string, manualTtns: { ttn: stri
       }),
     });
 
-    if (statusRes.status === 429 || (await statusRes.clone().text()).includes("many requests")) {
-       await delay(2000);
-       statusRes = await fetch("https://api.novaposhta.ua/v2.0/json/", {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({
-           apiKey,
-           modelName: "TrackingDocument",
-           calledMethod: "getStatusDocuments",
-           methodProperties: { Documents: chunk },
-         }),
-       });
-    }
-
-    const statusData = await statusRes.json();
     if (statusData.success && statusData.data) {
       allStatuses.push(...statusData.data);
     }
@@ -289,7 +263,7 @@ export async function fetchManualParcels(apiKey: string, manualTtns: { ttn: stri
       Phone: "",
     }));
 
-    let basisStatusRes = await fetch("https://api.novaposhta.ua/v2.0/json/", {
+    const basisStatusData = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -302,7 +276,6 @@ export async function fetchManualParcels(apiKey: string, manualTtns: { ttn: stri
       }),
     });
 
-    const basisStatusData = await basisStatusRes.json();
     if (basisStatusData.success && basisStatusData.data) {
       let addedAny = false;
       basisStatusData.data.forEach((s: any) => {
@@ -375,6 +348,7 @@ export async function fetchManualParcels(apiKey: string, manualTtns: { ttn: stri
       sender: statusInfo.SenderFullNameEW || statusInfo.SenderContactPerson || "Невідомий відправник",
       recipient: statusInfo.RecipientFullNameEW || statusInfo.RecipientContactPerson || "Невідомий отримувач",
       cost: statusInfo.DocumentCost || "0",
+      announcedPrice: statusInfo.AnnouncedPrice || "0",
       cityName: statusInfo.CityRecipient || statusInfo.CitySender || "",
       weight: statusInfo.DocumentWeight || "0",
       estimatedDeliveryDate: statusInfo.ScheduledDeliveryDate || "",
