@@ -6,8 +6,11 @@ import { Dashboard } from './components/Dashboard';
 import { AccountsModal } from './components/AccountsModal';
 import { Onboarding } from './components/Onboarding';
 import { AddTtnModal } from './components/AddTtnModal';
+import { useAuth } from './lib/AuthContext';
+import { AuthScreen } from './components/AuthScreen';
 
 export default function App() {
+    const { user } = useAuth();
     const { accounts, saveAccounts, manualTtns, saveManualTtns, isLoaded } = useAccounts();
     const { parcels, loading, error, refresh, lastRefresh } = useDashboardData(accounts, manualTtns);
     const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
@@ -15,6 +18,10 @@ export default function App() {
     const [autoSelectTtn, setAutoSelectTtn] = useState<string | null>(null);
 
     if (!isLoaded) return null; // wait for hydration from localStorage
+
+    if (!user) {
+        return <AuthScreen />;
+    }
 
     return (
         <Layout 
