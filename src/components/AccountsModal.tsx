@@ -11,7 +11,7 @@ interface AccountsModalProps {
 }
 
 export function AccountsModal({ isOpen, onClose, accounts, onSave }: AccountsModalProps) {
-  const { user, loading, login, loginEmail, registerEmail, logout } = useAuth();
+  const { user, loading, loginEmail, registerEmail, logout } = useAuth();
   const [name, setName] = useState('');
   const [apiKey, setApiKey] = useState('');
 
@@ -98,24 +98,9 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave }: AccountsMod
             {!loading && !user ? (
               <>
                 <p className="text-xs text-[#a5acb5] lg:text-blue-800">
-                  Авторизуйтеся для синхронізації акаунтів між пристроями:
+                  Авторизуйтеся для збереження акаунтів та синхронізації між пристроями:
                 </p>
                 
-                {/* Google Sign-in */}
-                <button 
-                  onClick={login}
-                  className="flex items-center justify-center gap-2 bg-[#2a68ff] text-white text-xs py-2.5 rounded-lg font-medium hover:bg-[#1a58ef] transition cursor-pointer"
-                >
-                  <LogIn className="w-4 h-4" /> Авторизація через Google
-                </button>
-
-                {/* Divider */}
-                <div className="flex items-center justify-between gap-2 my-1">
-                  <span className="h-[1px] bg-[#32363b] lg:bg-gray-200 flex-1"></span>
-                  <span className="text-[10px] text-[#a5acb5] lg:text-gray-400 font-bold uppercase tracking-wider">або</span>
-                  <span className="h-[1px] bg-[#32363b] lg:bg-gray-200 flex-1"></span>
-                </div>
-
                 {/* Email sign in trigger */}
                 {!isEmailFormOpen ? (
                   <button
