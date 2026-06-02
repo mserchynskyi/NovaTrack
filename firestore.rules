@@ -17,11 +17,7 @@ service cloud.firestore {
     
     // Validation for UserAccount
     function isValidUserAccount(data, uid) {
-       return data.keys().hasAll(['userId', 'tokens'])
-       // we can't easily validate the tokens array structure in rules, but we ensure it's a list.
-       && data.tokens is list
-       // check userId matches uid
-       && data.userId == uid
+       return data.userId == uid
        && data.userId is string;
     }
     

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Trash2, Plus, Key, LogIn, LogOut, CheckCircle2 } from 'lucide-react';
+import { useState, FormEvent } from 'react';
+import { X, Trash2, Plus, Key, LogIn, LogOut, CheckCircle2, Mail } from 'lucide-react';
 import { NpAccount } from '../types';
 import { useAuth } from '../lib/AuthContext';
 
@@ -11,11 +11,57 @@ interface AccountsModalProps {
 }
 
 export function AccountsModal({ isOpen, onClose, accounts, onSave }: AccountsModalProps) {
-  const { user, loading, login, logout } = useAuth();
+  const { user, loading, login, loginEmail, registerEmail, logout } = useAuth();
   const [name, setName] = useState('');
   const [apiKey, setApiKey] = useState('');
 
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [isEmailFormOpen, setIsEmailFormOpen] = useState(false);
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [authSuccess, setAuthSuccess] = useState('');
+
   if (!isOpen) return null;
+
+  const handleEmailAuth = async (e: FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSuccess('');
+    if (!authEmail || !authPassword) {
+      setAuthError('Будь ласка, заповніть усі поля');
+      return;
+    }
+    if (authPassword.length < 6) {
+      setAuthError('Пароль має містити не менше 6 символів');
+      return;
+    }
+    try {
+      if (isRegisterMode) {
+        await registerEmail(authEmail, authPassword);
+        setAuthSuccess('Реєстрація успішна! Ви увійшли.');
+      } else {
+        await loginEmail(authEmail, authPassword);
+        setAuthSuccess('Вхід успішний!');
+      }
+      setAuthEmail('');
+      setAuthPassword('');
+      setIsEmailFormOpen(false);
+    } catch (err: any) {
+      console.error(err);
+      let msg = err.message || 'Помилка авторизації';
+      if (err.code === 'auth/email-already-in-use') {
+        msg = 'Цей Email вже використовується іншим акаунтом';
+      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        msg = 'Неправильний пароль або Email';
+      } else if (err.code === 'auth/user-not-found') {
+        msg = 'Користувача з таким Email не знайдено';
+      } else if (err.code === 'auth/invalid-email') {
+        msg = 'Неправильний формат Email-адреси';
+      }
+      setAuthError(msg);
+    }
+  };
 
   const handleAdd = () => {
     if (!name || !apiKey) return;
@@ -54,27 +100,129 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave }: AccountsMod
                 <p className="text-xs text-[#a5acb5] lg:text-blue-800">
                   Авторизуйтеся для синхронізації акаунтів між пристроями:
                 </p>
+                
+                {/* Google Sign-in */}
                 <button 
                   onClick={login}
-                  className="flex items-center justify-center gap-2 bg-[#2a68ff] text-white text-xs py-2.5 rounded-lg font-medium hover:bg-[#1a58ef] transition"
+                  className="flex items-center justify-center gap-2 bg-[#2a68ff] text-white text-xs py-2.5 rounded-lg font-medium hover:bg-[#1a58ef] transition cursor-pointer"
                 >
                   <LogIn className="w-4 h-4" /> Авторизація через Google
                 </button>
+
+                {/* Divider */}
+                <div className="flex items-center justify-between gap-2 my-1">
+                  <span className="h-[1px] bg-[#32363b] lg:bg-gray-200 flex-1"></span>
+                  <span className="text-[10px] text-[#a5acb5] lg:text-gray-400 font-bold uppercase tracking-wider">або</span>
+                  <span className="h-[1px] bg-[#32363b] lg:bg-gray-200 flex-1"></span>
+                </div>
+
+                {/* Email sign in trigger */}
+                {!isEmailFormOpen ? (
+                  <button
+                    onClick={() => {
+                      setIsEmailFormOpen(true);
+                      setAuthError('');
+                    }}
+                    className="flex items-center justify-center gap-2 bg-[#292d32] hover:bg-[#32363b] text-[#a5acb5] lg:bg-white lg:border lg:border-gray-300 lg:text-gray-700 lg:hover:bg-gray-50 text-xs py-2.5 rounded-lg font-medium transition cursor-pointer"
+                  >
+                    <Mail className="w-4 h-4" /> Вхід через Email / Пароль
+                  </button>
+                ) : (
+                  <form onSubmit={handleEmailAuth} className="space-y-3 mt-1 text-left">
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#a5acb5] lg:text-gray-500 uppercase tracking-wider mb-1">
+                        Email Адреса
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="your@email.com"
+                        value={authEmail}
+                        onChange={(e) => setAuthEmail(e.target.value)}
+                        className="w-full px-3 py-2 bg-[#1b2b35] lg:bg-white border border-[#32363b] lg:border-gray-200 rounded-lg text-white lg:text-gray-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#a5acb5] lg:text-gray-500 uppercase tracking-wider mb-1">
+                        Пароль (мін. 6 символів)
+                      </label>
+                      <input
+                        type="password"
+                        placeholder="••••••"
+                        value={authPassword}
+                        onChange={(e) => setAuthPassword(e.target.value)}
+                        className="w-full px-3 py-2 bg-[#1b2b35] lg:bg-white border border-[#32363b] lg:border-gray-200 rounded-lg text-white lg:text-gray-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+
+                    {authError && (
+                      <p className="text-[11px] text-red-500 font-medium">
+                        {authError}
+                      </p>
+                    )}
+
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="submit"
+                        className="flex-1 bg-[#2a68ff] hover:bg-[#1a58ef] text-white text-xs py-2 rounded-lg font-bold transition cursor-pointer"
+                      >
+                        {isRegisterMode ? 'Зареєструватися' : 'Увійти'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEmailFormOpen(false);
+                          setAuthError('');
+                        }}
+                        className="px-3 bg-transparent border border-[#32363b] lg:border-gray-300 text-[#a5acb5] lg:text-gray-600 rounded-lg text-xs hover:bg-[#131b20] lg:hover:bg-gray-100 transition cursor-pointer"
+                      >
+                        Скасувати
+                      </button>
+                    </div>
+
+                    <div className="text-center pt-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsRegisterMode(!isRegisterMode);
+                          setAuthError('');
+                        }}
+                        className="text-[11px] text-[#2a68ff] hover:underline font-medium cursor-pointer"
+                      >
+                        {isRegisterMode
+                          ? 'Вже маєте акаунт? Увійдіть'
+                          : 'Немає акаунту? Створіть новий'}
+                      </button>
+                    </div>
+                  </form>
+                )}
               </>
             ) : !loading && user ? (
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs text-white lg:text-blue-900">
-                  <CheckCircle2 className="w-4 h-4 text-[#25c468] lg:text-green-500" />
-                  Увійшли як: <span className="font-semibold truncate max-w-[140px]">{user.email}</span>
+                <div className="flex items-center gap-2 text-xs text-white lg:text-blue-900 min-w-0">
+                  <CheckCircle2 className="w-4 h-4 text-[#25c468] lg:text-green-500 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-[10px] text-[#a5acb5] lg:text-blue-700/80 font-bold uppercase tracking-wider">Синхронізація активна</div>
+                    <div className="font-semibold truncate max-w-[170px] mt-0.5">{user.email}</div>
+                  </div>
                 </div>
                 <button 
                   onClick={logout}
-                  className="text-xs flex items-center gap-1.5 text-[#e33745] hover:text-white lg:text-gray-500 lg:hover:text-gray-700"
+                  className="text-xs flex items-center gap-1.5 text-[#e33745] hover:text-white lg:text-gray-500 lg:hover:text-gray-700 shrink-0"
                 >
                  <LogOut className="w-3.5 h-3.5"/> Вийти
                 </button>
               </div>
-            ) : null}
+            ) : (
+              <div className="text-center py-2 text-xs text-[#a5acb5] lg:text-gray-500">Завантаження...</div>
+            )}
+            
+            {authSuccess && (
+              <p className="text-[11px] text-[#25c468] font-semibold text-center mt-1">
+                {authSuccess}
+              </p>
+            )}
           </div>
 
           {accounts.length > 0 ? (

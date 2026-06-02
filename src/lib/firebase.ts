@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithCredential, signOut } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
@@ -40,8 +40,17 @@ export const loginWithGoogle = async () => {
     } catch (error: any) {
         if (error?.code !== 'auth/cancelled-popup-request' && error?.code !== 'auth/popup-closed-by-user') {
             console.error("Login failed", error);
+            throw error;
         }
     }
+};
+
+export const loginWithEmail = async (email: string, pass: string) => {
+    await signInWithEmailAndPassword(auth, email, pass);
+};
+
+export const registerWithEmail = async (email: string, pass: string) => {
+    await createUserWithEmailAndPassword(auth, email, pass);
 };
 
 export const logout = async () => {
