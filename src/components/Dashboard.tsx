@@ -41,7 +41,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
   
   const getStatusColorTheme = (statusCode: string) => {
     const code = Number(statusCode);
-    if (code === 1) return "bg-gray-50 text-gray-700";
+    if (code === 1) return "bg-[var(--bg-card)] text-[var(--text-main)]";
     if ([2, 3, 102, 103].includes(code)) return "bg-red-50 text-red-700";
     if ([9, 10, 11, 14, 106, 108].includes(code)) return "bg-green-50 text-green-700";
     if ([7, 8].includes(code)) return "bg-orange-50 text-orange-700";
@@ -58,7 +58,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
   };
 
   const getAvatarColors = (name: string) => {
-      if (!name) return 'bg-[#96bdd1] text-[#1b2b35]';
+      if (!name) return 'bg-[#96bdd1] text-[var(--text-main)]';
       const firstLetter = name.trim().charAt(0).toUpperCase();
       const code = firstLetter.charCodeAt(0) || 0;
       const colors = [
@@ -193,19 +193,19 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
       )}
 
       {/* Controls & Filters */}
-      <div className="sticky top-0 z-30 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3 shrink-0 bg-[#1b2b35] lg:bg-white p-4 pb-3 lg:p-3 rounded-none lg:rounded border-b border-[#25323d]/60 lg:border lg:border-gray-200 shadow-md lg:shadow-sm">
+      <div className="sticky top-0 z-30 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3 shrink-0 bg-[var(--bg-main)] p-4 pb-3 lg:p-3 rounded-none lg:rounded border-b border-[#25323d]/60 lg:border  shadow-md lg:shadow-sm">
         
         {/* Left Side: Search + Filters group */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
            {/* Real-time Search Box */}
            <div className="relative w-full sm:w-72 md:w-80 lg:w-96 shrink-0">
              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-               <Search className="h-4 w-4 text-gray-400" />
+               <Search className="h-4 w-4 text-[var(--text-muted)]" />
              </span>
              <input
                type="text"
                placeholder="Пошук за ТТН, телефоном, прізвищем, містом..."
-               className="w-full pl-9 pr-8 bg-[#262c33] lg:bg-gray-50 border border-[#30373e] lg:border-gray-200 rounded-lg lg:rounded py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 lg:focus:border-red-400 text-gray-200 lg:text-gray-700 font-medium text-xs placeholder:text-gray-500 lg:placeholder:text-gray-400"
+               className="w-full pl-9 pr-8 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 lg:focus:border-red-400 text-[var(--text-main)] font-medium text-xs placeholder:text-[var(--text-muted)]"
                value={searchQuery}
                onChange={e => setSearchQuery(e.target.value)}
              />
@@ -213,7 +213,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                <button
                  type="button"
                  onClick={() => setSearchQuery('')}
-                 className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400 hover:text-white lg:hover:text-gray-600"
+                 className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-[var(--text-muted)] hover:text-[var(--text-main)] lg:hover:text-[var(--text-muted)]"
                >
                  <X className="h-4 w-4" />
                </button>
@@ -223,9 +223,9 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
            {/* Select Dropdowns */}
            <div className="flex items-center gap-3 flex-nowrap w-full sm:w-auto">
               <div className="flex items-center gap-2 text-xs flex-1 sm:flex-none">
-                 <SlidersHorizontal className="w-4 h-4 text-gray-400 hidden lg:block" />
+                 <SlidersHorizontal className="w-4 h-4 text-[var(--text-muted)] hidden lg:block" />
                  <select 
-                     className="w-full bg-[#262c33] lg:bg-gray-50 border border-[#30373e] lg:border-gray-200 rounded-lg lg:rounded px-3 py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 lg:focus:border-red-400 text-gray-200 lg:text-gray-700 font-medium"
+                     className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 lg:focus:border-red-400 text-[var(--text-main)] font-medium"
                      value={filterStatus}
                      onChange={e => setFilterStatus(e.target.value)}
                  >
@@ -241,9 +241,9 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
               </div>
               
               <div className="flex items-center gap-2 text-xs flex-1 sm:flex-none">
-                 <ArrowUpDown className="w-4 h-4 text-gray-400 hidden lg:block" />
+                 <ArrowUpDown className="w-4 h-4 text-[var(--text-muted)] hidden lg:block" />
                  <select 
-                     className="w-full bg-[#262c33] lg:bg-gray-50 border border-[#30373e] lg:border-gray-200 rounded-lg lg:rounded px-3 py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 lg:focus:border-red-400 text-gray-200 lg:text-gray-700 font-medium"
+                     className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 lg:focus:border-red-400 text-[var(--text-main)] font-medium"
                      value={sortBy}
                      onChange={e => setSortBy(e.target.value)}
                  >
@@ -265,7 +265,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
              <button
                 type="button"
                 onClick={onCreateTtn}
-                className="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border border-transparent px-4 lg:px-3.5 py-2.5 lg:py-1.5 rounded-lg lg:rounded text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-emerald-500/10 cursor-pointer text-center whitespace-nowrap"
+                className="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-[var(--text-main)] border border-transparent px-4 lg:px-3.5 py-2.5 lg:py-1.5 rounded-lg lg:rounded text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-emerald-500/10 cursor-pointer text-center whitespace-nowrap"
              >
                 <Plus className="w-4 h-4" />
                 <span>Створити ТТН</span>
@@ -274,7 +274,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
           <button 
             onClick={() => onRefresh(true)} 
             disabled={loading}
-            className="flex items-center justify-center gap-1.5 bg-[#e33745]/10 lg:bg-gray-50 border border-[#e33745]/30 lg:border-gray-200 px-4 lg:px-3 py-2.5 lg:py-1.5 rounded-lg lg:rounded text-xs font-medium hover:bg-[#e33745]/20 lg:hover:bg-gray-100 disabled:opacity-50 transition-colors text-[#e33745] lg:text-gray-700"
+            className="flex items-center justify-center gap-1.5 bg-[#e33745]/10  border border-[#e33745]/30  px-4 lg:px-3 py-2.5 lg:py-1.5 rounded-lg lg:rounded text-xs font-medium hover:bg-[#e33745]/20  disabled:opacity-50 transition-colors text-[#e33745] "
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>{loading ? 'Оновлення...' : 'Оновити'}</span>
@@ -283,22 +283,22 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
       </div>
 
       {/* List */}
-      <div className="flex-1 flex flex-col min-h-0 bg-transparent lg:bg-white lg:border lg:border-gray-200 lg:rounded lg:shadow-sm lg:overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 bg-transparent  lg:border  lg:rounded lg:shadow-sm lg:overflow-hidden">
         {filteredAndSortedParcels.length === 0 && !loading && !error && (
-          <div className="text-center py-12 lg:bg-white rounded lg:border lg:border-gray-200">
-            <Package className="w-10 h-10 text-gray-500 lg:text-gray-300 mx-auto mb-2" />
-            <p className="text-gray-400 lg:text-gray-500 text-xs">Не знайдено посилок, що відповідають критеріям</p>
+          <div className="text-center py-12  rounded lg:border ">
+            <Package className="w-10 h-10 text-[var(--text-muted)] lg:text-[var(--text-muted)] mx-auto mb-2" />
+            <p className="text-[var(--text-muted)]  text-xs">Не знайдено посилок, що відповідають критеріям</p>
           </div>
         )}
         
         {loading && parcels.length === 0 && (
-           <div className="flex flex-col items-center justify-center py-24 lg:bg-white lg:shadow-sm rounded-2xl lg:border lg:border-gray-100">
+           <div className="flex flex-col items-center justify-center py-24  lg:shadow-sm rounded-2xl lg:border border-[var(--border-color)]">
                <div className="w-16 h-16 bg-[#e33745]/5 rounded-2xl flex items-center justify-center mb-5 border border-[#e33745]/10 relative">
                    <Package className="w-8 h-8 text-[#e33745] animate-pulse" />
                    <div className="absolute inset-0 rounded-2xl border-2 border-[#e33745]/20 animate-ping opacity-20" />
                </div>
                <div className="flex flex-col items-center gap-2">
-                   <p className="text-white lg:text-gray-900 font-medium text-sm">Завантаження даних</p>
+                   <p className="text-[var(--text-main)] font-medium text-sm">Завантаження даних</p>
                    <div className="flex gap-1.5">
                        <div className="w-1.5 h-1.5 rounded-full bg-[#e33745]/60 animate-bounce" style={{ animationDelay: '0ms' }} />
                        <div className="w-1.5 h-1.5 rounded-full bg-[#e33745]/60 animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -313,7 +313,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
             {/* Desktop View */}
             <div className="hidden lg:block min-w-[800px]">
               {/* Header Row (fake table) */}
-              <div className="bg-gray-50 sticky top-0 border-b border-gray-200 z-10 flex text-[10px] uppercase text-gray-400 font-bold tracking-wider">
+              <div className="bg-[var(--bg-card)] sticky top-0 border-b border-[var(--border-color)] z-10 flex text-[10px] uppercase text-[var(--text-muted)] font-bold tracking-wider">
                 <div className="px-4 py-3 w-40 shrink-0">ТТН</div>
                 <div className="px-4 py-3 w-40 shrink-0">Акаунт</div>
                 <div className="px-4 py-3 w-32 shrink-0">Статус</div>
@@ -331,7 +331,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                       transition={{ delay: Math.min(idx * 0.02, 0.2), duration: 0.15 }}
                       key={parcel.ttn} 
                       onClick={() => setSelectedParcel(parcel)}
-                      className="flex hover:bg-gray-50 group cursor-pointer text-xs transition-colors items-center"
+                      className="flex hover:bg-[var(--bg-card)] group cursor-pointer text-xs transition-colors items-center"
                   >
                       {/* Tracking */}
                       <div className="px-4 py-2.5 w-40 shrink-0 font-mono text-red-600 font-medium group-hover:underline">
@@ -340,7 +340,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
 
                       {/* Account */}
                       <div className="px-4 py-2.5 w-40 shrink-0 flex items-center gap-1.5 truncate">
-                        <span className="w-4 h-4 rounded bg-gray-200 text-[8px] flex items-center justify-center text-gray-600 font-bold shrink-0">
+                        <span className="w-4 h-4 rounded bg-[var(--bg-active-alpha)] text-[8px] flex items-center justify-center text-[var(--text-muted)] font-bold shrink-0">
                           {parcel.accountName.charAt(0).toUpperCase()}
                         </span>
                         <span className="truncate flex-1" title={parcel.accountName}>{parcel.accountName}</span>
@@ -355,10 +355,10 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
 
                       {/* Route/Details */}
                       <div className="px-4 py-2.5 flex-1 min-w-[200px] flex flex-col gap-0.5 justify-center">
-                        <div className="font-medium text-gray-900 truncate" title={parcel.recipient}>
+                        <div className="font-medium text-[var(--text-main)] truncate" title={parcel.recipient}>
                           {parcel.recipient}
                         </div>
-                        <div className="text-[10px] text-gray-500 truncate flex items-center gap-2 flex-wrap" title={`${parcel.sender} → ${parcel.cityName}`}>
+                        <div className="text-[10px] text-[var(--text-muted)] truncate flex items-center gap-2 flex-wrap" title={`${parcel.sender} → ${parcel.cityName}`}>
                           <span>{parcel.cityName}</span>
                           {parcel.basisTtn && (() => {
                             const hasRedirect = parcel.basisChain?.some((b: any) => b.rawStatus?.OwnerDocumentType === 'Redirecting');
@@ -393,12 +393,12 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                       </div>
 
                       {/* Cost */}
-                      <div className="px-4 py-2.5 w-28 shrink-0 text-gray-600">
+                      <div className="px-4 py-2.5 w-28 shrink-0 text-[var(--text-muted)]">
                         {parcel.cost} ₴
                       </div>
 
                       {/* Date */}
-                      <div className="px-4 py-2.5 w-28 shrink-0 text-right text-gray-400">
+                      <div className="px-4 py-2.5 w-28 shrink-0 text-right text-[var(--text-muted)]">
                         {parcel.actualDeliveryDate || parcel.estimatedDeliveryDate || '-'}
                       </div>
                   </motion.div>
@@ -407,7 +407,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
             </div>
 
             {/* Mobile View */}
-            <div className="lg:hidden divide-y divide-[#32363b] bg-[#292D32] overflow-hidden pb-6">
+            <div className="lg:hidden divide-y divide-[#32363b] bg-[var(--bg-card-alt)] overflow-hidden pb-6">
               {filteredAndSortedParcels.map((parcel, idx) => {
                  const initials = getInitials(parcel.recipient);
                  const ttnSuffix = "'" + parcel.ttn.slice(-4);
@@ -431,17 +431,17 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                         transition={{ delay: Math.min(idx * 0.03, 0.3), duration: 0.2 }}
                         key={parcel.ttn} 
                         onClick={() => setSelectedParcel(parcel)} 
-                        className="px-4 py-4 flex gap-4 cursor-pointer active:bg-[#32373e] transition-colors"
+                        className="px-4 py-4 flex gap-4 cursor-pointer active:bg-[var(--bg-active-alpha)] transition-colors"
                     >
                         <div className="flex flex-col items-center gap-1.5 shrink-0 pt-0.5">
                             <div className={`w-12 h-12 rounded-full ${getAvatarColors(parcel.recipient)} flex items-center justify-center text-[17px] font-medium tracking-wide`}>
                                 {initials}
                             </div>
-                            <div className="text-[12px] text-[#a5acb5] font-mono tracking-wider">{ttnSuffix}</div>
+                            <div className="text-[12px] text-[var(--text-muted)] font-mono tracking-wider">{ttnSuffix}</div>
                         </div>
                         
                         <div className="flex-1 min-w-0 flex flex-col justify-center">
-                            <div className="text-[15px] font-semibold text-gray-100 leading-snug drop-shadow-sm mb-1 pr-2 tracking-tight flex flex-wrap items-center gap-2">
+                            <div className="text-[15px] font-semibold text-[var(--text-main)] leading-snug mb-1 pr-2 tracking-tight flex flex-wrap items-center gap-2">
                                 <span>{parcel.status}</span>
                                 {parcel.basisTtn && (() => {
                                     const hasRedirect = parcel.basisChain?.some((b: any) => b.rawStatus?.OwnerDocumentType === 'Redirecting');
@@ -451,20 +451,20 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                                     if (hasReturn || (!hasRedirect && !hasReturn)) parts.push('Повернення');
                                     const badgeText = parts.join(' / ');
                                     return (
-                                        <span className="px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400 text-[10px] font-bold tracking-wider uppercase inline-flex items-center gap-1 shrink-0">
+                                        <span className="px-1.5 py-0.5 rounded bg-yellow-500/20 text-[var(--text-yellow-accent)] text-[10px] font-bold tracking-wider uppercase inline-flex items-center gap-1 shrink-0">
                                             {badgeText}
                                         </span>
                                     );
                                 })()}
                             </div>
-                            <div className="text-[#a5acb5] text-[14px] truncate tracking-tight">
+                            <div className="text-[var(--text-muted)] text-[14px] truncate tracking-tight">
                                 до {parcel.recipient}
                             </div>
                             <div className="flex items-center gap-2 mb-3 mt-0.5">
-                                <div className="text-[#a5acb5] text-[14px] truncate tracking-tight">
+                                <div className="text-[var(--text-muted)] text-[14px] truncate tracking-tight">
                                     {parcel.sender}
                                 </div>
-                                <div className="px-1.5 py-0.5 rounded border border-dashed border-blue-500/50 bg-blue-500/5 text-blue-400 text-[10px] font-medium tracking-wide shrink-0" title={`Додано з акаунту: ${parcel.accountName}`}>
+                                <div className="px-1.5 py-0.5 rounded border border-dashed border-blue-500/50 bg-blue-500/5 text-[var(--text-blue-accent)] text-[10px] font-medium tracking-wide shrink-0" title={`Додано з акаунту: ${parcel.accountName}`}>
                                     {parcel.accountName}
                                 </div>
                             </div>
@@ -474,7 +474,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                                 const isReturn = basis.rawStatus?.OwnerDocumentType === 'CargoReturn';
                                 const title = isRedirect ? 'Переадресація' : (isReturn ? 'Повернення' : 'Переадресація / Повернення');
                                 return (
-                                    <div key={basis.ttn} className="mb-3 mr-4 bg-[#febb14]/10 border border-[#febb14]/20 rounded-xl px-3 py-2 text-[#febb14] flex flex-col gap-0.5">
+                                    <div key={basis.ttn} className="mb-3 mr-4 bg-[#febb14]/10 border border-[#febb14]/20 rounded-xl px-3 py-2 text-[var(--text-yellow-accent)] flex flex-col gap-0.5">
                                         <div className="font-semibold flex items-center gap-1.5 text-xs">
                                             {title} (ТТН <span 
                                                 className="underline decoration-dashed cursor-pointer hover:opacity-80 transition" 
@@ -490,17 +490,17 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                             
                             {/* Progress Bar Container */}
                             <div className="pr-4 mt-1">
-                                <div className="relative w-full h-[3px] bg-[#43484e] rounded-full mb-3 flex items-center">
+                                <div className="relative w-full h-[3px] bg-[var(--progress-track)] rounded-full mb-3 flex items-center">
                                     <div 
                                         className={`h-[3px] rounded-full ${progressColor} relative`} 
                                         style={{ width: `${progress}%` }}
                                     >
-                                        <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${progressColor} shadow-[0_0_0_2px_#292D32] translate-x-1/2`}></div>
+                                        <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${progressColor} shadow-[0_0_0_2px_var(--bg-card-alt)] translate-x-1/2`}></div>
                                     </div>
                                 </div>
                                 
                                 {/* Bottom texts */}
-                                <div className="mt-2.5 flex justify-between items-center text-[12px] text-[#868d96] font-medium tracking-wide">
+                                <div className="mt-2.5 flex justify-between items-center text-[12px] text-[var(--text-muted)] font-medium tracking-wide">
                                     <div className="truncate pr-2">
                                         {parcel.rawStatus?.CitySender || 'Відправка'} · {dateCreated}
                                     </div>
@@ -536,9 +536,9 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
 
       {autoSelectTtn && loading && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
-              <div className="bg-[#292D32] p-8 rounded-2xl border border-[#32363b] shadow-2xl flex flex-col items-center gap-5">
+              <div className="bg-[var(--bg-card-alt)] p-8 rounded-2xl border border-[var(--border-color)] shadow-2xl flex flex-col items-center gap-5">
                   <RefreshCw className="w-10 h-10 text-[#e33745] animate-spin" />
-                  <div className="text-white font-medium text-[15px] tracking-wide">Отримання даних...</div>
+                  <div className="text-[var(--text-main)] font-medium text-[15px] tracking-wide">Отримання даних...</div>
               </div>
           </div>
       )}

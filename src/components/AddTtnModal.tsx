@@ -64,22 +64,18 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, 
     };
 
     return (
-        <div className="fixed inset-0 bg-black/40 lg:bg-black/60 lg:backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-[#1b2b35] lg:bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-[#32363b] lg:border-none">
+        <div className="fixed inset-0 bg-black/40 lg:bg-black/60 lg:backdrop-blur-sm z-[100] flex items-center justify-center p-0 sm:p-4">
+            <div className="bg-[var(--bg-main)] w-full max-w-lg h-[100dvh] sm:h-auto rounded-none sm:rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border-none sm:border border-[var(--border-color)] lg:border-none flex flex-col">
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-[#32363b] lg:border-gray-100 flex items-center justify-between bg-[#1b2b35] lg:bg-gray-50">
-                    <div className="flex items-center gap-2.5">
-                        <div className="bg-[#e33745] p-2 rounded-xl text-white">
-                            <Plus className="w-5 h-5" />
-                        </div>
-                        <span className="font-bold text-lg text-white lg:text-gray-900">Додати ТТН вручну</span>
-                    </div>
-                    <button onClick={onClose} className="p-1 text-[#a5acb5] hover:text-white lg:hover:text-gray-900 rounded-full transition-colors">
+                <div className="px-6 py-4 border-b border-[var(--border-color)] border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-main)] lg:bg-gray-50 shrink-0">
+                    <div className="w-7 h-7" />
+                    <span className="font-bold text-lg text-[var(--text-main)] tracking-tight text-center">Відстежити</span>
+                    <button onClick={onClose} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] lg:hover:text-gray-900 rounded-full transition-colors shrink-0">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                <div className="p-6 space-y-6">
+                <div className="p-6 space-y-6 flex-1 overflow-y-auto no-scrollbar">
                     {!hasAccounts && (
                         <div className="bg-amber-500/10 border border-amber-500/25 text-amber-500 lg:bg-amber-50 lg:border-amber-200 lg:text-amber-805 p-3.5 rounded-xl text-xs flex gap-2 w-full">
                             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -90,30 +86,11 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, 
                         </div>
                     )}
 
-                    {hasAccounts && onCreateNewTtn && (
-                        <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-100 lg:bg-emerald-50 lg:border-emerald-200 lg:text-emerald-800 p-4 rounded-xl text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md shadow-emerald-950/10">
-                            <div className="flex gap-2.5">
-                                <Truck className="w-5 h-5 shrink-0 text-emerald-400 mt-0.5" />
-                                <div>
-                                    <p className="font-bold">Оформити нову посилку?</p>
-                                    <p className="opacity-85 mt-0.5">Ви можете створити, розрахувати та зареєструвати нову ТТН онлайн.</p>
-                                </div>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={onCreateNewTtn}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2 px-3.5 rounded-xl text-[10px] uppercase tracking-wider transition-colors shrink-0 text-center cursor-pointer shadow-lg shadow-emerald-500/15"
-                            >
-                                Створити ТТН
-                            </button>
-                        </div>
-                    )}
-
                     <form onSubmit={handleAdd} className="space-y-4">
                         <div>
-                            <label className="block text-xs font-bold text-gray-300 lg:text-gray-600 uppercase tracking-wider mb-1.5">Номер ТТН (14 цифр)</label>
+                            <label className="block text-xs font-bold text-[var(--text-muted)] lg:text-gray-600 uppercase tracking-wider mb-1.5">Номер ТТН (14 цифр)</label>
                             <div className="relative">
-                                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-[var(--text-muted)]">
                                     <Ticket className="w-4 h-4" />
                                 </span>
                                 <input
@@ -121,7 +98,7 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, 
                                     maxLength={14}
                                     placeholder="59000000000000"
                                     disabled={!hasAccounts}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-[#262c33] lg:bg-gray-50 border border-[#32363b] lg:border-gray-200 rounded-xl text-white lg:text-gray-900 text-sm focus:outline-none focus:border-red-[#e33745] focus:ring-1 focus:ring-[#e33745] placeholder:text-gray-500 lg:placeholder:text-gray-400 disabled:opacity-50 font-mono tracking-wider"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-xl text-[var(--text-main)] text-sm focus:outline-none focus:border-red-[#e33745] focus:ring-1 focus:ring-[#e33745] placeholder:text-gray-500 lg:placeholder:text-[var(--text-muted)] disabled:opacity-50 font-mono tracking-wider"
                                     value={ttn}
                                     onChange={e => setTtn(e.target.value.replace(/\D/g, ''))}
                                 />
@@ -129,25 +106,25 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, 
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-300 lg:text-gray-600 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                            <label className="block text-xs font-bold text-[var(--text-muted)] lg:text-gray-600 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                                 <span>Номер телефону (Отримувача або Відправника)</span>
-                                <span className="text-[10px] text-gray-400 lowercase italic normal-case">Необов'язково</span>
+                                <span className="text-[10px] text-[var(--text-muted)] lowercase italic normal-case">Необов'язково</span>
                             </label>
                             <div className="relative">
-                                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-[var(--text-muted)]">
                                     <Phone className="w-4 h-4" />
                                 </span>
                                 <input
                                     type="tel"
                                     placeholder="0951112233"
                                     disabled={!hasAccounts}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-[#262c33] lg:bg-gray-50 border border-[#32363b] lg:border-gray-200 rounded-xl text-white lg:text-gray-900 text-sm focus:outline-none focus:border-red-[#e33745] focus:ring-1 focus:ring-[#e33745] placeholder:text-gray-500 lg:placeholder:text-gray-400 disabled:opacity-50 font-mono"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-xl text-[var(--text-main)] text-sm focus:outline-none focus:border-red-[#e33745] focus:ring-1 focus:ring-[#e33745] placeholder:text-gray-500 lg:placeholder:text-[var(--text-muted)] disabled:opacity-50 font-mono"
                                     value={phone}
                                     onChange={e => setPhone(e.target.value)}
                                 />
                             </div>
-                            <span className="text-[10px] text-gray-400 flex items-center gap-1 mt-1 pl-1">
-                                <Info className="w-3.5 h-3.5 text-gray-400" />
+                            <span className="text-[10px] text-[var(--text-muted)] flex items-center gap-1 mt-1 pl-1">
+                                <Info className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                                 Покращує точність відображення ПІБ відправника/отримувача у Новій Пошті.
                             </span>
                         </div>
@@ -162,33 +139,33 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, 
                         <button
                             type="submit"
                             disabled={!hasAccounts || !ttn}
-                            className="w-full bg-[#e33745] hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition-colors shadow-lg shadow-red-900/10 disabled:opacity-50"
+                            className="w-full bg-[#e33745] hover:bg-red-700 text-[#ffffff] font-bold py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition-colors shadow-lg shadow-red-900/10 disabled:opacity-50"
                         >
                             Почати відстеження
                         </button>
                     </form>
 
                     {/* Manual TTN list */}
-                    <div className="pt-4 border-t border-[#32363b] lg:border-gray-100">
-                        <h4 className="text-xs font-bold text-gray-300 lg:text-gray-600 uppercase tracking-widest mb-3">
+                    <div className="pt-4 border-t border-[var(--border-color)] border-[var(--border-color)]">
+                        <h4 className="text-xs font-bold text-[var(--text-muted)] lg:text-gray-600 uppercase tracking-widest mb-3">
                             Зараз відстежуються вручну ({manualTtns.length})
                         </h4>
                         
                         {manualTtns.length === 0 ? (
-                            <p className="text-xs text-gray-400 italic py-2">Немає доданих вручну номерів.</p>
+                            <p className="text-xs text-[var(--text-muted)] italic py-2">Немає доданих вручну номерів.</p>
                         ) : (
                             <div className="max-h-40 overflow-y-auto space-y-2 pr-1 no-scrollbar">
                                 {manualTtns.map(item => (
-                                    <div key={item.ttn} className="bg-[#262c33] lg:bg-gray-50 border border-[#32363b] lg:border-gray-150 rounded-xl p-3 flex items-center justify-between text-white lg:text-gray-900">
+                                    <div key={item.ttn} className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:border-gray-150 rounded-xl p-3 flex items-center justify-between text-[var(--text-main)]">
                                         <div className="flex flex-col">
                                             <span className="font-mono text-sm font-bold tracking-wider">{item.ttn}</span>
                                             {item.phone && (
-                                                <span className="text-[10px] text-gray-400 font-mono mt-0.5">📞 {item.phone}</span>
+                                                <span className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5">📞 {item.phone}</span>
                                             )}
                                         </div>
                                         <button
                                             onClick={() => handleDelete(item.ttn)}
-                                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                                            className="p-1.5 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>

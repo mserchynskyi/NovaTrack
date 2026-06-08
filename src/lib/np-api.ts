@@ -684,6 +684,8 @@ export async function submitChangeData(
     PayerType: string;
     RecipientContactPerson: string;
     RecipientPhone: string;
+    BackwardDeliveryData?: any[];
+    AfterpaymentOnGoodsCost?: string;
   }
 ): Promise<{ success: boolean; ttn?: string; error?: string }> {
   const data = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
@@ -700,6 +702,8 @@ export async function submitChangeData(
         RecipientPhone: params.RecipientPhone,
         PaymentMethod: params.PaymentMethod,
         PayerType: params.PayerType,
+        BackwardDeliveryData: params.BackwardDeliveryData,
+        AfterpaymentOnGoodsCost: params.AfterpaymentOnGoodsCost,
       },
     }),
   });
@@ -810,6 +814,7 @@ export interface CreateTtnParams {
   CargoType?: string;
   ServiceType?: string;
   BackwardDeliveryData?: BackwardDelivery[];
+  AfterpaymentOnGoodsCost?: string;
 }
 
 export async function submitCreateTtn(apiKey: string, params: CreateTtnParams): Promise<{ success: boolean; ttn: string; cost: string; estimatedDeliveryDate: string }> {
@@ -879,6 +884,10 @@ export async function submitCreateTtn(apiKey: string, params: CreateTtnParams): 
 
   if (params.BackwardDeliveryData && params.BackwardDeliveryData.length > 0) {
     documentProps.BackwardDeliveryData = params.BackwardDeliveryData;
+  }
+
+  if (params.AfterpaymentOnGoodsCost) {
+    documentProps.AfterpaymentOnGoodsCost = params.AfterpaymentOnGoodsCost;
   }
 
   const documentRes = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {

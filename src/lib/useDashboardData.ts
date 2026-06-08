@@ -99,7 +99,16 @@ export function useDashboardData(
             }
             previousStatusesRef.current = newStatuses;
 
-            const sortedParcels = flatParcels.sort((a, b) => {
+            // Deduplicate parcels by TTN
+            const uniqueParcelsMap = new Map<string, Parcel>();
+            for (const p of flatParcels) {
+                // If duplicate, manual typically overwrites but let's keep the one that might have more data.
+                // Right now we just ensure uniqueness.
+                uniqueParcelsMap.set(p.ttn, p);
+            }
+            const uniqueParcels = Array.from(uniqueParcelsMap.values());
+
+            const sortedParcels = uniqueParcels.sort((a, b) => {
                 const parseDate = (d: string) => {
                     if (!d) return 0;
                     const parts = d.split(' ')[0]?.split('.');

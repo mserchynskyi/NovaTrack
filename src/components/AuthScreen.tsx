@@ -61,8 +61,8 @@ export function AuthScreen() {
     };
 
     return (
-        <div className="flex bg-[#1b2b35] min-h-[100dvh] items-center justify-center p-4 antialiased">
-            <div className="w-full max-w-md bg-[#292D32]/80 backdrop-blur-md rounded-3xl border border-[#32363b] p-8 shadow-2xl relative overflow-hidden transition-all duration-300">
+        <div className="flex bg-[var(--bg-main)] min-h-[100dvh] items-center justify-center p-4 antialiased">
+            <div className="w-full max-w-md bg-[var(--bg-card-alt)]/80 backdrop-blur-md rounded-3xl border border-[var(--border-color)] p-8 shadow-2xl relative overflow-hidden transition-all duration-300">
                 {/* Visual Accent */}
                 <div className="absolute top-0 left-0 w-full h-[4px] bg-[#e33745]" />
 
@@ -71,10 +71,10 @@ export function AuthScreen() {
                     <div className="w-16 h-16 bg-[#e33745]/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[#e33745]/20 shadow-inner">
                         <Box className="w-8 h-8 text-[#e33745]" />
                     </div>
-                    <h1 className="text-3xl font-extrabold text-white tracking-tight">
+                    <h1 className="text-3xl font-extrabold text-[var(--text-main)] tracking-tight">
                         Nova Track
                     </h1>
-                    <p className="text-gray-400 text-sm mt-1.5 font-medium">
+                    <p className="text-[var(--text-muted)] text-sm mt-1.5 font-medium">
                         {isRegisterMode 
                             ? 'Створіть акаунт, щоб синхронізувати посилки' 
                             : 'Увійдіть для доступу та синхронізації ТТН'}
@@ -93,11 +93,11 @@ export function AuthScreen() {
                     <div className="space-y-4">
                         {/* Email Input */}
                         <div>
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">
                                 Email Адреса
                             </label>
                             <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[var(--text-muted)]">
                                     <Mail className="w-4.5 h-4.5 stroke-[1.8]" />
                                 </div>
                                 <input
@@ -105,7 +105,7 @@ export function AuthScreen() {
                                     placeholder="name@company.com"
                                     value={authEmail}
                                     onChange={(e) => setAuthEmail(e.target.value)}
-                                    className="w-full pl-11 pr-4 py-3 bg-[#1b2b35] border border-[#32363b] focus:border-[#e33745] focus:ring-2 focus:ring-[#e33745]/30 rounded-xl text-white text-sm placeholder:text-gray-500 focus:outline-none transition-all"
+                                    className="w-full pl-11 pr-4 py-3 bg-[var(--bg-main)] border border-[var(--border-color)] focus:border-[#e33745] focus:ring-2 focus:ring-[#e33745]/30 rounded-xl text-[var(--text-main)] text-sm placeholder:text-gray-500 focus:outline-none transition-all"
                                     required
                                     disabled={isLoading}
                                 />
@@ -114,11 +114,11 @@ export function AuthScreen() {
 
                         {/* Password Input */}
                         <div>
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">
                                 Пароль
                             </label>
                             <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[var(--text-muted)]">
                                     <Lock className="w-4.5 h-4.5 stroke-[1.8]" />
                                 </div>
                                 <input
@@ -126,14 +126,14 @@ export function AuthScreen() {
                                     placeholder={isRegisterMode ? "Створіть надійний пароль" : "Введіть ваш пароль"}
                                     value={authPassword}
                                     onChange={(e) => setAuthPassword(e.target.value)}
-                                    className="w-full pl-11 pr-11 py-3 bg-[#1b2b35] border border-[#32363b] focus:border-[#e33745] focus:ring-2 focus:ring-[#e33745]/30 rounded-xl text-white text-sm placeholder:text-gray-500 focus:outline-none transition-all"
+                                    className="w-full pl-11 pr-11 py-3 bg-[var(--bg-main)] border border-[var(--border-color)] focus:border-[#e33745] focus:ring-2 focus:ring-[#e33745]/30 rounded-xl text-[var(--text-main)] text-sm placeholder:text-gray-500 focus:outline-none transition-all"
                                     required
                                     disabled={isLoading}
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-white transition-colors"
+                                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
                                 >
                                     {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
                                 </button>
@@ -143,11 +143,11 @@ export function AuthScreen() {
                         {/* Confirm Password Input (only in registration) */}
                         {isRegisterMode && (
                             <div className="animate-fade-in">
-                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                                <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">
                                     Підтвердьте пароль
                                 </label>
                                 <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[var(--text-muted)]">
                                         <Lock className="w-4.5 h-4.5 stroke-[1.8]" />
                                     </div>
                                     <input
@@ -155,7 +155,7 @@ export function AuthScreen() {
                                         placeholder="Введіть пароль ще раз"
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="w-full pl-11 pr-4 py-3 bg-[#1b2b35] border border-[#32363b] focus:border-[#e33745] focus:ring-2 focus:ring-[#e33745]/30 rounded-xl text-white text-sm placeholder:text-gray-500 focus:outline-none transition-all"
+                                        className="w-full pl-11 pr-4 py-3 bg-[var(--bg-main)] border border-[var(--border-color)] focus:border-[#e33745] focus:ring-2 focus:ring-[#e33745]/30 rounded-xl text-[var(--text-main)] text-sm placeholder:text-gray-500 focus:outline-none transition-all"
                                         required
                                         disabled={isLoading}
                                     />
@@ -167,7 +167,7 @@ export function AuthScreen() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full flex items-center justify-center gap-2.5 bg-[#e33745] hover:bg-red-700 disabled:bg-red-900/40 text-white py-3.5 px-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all shadow-lg shadow-red-900/30 disabled:shadow-none hover:shadow-red-600/20 active:scale-[0.98] mt-6 select-none cursor-pointer"
+                        className="w-full flex items-center justify-center gap-2.5 bg-[#e33745] hover:bg-red-700 disabled:bg-red-900/40 text-[#ffffff] py-3.5 px-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all shadow-lg shadow-red-900/30 disabled:shadow-none hover:shadow-red-600/20 active:scale-[0.98] mt-6 select-none cursor-pointer"
                     >
                         {isLoading ? (
                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -186,7 +186,7 @@ export function AuthScreen() {
                 </form>
 
                 {/* Switch Mode Toggle */}
-                <div className="text-center mt-6 pt-5 border-t border-[#32363b]/70">
+                <div className="text-center mt-6 pt-5 border-t border-[var(--border-color)]/70">
                     <button
                         type="button"
                         onClick={() => {
@@ -195,7 +195,7 @@ export function AuthScreen() {
                             setAuthPassword('');
                             setConfirmPassword('');
                         }}
-                        className="text-gray-400 hover:text-white text-xs font-semibold select-none cursor-pointer transition-colors"
+                        className="text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs font-semibold select-none cursor-pointer transition-colors"
                         disabled={isLoading}
                     >
                         {isRegisterMode 

@@ -1,0 +1,86 @@
+636:        <div id="create-ttn-modal-overlay" className="fixed inset-0 bg-[#0c0d10]/90 backdrop-blur-md z-[100] flex items-center justify-center p-0 sm:p-2 overflow-hidden sm:overflow-y-auto no-scrollbar">
+639:            <div id="create-ttn-phone-boundary" className="bg-[#1c1d21] text-zinc-150 w-full max-w-lg sm:rounded-[32px] shadow-2xl flex flex-col h-[100dvh] sm:h-[880px] overflow-hidden border border-[#2e3138] relative font-sans">
+642:                <div id="ttn-modal-header" className="px-5 py-4 border-b border-[#2d3139]/40 flex items-center justify-between bg-[#1c1d21] shrink-0 z-20">
+679:                        <div className="bg-[#262a30] border border-[#2e3138] rounded-3xl p-6 w-full space-y-4 shadow-md">
+690:                                        className="p-1.5 hover:bg-[#32363b] rounded-lg transition-colors text-zinc-400 hover:text-white group relative"
+710:                        <div className="bg-[#262a30] border border-[#2e3138] rounded-3xl p-4.5 w-full space-y-3 text-left shadow-sm">
+717:                                    className="flex items-center justify-center gap-1.5 bg-[#2d3139] hover:bg-zinc-700 border border-[#3e424c] text-white font-bold py-3 px-3 rounded-xl text-xs transition-colors cursor-pointer text-center"
+732:                                className="w-full bg-[#0ea5e9] hover:bg-[#0c94d2] text-white font-bold py-3.5 px-6 rounded-2xl text-xs transition-colors cursor-pointer uppercase tracking-wider"
+756:                                            className="w-full bg-[#0ea5e9] hover:bg-[#0c91cc] text-white font-bold py-2.5 py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-lg hover:shadow-[#0ea5e9]/20"
+780:                                        className="bg-[#262a30] hover:bg-zinc-800/80 rounded-2xl p-4 border border-[#2e3138] flex items-center justify-between cursor-pointer transition-colors"
+798:                                            className="overflow-hidden bg-[#2d313a] border border-[#2e3138] rounded-2xl p-2.5 space-y-2 shadow-inner"
+811:                                                            ? 'bg-[#0ea5e9]/10 text-[#0ea5e9]' 
+829:                                        className="bg-[#262a30] hover:bg-zinc-800/80 rounded-2xl p-4 border border-[#2e3138] flex items-center justify-between cursor-pointer transition-colors"
+853:                                        className="bg-[#262a30] hover:bg-zinc-800/80 rounded-2xl p-4 border border-[#2e3138] flex items-center justify-between cursor-pointer transition-colors"
+877:                                            className="w-full bg-[#262a30] hover:bg-zinc-800/80 rounded-2xl p-4 pr-10 border border-[#2e3138] text-white text-sm font-semibold appearance-none cursor-pointer outline-none focus:ring-1 focus:ring-[#0ea5e9]"
+896:                                        className="bg-[#0ea5e9] text-white p-2.5 rounded-xl transition-all hover:bg-sky-500 shrink-0 shadow-md flex items-center justify-center cursor-pointer"
+910:                                            className="bg-[#262a30] hover:bg-zinc-800/80 rounded-2xl p-4 border border-[#2e3138] flex items-start gap-3.5 cursor-pointer transition-colors relative group"
+920:                                                    <span className="text-[9px] text-[#0ea5e9] font-black uppercase tracking-wider bg-[#0ea5e9]/5 px-1 py-0.5 rounded leading-none">
+947:                                            className="bg-[#262a30] rounded-2xl p-4 border border-[#2e3138] space-y-4 shadow-xl relative"
+958:                                                        className="w-full bg-[#1c1d21] border border-zinc-700 text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#0ea5e9] transition-colors"
+985:                                                        className="w-full bg-[#1c1d21] border border-zinc-700 font-medium text-white text-xs rounded-xl pl-9 pr-8 py-2.5 focus:outline-none focus:border-[#0ea5e9] placeholder-zinc-500 transition-colors"
+993:                                                    <div className="absolute top-[103%] left-0 w-full bg-[#2a2e38] border border-zinc-700 rounded-xl mt-1 shadow-2xl z-40 max-h-48 overflow-y-auto no-scrollbar">
+1002:                                                                className="w-full text-left px-3 py-2.5 text-xs text-zinc-100 hover:bg-[#323642] border-b border-zinc-700/30 font-medium flex flex-col transition-colors"
+1017:                                                        <div className="py-2.5 px-3 bg-[#1c1d21] text-xs text-zinc-400 rounded-xl flex items-center gap-2">
+1025:                                                            className="w-full bg-[#1c1d21] border border-zinc-700 text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#0ea5e9] transition-colors"
+1044:                                                    className="bg-[#1e293b] hover:bg-slate-800 text-white font-bold text-xs uppercase px-4 py-2 rounded-xl transition-all cursor-pointer"
+1062:                                        className="bg-[#0ea5e9] text-white p-2.5 rounded-xl transition-all hover:bg-sky-500 shrink-0 shadow-md flex items-center justify-center cursor-pointer"
+1068:                                <div className="bg-[#262a30] rounded-2xl p-4.5 border border-[#2e3138] space-y-4">
+1091:                                                            ? 'bg-[#0ea5e9] text-white' 
+1092:                                                            : 'bg-[#1c1d21] text-zinc-400 border border-zinc-700/60'
+1102:                                                            ? 'bg-[#0ea5e9] text-white' 
+1103:                                                            : 'bg-[#1c1d21] text-zinc-400 border border-zinc-700/60'
+1118:                                                    className="w-full bg-[#1c1d21] border border-zinc-700/60 font-bold text-sm text-white rounded-xl px-3 py-2 focus:outline-none focus:border-[#0ea5e9]"
+1129:                                                        afterpayment ? 'bg-[#0ea5e9]' : 'bg-zinc-700'
+1149:                                                                    ? 'bg-[#0ea5e9] text-white' 
+1150:                                                                    : 'bg-[#1c1d21] text-zinc-400 border border-zinc-700/60'
+1160:                                                                    ? 'bg-[#0ea5e9] text-white' 
+1161:                                                                    : 'bg-[#1c1d21] text-zinc-400 border border-zinc-700/60'
+1180:                                                            className="w-full bg-[#1c1d21] border border-zinc-700/60 font-bold text-sm text-white rounded-xl px-3 py-2 focus:outline-none focus:border-[#0ea5e9]"
+1192:                                                                    ? 'bg-[#0ea5e9] text-white' 
+1193:                                                                    : 'bg-[#1c1d21] text-zinc-400 border border-zinc-700/60'
+1203:                                                                    ? 'bg-[#0ea5e9] text-white' 
+1204:                                                                    : 'bg-[#1c1d21] text-zinc-400 border border-zinc-700/60'
+1229:                                                        <span className="bg-[#0ea5e9] text-white font-black text-[10px] px-2.5 py-0.5 rounded-lg uppercase tracking-wider shadow-sm">
+1274:                                        className="bg-[#0ea5e9] text-white p-2.5 rounded-xl transition-all hover:bg-sky-500 shrink-0 shadow-md flex items-center justify-center cursor-pointer"
+1280:                                <div className="bg-[#262a30] rounded-2xl p-4.5 border border-[#2e3138] space-y-4">
+1302:                                                            ? 'bg-[#0ea5e9] text-white' 
+1303:                                                            : 'bg-[#1c1d21] text-zinc-400 border border-zinc-700/60'
+1313:                                                            ? 'bg-[#0ea5e9] text-white' 
+1314:                                                            : 'bg-[#1c1d21] text-zinc-400 border border-zinc-700/60'
+1324:                                                <div className="space-y-2.5 bg-[#1c1d21] p-3 rounded-xl border border-zinc-700/40">
+1333:                                                            className="w-full bg-[#1c1d21] border-b border-zinc-650 font-bold text-xs text-white py-1 outline-none focus:border-[#0ea5e9]"
+1342:                                                            className="w-full bg-[#1c1d21] border-b border-zinc-650 font-bold text-xs text-white py-1 outline-none focus:border-[#0ea5e9]"
+1351:                                                            className="w-full bg-[#1c1d21] border-b border-zinc-650 font-bold text-xs text-white py-1 outline-none focus:border-[#0ea5e9]"
+1368:                                                    className="w-full bg-[#1c1d21] border border-zinc-700/60 font-medium text-xs text-white rounded-xl px-3 py-2 focus:outline-none focus:border-[#0ea5e9]"
+1373:                                                    <div className="absolute top-[103%] left-0 w-full bg-[#2a2e38] border border-zinc-700 rounded-xl mt-1 shadow-2xl z-45 max-h-40 overflow-y-auto no-scrollbar">
+1382:                                                                className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-[#323642] border-b border-zinc-700/30 flex flex-col font-medium"
+1397:                                                        <div className="py-2.5 px-3 bg-[#1c1d21] text-xs text-zinc-400 rounded-xl flex items-center gap-2">
+1405:                                                            className="w-full bg-[#1c1d21] border border-zinc-700/60 text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#0ea5e9]"
+1463:                                        className="bg-[#0ea5e9] text-white p-2.5 rounded-xl transition-all hover:bg-sky-500 shrink-0 shadow-md flex items-center justify-center cursor-pointer"
+1469:                                <div className="bg-[#262a30] rounded-2xl p-4.5 border border-[#2e3138] space-y-4">
+1490:                                                    className="w-full bg-[#1c1d21] border border-zinc-700/60 font-medium text-xs text-white rounded-xl px-3 py-2"
+1501:                                                    className="w-full bg-[#1c1d21] border border-zinc-700/60 font-medium text-xs text-white rounded-xl px-3 py-2 focus:outline-none"
+1511:                                                                ? 'bg-[#0ea5e9] text-white' 
+1512:                                                                : 'bg-[#1c1d21] text-zinc-400 border border-zinc-800'
+1528:                                                    className="w-full bg-[#1c1d21] border border-zinc-700/60 font-medium text-xs text-white rounded-xl px-3 py-2 focus:outline-none"
+1561:                                        className="bg-[#262a30] hover:bg-zinc-800/80 rounded-2xl p-4 border border-[#2e3138] flex items-center justify-between cursor-pointer transition-colors"
+1582:                                            className="bg-[#262a30] hover:bg-[#2d313a] cursor-pointer rounded-2xl p-4 border border-[#2e3138] flex items-center justify-between transition-colors"
+1628:                                    className="w-full text-center border border-[#0ea5e9]/40 hover:bg-[#0ea5e9]/5 bg-transparent text-[#0ea5e9] py-3.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2.5 shadow-sm cursor-pointer"
+1650:                                className="w-full bg-[#262a30] hover:bg-zinc-800 text-[#0ea5e9] border border-zinc-700/60 transition-colors font-bold py-3.5 px-4 rounded-2xl text-[13px] uppercase tracking-wider text-center cursor-pointer"
+1658:                                className="w-full bg-[#0ea5e9] hover:bg-[#0c94d2] disabled:bg-zinc-800 transition-colors font-bold text-white py-3.5 px-4 rounded-2xl text-[13px] uppercase tracking-wider text-center cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-[#0ea5e9]/10"
+1682:                            className="absolute inset-0 bg-[#1c1d21] z-50 flex flex-col font-sans"
+1685:                            <div className="px-5 py-4 border-b border-[#2d3139]/40 flex items-center justify-between bg-[#1c1d21] shrink-0">
+1698:                            <div className="flex-1 overflow-y-auto p-5 space-y-4 no-scrollbar bg-[#1c1d21]">
+1711:                                            className={`w-full bg-[#262a30] hover:bg-[#2d313a] rounded-2xl p-4.5 border transition-all flex items-center justify-between cursor-pointer text-left outline-none ${
+1741:                            className="absolute inset-0 bg-[#1c1d21] z-50 flex flex-col font-sans"
+1744:                            <div className="px-5 py-4 border-b border-[#2d3139]/40 flex items-center justify-between bg-[#1c1d21] shrink-0">
+1760:                            <div className="flex-1 overflow-y-auto p-5 pb-24 bg-[#1c1d21] no-scrollbar">
+1761:                                <div className="bg-[#262a30] rounded-2xl p-4.5 border border-[#2e3138] space-y-4">
+1769:                                            className="w-full bg-[#1c1d21] border border-zinc-700/60 font-bold text-sm text-white rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#0ea5e9]"
+1778:                                            className="w-full bg-[#1c1d21] border border-zinc-700/60 font-bold text-sm text-white rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#0ea5e9]"
+1787:                                            className="w-full bg-[#1c1d21] border border-zinc-700/60 font-bold text-sm text-white rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#0ea5e9]"
+1796:                                            className="w-full bg-[#1c1d21] border border-zinc-700/60 font-bold text-sm text-white rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#0ea5e9]"
+1803:                                            className={`relative w-11 h-6 rounded-full cursor-pointer transition-colors border border-zinc-700/60 ${editingPlaceData.isPacked ? 'bg-[#0ea5e9] border-[#0ea5e9]' : 'bg-[#1c1d21]'}`}
+1812:                            <div className="p-4 border-t border-[#2d3139]/40 bg-[#1c1d21] shrink-0">
+1822:                                    className="w-full bg-[#0ea5e9] hover:bg-sky-500 text-white py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all shadow-md active:scale-[0.98] cursor-pointer"

@@ -1,18 +1,19 @@
 import React, { ReactNode, useState, useEffect, useRef } from 'react';
-import { Home, MapPin, User, Package as Box, LogOut, Plus, FileText, X, Search, Globe, Copy, Check, Barcode, RefreshCw } from 'lucide-react';
+import { Home, MapPin, User, Package as Box, LogOut, Plus, FileText, X, Search, Globe, Copy, Check, Barcode, RefreshCw, Key } from 'lucide-react';
 import { useAuth } from '../lib/AuthContext';
 import { searchCities, getWarehouses } from '../lib/np-api';
 
 interface LayoutProps {
   children: ReactNode;
   onManageAccounts: () => void;
+  onManageApiKeys: () => void;
   onAddTtn: () => void;
   onCreateTtn?: () => void;
   onRefresh?: () => void;
   loading?: boolean;
 }
 
-export function Layout({ children, onManageAccounts, onAddTtn, onCreateTtn, onRefresh, loading }: LayoutProps) {
+export function Layout({ children, onManageAccounts, onManageApiKeys, onAddTtn, onCreateTtn, onRefresh, loading }: LayoutProps) {
   const { user, logout } = useAuth();
 
   // Scroll and Pull to refresh state
@@ -197,44 +198,48 @@ export function Layout({ children, onManageAccounts, onAddTtn, onCreateTtn, onRe
   });
 
   return (
-    <div className="flex bg-[#1b2b35] lg:bg-[#F3F4F6] min-h-[100dvh] font-sans selection:bg-red-200">
+    <div className="flex bg-[var(--bg-main)] min-h-[100dvh] font-sans selection:bg-red-200">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-64 bg-[#1b2b35] text-white flex-col h-screen sticky top-0 shadow-lg shrink-0">
+      <aside className="hidden lg:flex w-64 bg-[var(--bg-main)] text-[var(--text-main)] flex-col h-screen sticky top-0 shadow-lg shrink-0">
          <div className="p-6 flex items-center gap-3">
              <div className="bg-[#e33745] p-2 rounded-xl shadow-md shadow-red-900/20">
-                 <Box className="w-5 h-5 text-white stroke-[2]" />
+                 <Box className="w-5 h-5 text-[var(--text-main)] stroke-[2]" />
              </div>
              <span className="font-bold text-lg tracking-tight">Nova Track</span>
          </div>
          
          <nav className="flex-1 px-4 space-y-1.5 mt-2">
-             <div className="flex items-center gap-3 px-3 py-2.5 bg-white/10 rounded-lg text-white cursor-pointer font-medium text-sm">
+             <div className="flex items-center gap-3 px-3 py-2.5 bg-[var(--bg-active-alpha)] rounded-lg text-[var(--text-main)] cursor-pointer font-medium text-sm">
                 <Home className="w-4 h-4" />
                 Головна (Посилки)
              </div>
              {onCreateTtn && (
-                <div onClick={onCreateTtn} className="flex items-center gap-3 px-3 py-2.5 text-[#a5acb5] hover:bg-white/5 hover:text-white rounded-lg cursor-pointer font-medium text-sm transition-colors">
+                <div onClick={onCreateTtn} className="flex items-center gap-3 px-3 py-2.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover-alpha)] hover:text-[var(--text-main)] rounded-lg cursor-pointer font-medium text-sm transition-colors">
                    <FileText className="w-4 h-4 text-emerald-400" />
                    Створити посилку
                 </div>
              )}
-             <div onClick={onAddTtn} className="flex items-center gap-3 px-3 py-2.5 text-[#a5acb5] hover:bg-white/5 hover:text-white rounded-lg cursor-pointer font-medium text-sm transition-colors">
+             <div onClick={onAddTtn} className="flex items-center gap-3 px-3 py-2.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover-alpha)] hover:text-[var(--text-main)] rounded-lg cursor-pointer font-medium text-sm transition-colors">
                 <Plus className="w-4 h-4" />
                 Додати ТТН вручну
              </div>
-             <div onClick={() => setIsMapOpen(true)} className="flex items-center gap-3 px-3 py-2.5 text-[#a5acb5] hover:bg-white/5 hover:text-white rounded-lg cursor-pointer font-medium text-sm transition-colors">
+             <div onClick={() => setIsMapOpen(true)} className="flex items-center gap-3 px-3 py-2.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover-alpha)] hover:text-[var(--text-main)] rounded-lg cursor-pointer font-medium text-sm transition-colors">
                 <MapPin className="w-4 h-4" />
                 Мапа відділень
              </div>
-             <div onClick={onManageAccounts} className="flex items-center gap-3 px-3 py-2.5 text-[#a5acb5] hover:bg-white/5 hover:text-white rounded-lg cursor-pointer font-medium text-sm transition-colors">
+             <div onClick={onManageAccounts} className="flex items-center gap-3 px-3 py-2.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover-alpha)] hover:text-[var(--text-main)] rounded-lg cursor-pointer font-medium text-sm transition-colors">
                 <User className="w-4 h-4" />
-                Профіль та Акаунти
+                Профіль
+             </div>
+             <div onClick={onManageApiKeys} className="flex items-center gap-3 px-3 py-2.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover-alpha)] hover:text-[var(--text-main)] rounded-lg cursor-pointer font-medium text-sm transition-colors">
+                <Key className="w-4 h-4" />
+                API Ключі
              </div>
          </nav>
 
          {user && (
             <div className="p-4 mt-auto">
-                <div className="flex items-center gap-3 px-3 py-2.5 text-[#a5acb5] hover:bg-white/5 hover:text-white rounded-lg cursor-pointer font-medium text-sm transition-colors" onClick={logout}>
+                <div className="flex items-center gap-3 px-3 py-2.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover-alpha)] hover:text-[var(--text-main)] rounded-lg cursor-pointer font-medium text-sm transition-colors" onClick={logout}>
                    <LogOut className="w-4 h-4" />
                    <span className="truncate flex-1">Вийти ({user.email?.split('@')[0]})</span>
                 </div>
@@ -261,9 +266,9 @@ export function Layout({ children, onManageAccounts, onAddTtn, onCreateTtn, onRe
                 }}
                 className="flex items-center justify-center w-full transition-all duration-150 overflow-hidden shrink-0 bg-transparent mt-2 self-center z-40"
               >
-                <div className="flex items-center gap-2 bg-[#20313c]/90 border border-[#1b2b35] rounded-full px-4 py-2 text-xs font-bold shadow-lg shadow-black/25">
+                <div className="flex items-center gap-2 bg-[var(--bg-card-alt)]/90 border border-[var(--border-color)] rounded-full px-4 py-2 text-xs font-bold shadow-lg shadow-black/25">
                   <RefreshCw className={`w-4 h-4 text-[#e33745] ${loading ? 'animate-spin' : pullDistance > 55 ? 'rotate-180 transition-all duration-200' : ''}`} />
-                  <span className="text-gray-200 font-semibold">
+                  <span className="text-[var(--text-main)] font-semibold">
                     {loading ? 'Оновлення...' : pullDistance > 55 ? 'Відпустіть для оновлення' : 'Потягніть для оновлення'}
                   </span>
                 </div>
@@ -276,23 +281,23 @@ export function Layout({ children, onManageAccounts, onAddTtn, onCreateTtn, onRe
           </main>
           
           {/* Mobile Bottom Nav - Styled exactly like the uploaded screenshot */}
-          <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-[#111d24] border-t border-[#1b2b35]/40 pt-2 px-2 flex justify-around items-end text-[11px] text-[#7d8c97] font-semibold z-50 h-[76px] shadow-[0_-8px_24px_rgba(0,0,0,0.3)] select-none">
+          <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-[var(--bg-nav)] border-t border-[var(--border-color)] pt-2 px-2 flex justify-around items-end text-[11px] text-[#7d8c97] font-semibold z-50 h-[76px] shadow-[0_-8px_24px_rgba(0,0,0,0.3)] select-none">
             
             {/* 1. Посилки */}
-            <div className="flex flex-col items-center justify-center w-16 h-[54px] cursor-pointer text-white pb-1">
+            <div className="flex flex-col items-center justify-center w-16 h-[54px] cursor-pointer text-[var(--text-main)] pb-1">
               <Box className="w-6 h-6 stroke-[1.8]" />
               <span className="text-[10px] mt-1 font-semibold tracking-wide">Посилки</span>
             </div>
 
-            {/* 2. Відстежити ТТН */}
+            {/* 2. Відстежити */}
             <div 
-              className="flex flex-col items-center justify-center w-20 h-[54px] cursor-pointer hover:text-white text-[#7d8c97] transition-all pb-1"
+              className="flex flex-col items-center justify-center w-20 h-[54px] cursor-pointer hover:text-[var(--text-main)] text-[#7d8c97] transition-all pb-1"
               onClick={onAddTtn}
             >
               <div className="relative">
                 <Barcode className="w-6 h-6 stroke-[1.8]" />
               </div>
-              <span className="text-[9.5px] mt-1 font-semibold tracking-wide text-center leading-tight whitespace-nowrap">Відстежити ТТН</span>
+              <span className="text-[9.5px] mt-1 font-semibold tracking-wide text-center leading-tight whitespace-nowrap">Відстежити</span>
             </div>
 
             {/* 3. "Відправити" (Red Central Plus button) */}
@@ -300,7 +305,7 @@ export function Layout({ children, onManageAccounts, onAddTtn, onCreateTtn, onRe
               className="flex flex-col items-center justify-center w-[72px] h-[64px] cursor-pointer pb-1"
               onClick={onCreateTtn}
             >
-              <div className="w-10 h-10 rounded-full bg-[#e33745] hover:bg-[#c92f3a] text-white flex items-center justify-center shadow-lg shadow-red-950/40 border border-red-700/30 transition-all transform active:scale-95">
+              <div className="w-10 h-10 rounded-full bg-[#e33745] hover:bg-[#c92f3a] text-[#ffffff] flex items-center justify-center shadow-lg shadow-red-950/40 border border-red-700/30 transition-all transform active:scale-95">
                 <Plus className="w-5.5 h-5.5 stroke-[2.5]" />
               </div>
               <span className="text-[10px] mt-1 font-bold tracking-wide text-[#e33745]">Відправити</span>
@@ -308,7 +313,7 @@ export function Layout({ children, onManageAccounts, onAddTtn, onCreateTtn, onRe
 
             {/* 4. Мапа */}
             <div 
-              className="flex flex-col items-center justify-center w-16 h-[54px] cursor-pointer hover:text-white text-[#7d8c97] transition-all pb-1"
+              className="flex flex-col items-center justify-center w-16 h-[54px] cursor-pointer hover:text-[var(--text-main)] text-[#7d8c97] transition-all pb-1"
               onClick={() => setIsMapOpen(true)}
             >
               <MapPin className="w-6 h-6 stroke-[1.8]" />
@@ -317,17 +322,17 @@ export function Layout({ children, onManageAccounts, onAddTtn, onCreateTtn, onRe
 
             {/* 5. Профіль */}
             <div 
-              className="flex flex-col items-center justify-center w-16 h-[54px] cursor-pointer hover:text-white text-[#7d8c97] transition-all pb-1"
+              className="flex flex-col items-center justify-center w-16 h-[54px] cursor-pointer hover:text-[var(--text-main)] text-[#7d8c97] transition-all pb-1"
               onClick={onManageAccounts}
             >
-              <div className="w-6 h-6 rounded-full bg-[#3d4b53]/80 flex items-center justify-center text-[9px] font-bold text-white tracking-tighter uppercase border border-gray-650 shrink-0">
+              <div className="w-6 h-6 rounded-full bg-[#3d4b53]/80 flex items-center justify-center text-[9px] font-bold text-[var(--text-main)] tracking-tighter uppercase border border-gray-650 shrink-0">
                 {getEmailInitials(user?.email)}
               </div>
-              <span className="text-[10px] mt-1 font-semibold tracking-wide">Профіль</span>
+              <span className="text-[10px] mt-1 font-semibold tracking-wide">Користувач</span>
             </div>
 
             {/* Sublte iOS home indicator simulated bar at the bottom center to match the visual in the screenshot */}
-            <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1 bg-gray-750/30 rounded-full sm:hidden"></div>
+            <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1 bg-[var(--text-muted)] opacity-30 rounded-full sm:hidden"></div>
           </nav>
       </div>
 
@@ -338,32 +343,25 @@ export function Layout({ children, onManageAccounts, onAddTtn, onCreateTtn, onRe
           onClick={() => setIsMapOpen(false)}
         >
           <div 
-            className="bg-[#111d24] text-white w-full max-w-[480px] h-[100dvh] sm:h-[650px] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            className="bg-[var(--bg-nav)] text-[var(--text-main)] w-full max-w-[480px] h-[100dvh] sm:h-[650px] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header Handle for mobile swipe indicator look */}
-            <div className="flex justify-center pt-3 pb-1 sm:hidden">
-              <div className="w-12 h-1.5 bg-gray-800 rounded-full"></div>
-            </div>
-
             {/* Header */}
-            <div className="p-6 pb-4 flex items-center justify-between border-b border-gray-900/30 shrink-0">
-              <div>
-                <h3 className="text-xl font-bold text-white tracking-tight">Пошук відділень</h3>
-                <p className="text-xs text-gray-400 mt-1">Знайдіть найближче відділення Нової Пошти</p>
-              </div>
+            <div id="map-modal-header" className="px-5 py-4 flex items-center justify-between border-b border-[var(--border-color)]/40 bg-[var(--bg-main)] shrink-0 z-20">
+              <div className="w-8 h-8" />
+              <span className="font-bold text-lg text-[var(--text-main)] font-sans tracking-tight">Пошук відділень</span>
               <button 
                 onClick={() => setIsMapOpen(false)}
-                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-full transition-all shrink-0"
+                className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] rounded-full transition-colors cursor-pointer shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Search Input for City */}
-            <div className="p-5 pb-3 border-b border-gray-900/30 bg-[#16252f]/30 shrink-0 relative">
+            <div className="p-5 pb-3 border-b border-[var(--border-color)]/30 bg-[var(--bg-main)] shrink-0 relative">
               <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                 <input
                   type="text"
                   placeholder="Введіть ваше місто (наприклад: Львів, Одеса...)"
@@ -372,7 +370,7 @@ export function Layout({ children, onManageAccounts, onAddTtn, onCreateTtn, onRe
                     setMapCityQuery(e.target.value);
                     setSelectedMapCity(null);
                   }}
-                  className="w-full bg-[#1b2b35] border border-gray-800 rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#e33745] transition-all font-medium"
+                  className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl py-3 pl-10 pr-4 text-sm text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#e33745] transition-all font-medium"
                 />
                 {citySearching && (
                   <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
@@ -383,15 +381,15 @@ export function Layout({ children, onManageAccounts, onAddTtn, onCreateTtn, onRe
 
               {/* City Suggestions dropdown list */}
               {mapCities.length > 0 && !selectedMapCity && (
-                <div className="absolute z-[110] left-5 right-5 mt-1 bg-[#1b2b35] border border-gray-800 rounded-xl max-h-[180px] overflow-y-auto shadow-2xl py-1 divide-y divide-gray-800/60 no-scrollbar">
+                <div className="absolute z-[110] left-5 right-5 mt-1 bg-[var(--bg-main)] border border-[var(--border-color)] rounded-xl max-h-[180px] overflow-y-auto shadow-2xl py-1 divide-y divide-[var(--border-color)]/60 no-scrollbar">
                   {mapCities.map((city) => (
                     <button
                       key={city.Ref}
                       onClick={() => handleSelectCity(city)}
-                      className="w-full text-left px-4 py-2.5 hover:bg-[#20313c]/60 text-sm font-semibold text-gray-200 transition-colors flex items-center justify-between"
+                      className="w-full text-left px-4 py-2.5 hover:bg-[var(--bg-card-alt)] text-sm font-semibold text-[var(--text-main)] transition-colors flex items-center justify-between"
                     >
                       <span>{city.Description}</span>
-                      <span className="text-[10px] text-gray-500 font-normal">{city.AreaDescription || 'Область'}</span>
+                      <span className="text-[10px] text-[var(--text-muted)] font-normal">{city.AreaDescription || 'Область'}</span>
                     </button>
                   ))}
                 </div>
@@ -400,17 +398,17 @@ export function Layout({ children, onManageAccounts, onAddTtn, onCreateTtn, onRe
 
             {/* Warehouse Filter */}
             {selectedMapCity && (
-              <div className="px-5 py-2 border-b border-gray-900/30 bg-[#13212b]/60 shrink-0 flex items-center gap-2">
-                <Search className="w-3.5 h-3.5 text-gray-500" />
+              <div className="px-5 py-2 border-b border-[var(--border-color)]/30 bg-[var(--bg-card-alt)] shrink-0 flex items-center gap-2">
+                <Search className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                 <input
                   type="text"
                   placeholder="Фільтр за номером або назвою відділення..."
                   value={searchWarehouseQuery}
                   onChange={(e) => setSearchWarehouseQuery(e.target.value)}
-                  className="bg-transparent border-none text-xs text-gray-300 placeholder-gray-550 focus:ring-0 p-0 w-full focus:outline-none font-medium"
+                  className="bg-transparent border-none text-xs text-[var(--text-main)] placeholder-[var(--text-muted)] focus:ring-0 p-0 w-full focus:outline-none font-medium"
                 />
                 {searchWarehouseQuery && (
-                  <button onClick={() => setSearchWarehouseQuery('')} className="text-gray-500 hover:text-white">
+                  <button onClick={() => setSearchWarehouseQuery('')} className="text-[var(--text-muted)] hover:text-[var(--text-main)]">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
@@ -418,9 +416,9 @@ export function Layout({ children, onManageAccounts, onAddTtn, onCreateTtn, onRe
             )}
 
             {/* Warehouses list content */}
-            <div className="flex-1 overflow-y-auto px-5 py-3 divide-y divide-gray-800/40 no-scrollbar relative min-h-0">
+            <div className="flex-1 overflow-y-auto px-5 py-3 divide-y divide-[var(--border-color)]/40 no-scrollbar relative min-h-0">
               {loadingWarehouses ? (
-                <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
+                <div className="flex flex-col items-center justify-center py-20 text-[var(--text-muted)] gap-3">
                   <div className="w-10 h-10 border-2 border-[#e33745]/30 border-t-[#e33745] rounded-full animate-spin"></div>
                   <span className="text-xs font-semibold">Завантаження списку відділень...</span>
                 </div>
@@ -429,20 +427,20 @@ export function Layout({ children, onManageAccounts, onAddTtn, onCreateTtn, onRe
                   filteredWarehouses.map((w, idx) => (
                     <div key={w.Ref || idx} className="py-3 flex flex-col gap-1.5">
                       <div className="flex justify-between items-start gap-2">
-                        <div className="font-semibold text-xs sm:text-sm text-gray-150 flex items-start gap-1.5 leading-tight">
-                          <span className="px-1.5 py-0.5 bg-gray-800 text-[#e33745] text-[9px] font-bold rounded shrink-0 border border-gray-700/80 mt-0.5">
+                        <div className="font-semibold text-xs sm:text-sm text-[var(--text-main)] flex items-start gap-1.5 leading-tight">
+                          <span className="px-1.5 py-0.5 bg-[var(--bg-active-alpha)] text-[var(--text-main)] text-[9px] font-bold rounded shrink-0 border border-[var(--border-color)]/80 mt-0.5">
                             №{w.Number || (idx + 1)}
                           </span>
                           <span>{w.Description}</span>
                         </div>
                       </div>
                       
-                      <div className="text-[11px] text-gray-400 font-light flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                      <div className="text-[11px] text-[var(--text-muted)] font-light flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                         <span>{selectedMapCity.Description}</span>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <button
                             onClick={() => handleCopy(w.Description, idx)}
-                            className="p-1 px-2 rounded bg-gray-800/60 hover:bg-gray-800 hover:text-white transition-all text-[10px] font-semibold flex items-center gap-1 border border-gray-700/60"
+                            className="p-1 px-2 rounded bg-[var(--bg-hover)] hover:bg-[var(--bg-active-alpha)] hover:text-[var(--text-main)] transition-all text-[10px] font-semibold flex items-center gap-1 border border-[var(--border-color)]/60"
                           >
                             {copiedIndex === idx ? (
                               <>
@@ -461,7 +459,7 @@ export function Layout({ children, onManageAccounts, onAddTtn, onCreateTtn, onRe
                             href={`https://maps.google.com/?q=Нова+Пошта+${encodeURIComponent(selectedMapCity.Description + ' ' + w.Description)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-1 px-2 rounded bg-[#e33745]/10 text-[#e33745] hover:bg-[#e33745] hover:text-white transition-all text-[10px] font-semibold flex items-center gap-1 border border-[#e33745]/20"
+                            className="p-1 px-2 rounded bg-[#e33745]/10 text-[#e33745] hover:bg-[#e33745] hover:text-[#ffffff] transition-all text-[10px] font-semibold flex items-center gap-1 border border-[#e33745]/20"
                           >
                             <MapPin className="w-3 h-3" />
                             <span>Гугл карта</span>
@@ -471,13 +469,13 @@ export function Layout({ children, onManageAccounts, onAddTtn, onCreateTtn, onRe
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-20 text-gray-400 italic text-xs font-semibold">
+                  <div className="text-center py-20 text-[var(--text-muted)] italic text-xs font-semibold">
                     {searchWarehouseQuery ? 'Нічого не знайдено за вашим фільтром' : 'У цьому місті немає відділень'}
                   </div>
                 )
               ) : (
-                <div className="flex flex-col items-center justify-center text-center py-20 text-gray-400 px-6 gap-3">
-                  <Globe className="w-12 h-12 text-gray-700 stroke-[1]" />
+                <div className="flex flex-col items-center justify-center text-center py-20 text-[var(--text-muted)] px-6 gap-3">
+                  <Globe className="w-12 h-12 text-[var(--text-muted)] stroke-[1]" />
                   <p className="text-xs font-semibold leading-relaxed">
                     Будь ласка, вкажіть ваше місто в полі пошуку вище для автоматичного завантаження відділень через API Нової Пошти.
                   </p>
@@ -486,11 +484,11 @@ export function Layout({ children, onManageAccounts, onAddTtn, onCreateTtn, onRe
             </div>
 
             {/* Bottom Footer Action */}
-            <div className="p-5 border-t border-gray-900/35 shrink-0 bg-[#0d171d]/20">
+            <div className="p-5 border-t border-[var(--border-color)] shrink-0 bg-[var(--bg-main)]">
               <button
                 type="button"
                 onClick={() => setIsMapOpen(false)}
-                className="w-full bg-[#e33745] hover:bg-[#c92f3a] text-white font-bold py-3.5 rounded-2xl text-xs uppercase tracking-wider transition-colors shadow-lg cursor-pointer text-center"
+                className="w-full bg-[#e33745] hover:bg-[#c92f3a] text-[#ffffff] font-bold py-3.5 rounded-2xl text-xs uppercase tracking-wider transition-colors shadow-lg cursor-pointer text-center"
               >
                 Зрозуміло
               </button>

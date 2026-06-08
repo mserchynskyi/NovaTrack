@@ -12,6 +12,40 @@ interface ParcelDetailsProps {
     onUpdateManualTtn?: (phone?: string) => void;
 }
 
+const getBackwardDeliveryInfo = (parcel: any) => {
+    if (!parcel) return null;
+    const cleanVal = (val: any) => {
+        if (!val) return 0;
+        if (typeof val === 'number') return val;
+        if (typeof val === 'string') {
+            const cleaned = val.replace(',', '.').replace(/[^\d.]/g, '');
+            return parseFloat(cleaned) || 0;
+        }
+        return 0;
+    };
+
+    const sum = cleanVal(parcel.rawStatus?.BackwardDeliveryMoney) || 
+                cleanVal(parcel.rawStatus?.BackwardDeliverySum) || 
+                cleanVal(parcel.rawStatus?.RedeliverySum) ||
+                cleanVal(parcel.rawStatus?.AfterpaymentOnGoodsCost) ||
+                cleanVal(parcel.rawDoc?.BackwardDeliverySum) ||
+                0;
+
+    if (sum <= 0) return null;
+
+    const isControl = 
+        JSON.stringify(parcel.rawStatus || {}).toLowerCase().includes('контроль') || 
+        JSON.stringify(parcel.rawDoc || {}).toLowerCase().includes('контроль') ||
+        (parcel.rawStatus?.ServiceType || '').toLowerCase().includes('control') ||
+        (parcel.rawDoc?.ServiceType || '').toLowerCase().includes('control');
+        
+    return {
+        amount: sum,
+        label: isControl ? 'Контроль оплати' : 'Післяплата',
+        isControl
+    };
+};
+
 export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDeleteManualTtn, onUpdateManualTtn }: ParcelDetailsProps) {
     const [copied, setCopied] = useState(false);
     const [showFullRoute, setShowFullRoute] = useState(false);
@@ -263,6 +297,28 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
         return phoneNum;
     });
 
+    // Backward Delivery States
+    const [hasAfterpayment, setHasAfterpayment] = useState<boolean>(() => {
+        return !!getBackwardDeliveryInfo(parcel);
+    });
+    const [afterpaymentType, setAfterpaymentType] = useState<'Money' | 'PaymentControl'>(() => {
+        return getBackwardDeliveryInfo(parcel)?.isControl ? 'PaymentControl' : 'Money';
+    });
+    const [afterpaymentSum, setAfterpaymentSum] = useState<string>(() => {
+        const bd = getBackwardDeliveryInfo(parcel);
+        return bd ? String(bd.amount) : '';
+    });
+    const [afterpaymentPayer, setAfterpaymentPayer] = useState<string>(() => {
+        const bdList = parcel.rawStatus?.BackwardDeliveryData || parcel.rawDoc?.BackwardDeliveryData;
+        if (bdList && bdList[0]?.PayerType) {
+            return bdList[0].PayerType;
+        }
+        if (parcel.rawStatus?.RedeliveryPayerType) {
+            return parcel.rawStatus.RedeliveryPayerType;
+        }
+        return 'Recipient';
+    });
+
     // Form inputs and selection dropdowns
     const [selectedAccount, setSelectedAccount] = useState<NpAccount | null>(() => {
         const matching = accounts.find(a => a.id === parcel.accountId);
@@ -282,6 +338,27 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
     const [payerType, setPayerType] = useState<string>('Recipient'); // Recipient, Sender
     const [paymentMethod, setPaymentMethod] = useState<string>('Cash'); // Cash, NonCash
     const [note, setNote] = useState<string>('');
+
+    // Sync change data states when parcel changes
+    useEffect(() => {
+        setEditRecipientName(parcel.recipient || '');
+        const phoneNum = parcel.rawStatus?.PhoneRecipient || parcel.rawDoc?.PhoneRecipient || '';
+        setEditRecipientPhone(phoneNum);
+
+        const bd = getBackwardDeliveryInfo(parcel);
+        setHasAfterpayment(!!bd);
+        setAfterpaymentType(bd?.isControl ? 'PaymentControl' : 'Money');
+        setAfterpaymentSum(bd ? String(bd.amount) : '');
+
+        const bdList = parcel.rawStatus?.BackwardDeliveryData || parcel.rawDoc?.BackwardDeliveryData;
+        if (bdList && bdList[0]?.PayerType) {
+            setAfterpaymentPayer(bdList[0].PayerType);
+        } else if (parcel.rawStatus?.RedeliveryPayerType) {
+            setAfterpaymentPayer(parcel.rawStatus.RedeliveryPayerType);
+        } else {
+            setAfterpaymentPayer('Recipient');
+        }
+    }, [parcel]);
 
     const handleDeleteTtn = async () => {
         if (parcel.accountId === 'manual') {
@@ -467,6 +544,36 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
             setErrorMsg('Будь ласка, оберіть кабінет');
             return;
         }
+
+        let backwardDeliveryData;
+        let afterpaymentOnGoodsCost;
+
+        if (hasAfterpayment) {
+            const sumVal = String(Math.round(parseFloat(afterpaymentSum) || 0));
+            if (!sumVal || sumVal === '0') {
+                setErrorMsg('Будь ласка, вкажіть коректну суму післяплати');
+                return;
+            }
+
+            if (afterpaymentType === 'PaymentControl') {
+                afterpaymentOnGoodsCost = sumVal;
+                backwardDeliveryData = [{
+                    PayerType: afterpaymentPayer,
+                    CargoType: 'Money',
+                    RedeliveryString: sumVal
+                }];
+            } else {
+                backwardDeliveryData = [{
+                    PayerType: afterpaymentPayer,
+                    CargoType: 'Money',
+                    RedeliveryString: sumVal
+                }];
+            }
+        } else {
+            backwardDeliveryData = [];
+            afterpaymentOnGoodsCost = "";
+        }
+
         setSubmitting(true);
         setErrorMsg(null);
         try {
@@ -475,9 +582,11 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                 PaymentMethod: paymentMethod,
                 PayerType: payerType,
                 RecipientContactPerson: editRecipientName,
-                RecipientPhone: editRecipientPhone
+                RecipientPhone: editRecipientPhone,
+                BackwardDeliveryData: backwardDeliveryData,
+                AfterpaymentOnGoodsCost: afterpaymentOnGoodsCost
             });
-            setSuccessMsg('Дані отримувача успішно змінено!');
+            setSuccessMsg('Заяву про зміну даних ЕН (включаючи зворотну доставку) успішно надіслано!');
             if (onRefresh) onRefresh(true);
         } catch (err: any) {
             setErrorMsg(err.message || 'Помилка при зміні даних ТТН');
@@ -489,8 +598,8 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
     const renderActiveForm = () => {
         if (activeTab === 'redirect') {
             return (
-                <div className="flex flex-col gap-5 p-6 bg-[#1b2b35] text-white lg:bg-white lg:text-gray-900 rounded-2xl h-full overflow-y-auto no-scrollbar">
-                    <div className="flex items-center justify-between border-b pb-4 border-[#32363b] lg:border-gray-100">
+                <div className="flex flex-col gap-5 p-6 bg-[var(--bg-main)] text-[var(--text-main)] lg:bg-white  rounded-2xl h-full overflow-y-auto no-scrollbar">
+                    <div className="flex items-center justify-between border-b pb-4 border-[var(--border-color)] border-[var(--border-color)]">
                         <h4 className="text-base font-bold flex items-center gap-2">
                             <ArrowLeftRight className="w-5 h-5 text-red-500" />
                             <span>Переадресація відправлення</span>
@@ -498,7 +607,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                         <button 
                             type="button"
                             onClick={() => setActiveTab('details')}
-                            className="text-xs uppercase bg-[#32363b] hover:bg-[#43484e] lg:bg-gray-100 lg:hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors font-bold text-white lg:text-gray-800"
+                            className="text-xs uppercase bg-[#32363b] hover:bg-[#43484e] lg:bg-gray-100 lg:hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors font-bold text-[var(--text-main)] lg:text-gray-800"
                         >
                             Назад
                         </button>
@@ -514,40 +623,20 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                     setActiveTab('details');
                                     setSuccessMsg(null);
                                 }}
-                                className="mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-5 rounded-xl text-xs uppercase tracking-wider"
+                                className="mt-2 bg-emerald-600 hover:bg-emerald-700 text-[var(--text-main)] font-bold py-2 px-5 rounded-xl text-xs uppercase tracking-wider"
                             >
                                 Повернутись до деталей
                             </button>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-4">
-                            <div className="bg-[#292D32] border border-[#32363b] lg:bg-red-50/50 lg:border-red-100/30 p-4 rounded-2xl text-[13px] text-[#a5acb5] lg:text-gray-700 leading-relaxed">
+                            <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-red-50/50 lg:border-red-100/30 p-4 rounded-2xl text-[13px] text-[var(--text-muted)] lg:text-gray-700 leading-relaxed">
                                 За допомогою цієї послуги ви можете змінити адресу доставки посилки на інше відділення або поштомат Нової Пошти.
                             </div>
 
-                            {/* Cabinet selection */}
-                            {accounts.length > 1 && (
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-bold text-[#a5acb5] lg:text-gray-500 uppercase tracking-wider">Оберіть кабінет</label>
-                                    <select 
-                                        value={selectedAccount?.id || ''}
-                                        onChange={(e) => {
-                                            const key = e.target.value;
-                                            const match = accounts.find(a => a.id === key);
-                                            if (match) setSelectedAccount(match);
-                                        }}
-                                        className="bg-[#292D32] border border-[#32363b] lg:bg-white lg:border-gray-200 text-white lg:text-gray-900 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500"
-                                    >
-                                        {accounts.map(acc => (
-                                            <option key={acc.id} value={acc.id}>{acc.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-
                             {/* City lookup */}
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-xs font-bold text-[#a5acb5] lg:text-gray-500 uppercase tracking-wider">Місто призначення</label>
+                                <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Місто призначення</label>
                                 <div className="relative">
                                     <input 
                                         type="text"
@@ -557,9 +646,9 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                             setCitySearchQuery(e.target.value);
                                             if (selectedCity) setSelectedCity(null);
                                         }}
-                                        className="w-full bg-[#292D32] border border-[#32363b] lg:bg-white lg:border-gray-200 text-white lg:text-gray-900 rounded-xl pl-10 pr-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500"
+                                        className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-200 text-[var(--text-main)] rounded-xl pl-10 pr-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500"
                                     />
-                                    <Search className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-[#a5acb5] lg:text-gray-400" />
+                                    <Search className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-[var(--text-muted)] lg:text-[var(--text-muted)]" />
                                     {cityLoading && (
                                         <Loader2 className="absolute right-3 top-3.5 w-4.5 h-4.5 text-[#e33745] animate-spin" />
                                     )}
@@ -572,7 +661,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 )}
 
                                 {!selectedCity && cities.length > 0 && (
-                                    <div className="bg-[#292D32] border border-[#32363b] lg:bg-white lg:border-gray-200 rounded-xl max-h-40 overflow-y-auto mt-1 divide-y divide-[#32363b] lg:divide-gray-100 shadow-xl z-30">
+                                    <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-200 rounded-xl max-h-40 overflow-y-auto mt-1 divide-y divide-[#32363b] lg:divide-gray-100 shadow-xl z-30">
                                         {cities.map((city) => (
                                             <button
                                                 type="button"
@@ -582,7 +671,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                     setCitySearchQuery(city.Description);
                                                     setCities([]);
                                                 }}
-                                                className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-[#32363b] lg:hover:bg-gray-100 text-white lg:text-gray-800 transition-colors"
+                                                className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-[var(--bg-hover)] lg:hover:bg-gray-100 text-[var(--text-main)] lg:text-gray-800 transition-colors"
                                             >
                                                 {city.Description} ({city.AreaDescription})
                                             </button>
@@ -594,16 +683,16 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                             {/* Warehouse / Postomat lookup */}
                             {selectedCity && (
                                 <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-bold text-[#a5acb5] lg:text-gray-500 uppercase tracking-wider">Нове відділення або поштомат</label>
+                                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Нове відділення або поштомат</label>
                                     
                                     {selectedWarehouse ? (
-                                        <div className="bg-[#292D32]/60 lg:bg-red-50/30 border border-emerald-500/20 lg:border-emerald-100 p-3.5 rounded-xl flex items-center justify-between gap-3 animate-in fade-in duration-200">
+                                        <div className="bg-[var(--bg-card-alt)]/60 lg:bg-red-50/30 border border-emerald-500/20 lg:border-emerald-100 p-3.5 rounded-xl flex items-center justify-between gap-3 animate-in fade-in duration-200">
                                             <div className="flex flex-col gap-0.5 min-w-0">
                                                 <span className="text-[9px] text-emerald-400 lg:text-emerald-600 font-bold uppercase tracking-wider flex items-center gap-1.5">
                                                     <span className="inline-block w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                                                     ✓ Обрано відділення
                                                 </span>
-                                                <span className="text-xs font-bold text-white lg:text-gray-950 leading-normal break-words">
+                                                <span className="text-xs font-bold text-[var(--text-main)] leading-normal break-words">
                                                     {selectedWarehouse.Description}
                                                 </span>
                                             </div>
@@ -625,16 +714,16 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                     placeholder="Пошук відділення за номером чи назвою..."
                                                     value={warehouseSearch}
                                                     onChange={(e) => setWarehouseSearch(e.target.value)}
-                                                    className="w-full bg-[#292D32] border border-[#32363b] lg:bg-white lg:border-gray-200 text-white lg:text-gray-950 rounded-xl pl-10 pr-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500"
+                                                    className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-200 text-[var(--text-main)] rounded-xl pl-10 pr-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500"
                                                 />
-                                                <Search className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-[#a5acb5] lg:text-gray-400" />
+                                                <Search className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-[var(--text-muted)] lg:text-[var(--text-muted)]" />
                                                 {warehouseLoading && (
                                                     <Loader2 className="absolute right-3 top-3.5 w-4.5 h-4.5 text-[#e33745] animate-spin" />
                                                 )}
                                             </div>
 
                                             {warehouses.length > 0 ? (
-                                                <div className="bg-[#292D32] border border-[#32363b] lg:bg-white lg:border-gray-200 rounded-xl max-h-44 overflow-y-auto mt-1 divide-y divide-[#32363b] lg:divide-gray-100 shadow-md animate-in slide-in-from-top-1">
+                                                <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-200 rounded-xl max-h-44 overflow-y-auto mt-1 divide-y divide-[#32363b] lg:divide-gray-100 shadow-md animate-in slide-in-from-top-1">
                                                     {filteredWarehouses.slice(0, 50).map((w) => {
                                                         const isSel = selectedWarehouse?.Ref === w.Ref;
                                                         return (
@@ -645,7 +734,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                                 className={`w-full text-left px-4 py-3 text-xs font-medium transition-colors ${
                                                                     isSel 
                                                                     ? 'bg-red-500/15 text-red-400 lg:bg-red-50 lg:text-red-700 font-bold' 
-                                                                    : 'hover:bg-[#32363b] lg:hover:bg-gray-100 text-white lg:text-gray-800'
+                                                                    : 'hover:bg-[var(--bg-hover)] lg:hover:bg-gray-100 text-[var(--text-main)] lg:text-gray-800'
                                                                 }`}
                                                             >
                                                                 {w.Description} {w.ShortAddress ? `(${w.ShortAddress})` : ''}
@@ -653,14 +742,14 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                         );
                                                     })}
                                                     {filteredWarehouses.length === 0 && (
-                                                        <div className="p-4 text-xs font-semibold text-[#a5acb5] lg:text-gray-450 italic text-center">
+                                                        <div className="p-4 text-xs font-semibold text-[var(--text-muted)] lg:text-gray-450 italic text-center">
                                                             Відділень не знайдено за цим фільтром
                                                         </div>
                                                     )}
                                                 </div>
                                             ) : (
                                                 !warehouseLoading && (
-                                                    <div className="text-[12px] italic text-[#a5acb5] lg:text-gray-400">
+                                                    <div className="text-[12px] italic text-[var(--text-muted)] lg:text-[var(--text-muted)]">
                                                         Введіть та оберіть місто спочатку
                                                     </div>
                                                 )
@@ -673,15 +762,15 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                             {/* Payer and Payment Method Selection */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-bold text-[#a5acb5] lg:text-gray-500 uppercase tracking-wider">Хто оплачує</label>
-                                    <div className="grid grid-cols-2 bg-[#292D32] lg:bg-gray-100 p-1 rounded-xl border border-[#32363b] lg:border-gray-200">
+                                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Хто оплачує</label>
+                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] lg:bg-gray-100 p-1 rounded-xl border border-[var(--border-color)]">
                                         <button
                                             type="button"
                                             onClick={() => setPayerType('Recipient')}
                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                 payerType === 'Recipient' 
-                                                ? 'bg-red-500 text-white shadow-sm' 
-                                                : 'text-[#a5acb5] lg:text-gray-600 hover:text-white lg:hover:text-gray-900 bg-transparent'
+                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                : 'text-[var(--text-muted)] lg:text-gray-600 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
                                             }`}
                                         >
                                             Отримувач
@@ -691,8 +780,8 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                             onClick={() => setPayerType('Sender')}
                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                 payerType === 'Sender' 
-                                                ? 'bg-red-500 text-white shadow-sm' 
-                                                : 'text-[#a5acb5] lg:text-gray-600 hover:text-white lg:hover:text-gray-900 bg-transparent'
+                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                : 'text-[var(--text-muted)] lg:text-gray-600 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
                                             }`}
                                         >
                                             Відправник
@@ -701,15 +790,15 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-bold text-[#a5acb5] lg:text-gray-500 uppercase tracking-wider">Форма оплати</label>
-                                    <div className="grid grid-cols-2 bg-[#292D32] lg:bg-gray-100 p-1 rounded-xl border border-[#32363b] lg:border-gray-200">
+                                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Форма оплати</label>
+                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] lg:bg-gray-100 p-1 rounded-xl border border-[var(--border-color)]">
                                         <button
                                             type="button"
                                             onClick={() => setPaymentMethod('Cash')}
                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                 paymentMethod === 'Cash' 
-                                                ? 'bg-red-500 text-white shadow-sm' 
-                                                : 'text-[#a5acb5] lg:text-gray-600 hover:text-white lg:hover:text-gray-900 bg-transparent'
+                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                : 'text-[var(--text-muted)] lg:text-gray-600 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
                                             }`}
                                         >
                                             Готівка
@@ -719,8 +808,8 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                             onClick={() => setPaymentMethod('NonCash')}
                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                 paymentMethod === 'NonCash' 
-                                                ? 'bg-red-500 text-white shadow-sm' 
-                                                : 'text-[#a5acb5] lg:text-gray-600 hover:text-white lg:hover:text-gray-900 bg-transparent'
+                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                : 'text-[var(--text-muted)] lg:text-gray-600 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
                                             }`}
                                         >
                                             Безготівка
@@ -731,13 +820,13 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
 
                             {/* Comment / Note input */}
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-xs font-bold text-[#a5acb5] lg:text-gray-500 uppercase tracking-wider">Опис / Примітка (Необов'язково)</label>
+                                <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Опис / Примітка (Необов'язково)</label>
                                 <textarea 
                                     rows={2}
                                     placeholder="Введіть особливу примітку для переадресації..."
                                     value={note}
                                     onChange={(e) => setNote(e.target.value)}
-                                    className="w-full bg-[#292D32] border border-[#32363b] lg:bg-white lg:border-gray-200 text-white lg:text-gray-900 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                                    className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-200 text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 resize-none"
                                 />
                             </div>
 
@@ -752,7 +841,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 type="button"
                                 onClick={handleRedirectionSubmit}
                                 disabled={submitting || !selectedCity || !selectedWarehouse}
-                                className="mt-4 bg-red-500 hover:bg-red-600 disabled:bg-gray-700/50 lg:disabled:bg-gray-150 disabled:text-gray-400 lg:disabled:text-gray-400 text-white font-bold py-4 px-6 rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 select-none"
+                                className="mt-4 bg-red-500 hover:bg-red-600 disabled:bg-gray-700/50 lg:disabled:bg-gray-150 disabled:text-[var(--text-muted)] lg:disabled:text-[var(--text-muted)] text-[#ffffff] font-bold py-4 px-6 rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 select-none"
                             >
                                 {submitting ? (
                                     <>
@@ -774,8 +863,8 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
 
         if (activeTab === 'return') {
             return (
-                <div className="flex flex-col gap-5 p-6 bg-[#1b2b35] text-white lg:bg-white lg:text-gray-900 rounded-2xl h-full overflow-y-auto no-scrollbar">
-                    <div className="flex items-center justify-between border-b pb-4 border-[#32363b] lg:border-gray-100">
+                <div className="flex flex-col gap-5 p-6 bg-[var(--bg-main)] text-[var(--text-main)] lg:bg-white  rounded-2xl h-full overflow-y-auto no-scrollbar">
+                    <div className="flex items-center justify-between border-b pb-4 border-[var(--border-color)] border-[var(--border-color)]">
                         <h4 className="text-base font-bold flex items-center gap-2">
                             <CornerDownLeft className="w-5 h-5 text-red-500" />
                             <span>Замовлення повернення вантажу</span>
@@ -783,7 +872,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                         <button 
                             type="button"
                             onClick={() => setActiveTab('details')}
-                            className="text-xs uppercase bg-[#32363b] hover:bg-[#43484e] lg:bg-gray-100 lg:hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors font-bold text-white lg:text-gray-800"
+                            className="text-xs uppercase bg-[#32363b] hover:bg-[#43484e] lg:bg-gray-100 lg:hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors font-bold text-[var(--text-main)] lg:text-gray-800"
                         >
                             Назад
                         </button>
@@ -799,50 +888,30 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                     setActiveTab('details');
                                     setSuccessMsg(null);
                                 }}
-                                className="mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-5 rounded-xl text-xs uppercase tracking-wider"
+                                className="mt-2 bg-emerald-600 hover:bg-emerald-700 text-[var(--text-main)] font-bold py-2 px-5 rounded-xl text-xs uppercase tracking-wider"
                             >
                                 Повернутись до деталей
                             </button>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-4">
-                            <div className="bg-[#292D32] border border-[#32363b] lg:bg-red-50/50 lg:border-red-100/30 p-4.5 rounded-2xl text-[13px] leading-relaxed text-[#a5acb5] lg:text-gray-700">
-                                <span className="font-bold text-white lg:text-gray-900 block mb-1.5">✓ Зворотня доставка</span>
-                                Ви збираєтесь замовити послугу <strong className="text-red-400 lg:text-red-500 font-bold">"Повернення посилки"</strong>. Відправлений вантаж буде направлено назад від отримувача до початкового відправника (<strong className="text-white lg:text-gray-900 font-bold">{parcel.sender}</strong>) на його первинне відділення відправки.
+                            <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-red-50/50 lg:border-red-100/30 p-4.5 rounded-2xl text-[13px] leading-relaxed text-[var(--text-muted)] lg:text-gray-700">
+                                <span className="font-bold text-[var(--text-main)] block mb-1.5">✓ Зворотня доставка</span>
+                                Ви збираєтесь замовити послугу <strong className="text-red-400 lg:text-red-500 font-bold">"Повернення посилки"</strong>. Відправлений вантаж буде направлено назад від отримувача до початкового відправника (<strong className="text-[var(--text-main)] font-bold">{parcel.sender}</strong>) на його первинне відділення відправки.
                             </div>
-
-                            {/* Cabinet selection */}
-                            {accounts.length > 1 && (
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-bold text-[#a5acb5] lg:text-gray-500 uppercase tracking-wider">Оберіть кабінет</label>
-                                    <select 
-                                        value={selectedAccount?.id || ''}
-                                        onChange={(e) => {
-                                            const key = e.target.value;
-                                            const match = accounts.find(a => a.id === key);
-                                            if (match) setSelectedAccount(match);
-                                        }}
-                                        className="bg-[#292D32] border border-[#32363b] lg:bg-white lg:border-gray-200 text-white lg:text-gray-900 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500"
-                                    >
-                                        {accounts.map(acc => (
-                                            <option key={acc.id} value={acc.id}>{acc.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
 
                             {/* Payer and Payment Method Selection */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-bold text-[#a5acb5] lg:text-gray-500 uppercase tracking-wider">Хто оплачує повернення</label>
-                                    <div className="grid grid-cols-2 bg-[#292D32] lg:bg-gray-100 p-1 rounded-xl border border-[#32363b] lg:border-gray-200">
+                                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Хто оплачує повернення</label>
+                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] lg:bg-gray-100 p-1 rounded-xl border border-[var(--border-color)]">
                                         <button
                                             type="button"
                                             onClick={() => setPayerType('Recipient')}
                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                 payerType === 'Recipient' 
-                                                ? 'bg-red-500 text-white shadow-sm' 
-                                                : 'text-[#a5acb5] lg:text-gray-600 hover:text-white lg:hover:text-gray-900 bg-transparent'
+                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                : 'text-[var(--text-muted)] lg:text-gray-600 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
                                             }`}
                                         >
                                             Отримувач
@@ -852,8 +921,8 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                             onClick={() => setPayerType('Sender')}
                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                 payerType === 'Sender' 
-                                                ? 'bg-red-500 text-white shadow-sm' 
-                                                : 'text-[#a5acb5] lg:text-gray-650 hover:text-white lg:hover:text-gray-900 bg-transparent'
+                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
                                             }`}
                                         >
                                             Відправник
@@ -862,15 +931,15 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-bold text-[#a5acb5] lg:text-gray-500 uppercase tracking-wider">Форма оплати</label>
-                                    <div className="grid grid-cols-2 bg-[#292D32] lg:bg-gray-100 p-1 rounded-xl border border-[#32363b] lg:border-gray-200">
+                                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Форма оплати</label>
+                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] lg:bg-gray-100 p-1 rounded-xl border border-[var(--border-color)]">
                                         <button
                                             type="button"
                                             onClick={() => setPaymentMethod('Cash')}
                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                 paymentMethod === 'Cash' 
-                                                ? 'bg-red-500 text-white shadow-sm' 
-                                                : 'text-[#a5acb5] lg:text-gray-650 hover:text-white lg:hover:text-gray-900 bg-transparent'
+                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
                                             }`}
                                         >
                                             Готівка
@@ -880,8 +949,8 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                             onClick={() => setPaymentMethod('NonCash')}
                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                 paymentMethod === 'NonCash' 
-                                                ? 'bg-red-500 text-white shadow-sm' 
-                                                : 'text-[#a5acb5] lg:text-gray-650 hover:text-white lg:hover:text-gray-900 bg-transparent'
+                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
                                             }`}
                                         >
                                             Безготівка
@@ -892,13 +961,13 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
 
                             {/* Comment / Note input */}
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-xs font-bold text-[#a5acb5] lg:text-gray-500 uppercase tracking-wider">Причина або примітка (Необов'язково)</label>
+                                <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Причина або примітка (Необов'язково)</label>
                                 <textarea 
                                     rows={2.5}
                                     placeholder="Вкажіть примітку або причину повернення..."
                                     value={note}
                                     onChange={(e) => setNote(e.target.value)}
-                                    className="w-full bg-[#292D32] border border-[#32363b] lg:bg-white lg:border-gray-200 text-white lg:text-gray-900 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                                    className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-200 text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 resize-none"
                                 />
                             </div>
 
@@ -913,7 +982,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 type="button"
                                 onClick={handleReturnSubmit}
                                 disabled={submitting}
-                                className="mt-4 bg-red-500 hover:bg-red-600 disabled:bg-gray-700/50 lg:disabled:bg-gray-150 disabled:text-gray-400 lg:disabled:text-gray-400 text-white font-bold py-4 px-6 rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 select-none"
+                                className="mt-4 bg-red-500 hover:bg-red-600 disabled:bg-gray-700/50 lg:disabled:bg-gray-150 disabled:text-[var(--text-muted)] lg:disabled:text-[var(--text-muted)] text-[#ffffff] font-bold py-4 px-6 rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 select-none"
                             >
                                 {submitting ? (
                                     <>
@@ -935,8 +1004,8 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
 
         if (activeTab === 'change_data') {
             return (
-                <div className="flex flex-col gap-5 p-6 bg-[#1b2b35] text-white lg:bg-white lg:text-gray-900 rounded-2xl h-full overflow-y-auto no-scrollbar">
-                    <div className="flex items-center justify-between border-b pb-4 border-[#32363b] lg:border-gray-100">
+                <div className="flex flex-col gap-5 p-6 bg-[var(--bg-main)] text-[var(--text-main)] lg:bg-white  rounded-2xl h-full overflow-y-auto no-scrollbar">
+                    <div className="flex items-center justify-between border-b pb-4 border-[var(--border-color)] border-[var(--border-color)]">
                         <h4 className="text-base font-bold flex items-center gap-2">
                             <CheckCircle className="w-5 h-5 text-red-500" />
                             <span>Зміна даних відправлення</span>
@@ -948,7 +1017,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 setErrorMsg(null);
                                 setActiveTab('details');
                             }}
-                            className="text-xs uppercase bg-[#32363b] hover:bg-[#43484e] lg:bg-gray-100 lg:hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors font-bold text-white lg:text-gray-800"
+                            className="text-xs uppercase bg-[#32363b] hover:bg-[#43484e] lg:bg-gray-100 lg:hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors font-bold text-[var(--text-main)] lg:text-gray-800"
                         >
                             Назад
                         </button>
@@ -964,15 +1033,15 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                     setActiveTab('details');
                                     setSuccessMsg(null);
                                 }}
-                                className="mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-5 rounded-xl text-xs uppercase tracking-wider"
+                                className="mt-2 bg-emerald-600 hover:bg-emerald-700 text-[var(--text-main)] font-bold py-2 px-5 rounded-xl text-xs uppercase tracking-wider"
                             >
                                 Повернутись до деталей
                             </button>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-4">
-                            <div className="bg-[#292D32] border border-[#32363b] lg:bg-red-50/50 lg:border-red-100/30 p-4.5 rounded-2xl text-[13px] leading-relaxed text-[#a5acb5] lg:text-gray-700">
-                                <span className="font-bold text-white lg:text-gray-900 block mb-1.5">✓ Заява про зміну даних ЕН</span>
+                            <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-red-50/50 lg:border-red-100/30 p-4.5 rounded-2xl text-[13px] leading-relaxed text-[var(--text-muted)] lg:text-gray-700">
+                                <span className="font-bold text-[var(--text-main)] block mb-1.5">✓ Заява про зміну даних ЕН</span>
                                 {parcel.accountId === 'manual' ? (
                                     <span>Ви редагуєте дані вручну доданої ТТН локально. Ви можете змінити номер телефону отримувача, щоб система змогла завантажувати статус посилки в кабінеті.</span>
                                 ) : (
@@ -980,49 +1049,29 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 )}
                             </div>
 
-                            {/* Cabinet selection */}
-                            {parcel.accountId !== 'manual' && accounts.length > 1 && (
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-bold text-[#a5acb5] lg:text-gray-500 uppercase tracking-wider">Оберіть кабінет</label>
-                                    <select 
-                                        value={selectedAccount?.id || ''}
-                                        onChange={(e) => {
-                                            const key = e.target.value;
-                                            const match = accounts.find(a => a.id === key);
-                                            if (match) setSelectedAccount(match);
-                                        }}
-                                        className="bg-[#292D32] border border-[#32363b] lg:bg-white lg:border-gray-200 text-white lg:text-gray-900 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500"
-                                    >
-                                        {accounts.map(acc => (
-                                            <option key={acc.id} value={acc.id}>{acc.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-
                             {/* Recipient Contact Name Field */}
                             {parcel.accountId !== 'manual' && (
                                 <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-bold text-[#a5acb5] lg:text-gray-500 uppercase tracking-wider">ПІБ Отримувача</label>
+                                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">ПІБ Отримувача</label>
                                     <input 
                                         type="text"
                                         placeholder="Прізвище Ім'я По батькові отримувача..."
                                         value={editRecipientName}
                                         onChange={(e) => setEditRecipientName(e.target.value)}
-                                        className="w-full bg-[#292D32] border border-[#32363b] lg:bg-white lg:border-gray-200 text-white lg:text-gray-900 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500"
+                                        className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-200 text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500"
                                     />
                                 </div>
                             )}
 
                             {/* Recipient Phone Field */}
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-xs font-bold text-[#a5acb5] lg:text-gray-500 uppercase tracking-wider">Телефон Отримувача</label>
+                                <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Телефон Отримувача</label>
                                 <input 
                                     type="tel"
                                     placeholder="380991234567"
                                     value={editRecipientPhone}
                                     onChange={(e) => setEditRecipientPhone(e.target.value)}
-                                    className="w-full bg-[#292D32] border border-[#32363b] lg:bg-white lg:border-gray-200 text-white lg:text-gray-900 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 font-mono"
+                                    className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-200 text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 font-mono"
                                 />
                             </div>
 
@@ -1030,15 +1079,15 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                             {parcel.accountId !== 'manual' && (
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="flex flex-col gap-1.5">
-                                        <label className="text-xs font-bold text-[#a5acb5] lg:text-gray-500 uppercase tracking-wider">Хто оплачує доставку</label>
-                                        <div className="grid grid-cols-2 bg-[#292D32] lg:bg-gray-100 p-1 rounded-xl border border-[#32363b] lg:border-gray-200">
+                                        <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Хто оплачує доставку</label>
+                                        <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] lg:bg-gray-100 p-1 rounded-xl border border-[var(--border-color)]">
                                             <button
                                                 type="button"
                                                 onClick={() => setPayerType('Recipient')}
                                                 className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                     payerType === 'Recipient' 
-                                                    ? 'bg-red-500 text-white shadow-sm' 
-                                                    : 'text-[#a5acb5] lg:text-gray-650 hover:text-white lg:hover:text-gray-900 bg-transparent'
+                                                    ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                    : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
                                                 }`}
                                             >
                                                 Отримувач
@@ -1048,8 +1097,8 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                 onClick={() => setPayerType('Sender')}
                                                 className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                     payerType === 'Sender' 
-                                                    ? 'bg-red-500 text-white shadow-sm' 
-                                                    : 'text-[#a5acb5] lg:text-gray-650 hover:text-white lg:hover:text-gray-900 bg-transparent'
+                                                    ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                    : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
                                                 }`}
                                             >
                                                 Відправник
@@ -1058,15 +1107,15 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                     </div>
 
                                     <div className="flex flex-col gap-1.5">
-                                        <label className="text-xs font-bold text-[#a5acb5] lg:text-gray-500 uppercase tracking-wider">Форма оплати</label>
-                                        <div className="grid grid-cols-2 bg-[#292D32] lg:bg-gray-100 p-1 rounded-xl border border-[#32363b] lg:border-gray-200">
+                                        <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Форма оплати</label>
+                                        <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] lg:bg-gray-100 p-1 rounded-xl border border-[var(--border-color)]">
                                             <button
                                                 type="button"
                                                 onClick={() => setPaymentMethod('Cash')}
                                                 className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                     paymentMethod === 'Cash' 
-                                                    ? 'bg-red-500 text-white shadow-sm' 
-                                                    : 'text-[#a5acb5] lg:text-gray-650 hover:text-white lg:hover:text-gray-900 bg-transparent'
+                                                    ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                    : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
                                                 }`}
                                             >
                                                 Готівка
@@ -1076,14 +1125,115 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                 onClick={() => setPaymentMethod('NonCash')}
                                                 className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                     paymentMethod === 'NonCash' 
-                                                    ? 'bg-red-500 text-white shadow-sm' 
-                                                    : 'text-[#a5acb5] lg:text-gray-650 hover:text-white lg:hover:text-gray-900 bg-transparent'
+                                                    ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                    : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
                                                 }`}
                                             >
                                                 Безготівка
                                             </button>
                                         </div>
                                     </div>
+                                </div>
+                            )}
+
+                            {/* Backward Delivery (Afterpayment / Payment Control) */}
+                            {parcel.accountId !== 'manual' && (
+                                <div className="border border-[var(--border-color)]/80 rounded-2xl p-4 flex flex-col gap-4 bg-[var(--bg-card-alt)]/40 lg:bg-gray-50/60 shadow-inner">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-2">
+                                            <CreditCard className="w-4 h-4 text-red-500" />
+                                            <span>Зворотна доставка (Післяплата)</span>
+                                        </span>
+                                        <label className="relative inline-flex items-center cursor-pointer select-none">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={hasAfterpayment}
+                                                onChange={(e) => setHasAfterpayment(e.target.checked)}
+                                                className="sr-only peer"
+                                            />
+                                            <div className="w-11 h-6 bg-[#32363b] lg:bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                                        </label>
+                                    </div>
+
+                                    {hasAfterpayment && (
+                                        <div className="flex flex-col gap-4 border-t border-[var(--border-color)]/80 pt-4 animate-in fade-in duration-200">
+                                            {/* Afterpayment Type */}
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Тип послуги</label>
+                                                <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] lg:bg-gray-100 p-1 rounded-xl border border-[var(--border-color)]">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setAfterpaymentType('Money')}
+                                                        className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                                                            afterpaymentType === 'Money' 
+                                                            ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                            : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                        }`}
+                                                    >
+                                                        Післяплата
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setAfterpaymentType('PaymentControl')}
+                                                        className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                                                            afterpaymentType === 'PaymentControl' 
+                                                            ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                            : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                        }`}
+                                                    >
+                                                        Контроль оплати
+                                                    </button>
+                                                </div>
+                                                {afterpaymentType === 'PaymentControl' && (
+                                                    <div className="text-[10px] leading-tight text-amber-500 font-medium bg-amber-500/10 p-2 rounded-lg border border-amber-500/20 mt-1">
+                                                        * Послуга "Контроль оплати" доступна лише для бізнес-кабінетів з активованим NovaPay.
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Afterpayment Sum & Payer */}
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="flex flex-col gap-1.5">
+                                                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Сума (грн)</label>
+                                                    <input 
+                                                        type="number"
+                                                        placeholder="Сума..."
+                                                        value={afterpaymentSum}
+                                                        onChange={(e) => setAfterpaymentSum(e.target.value)}
+                                                        className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-250 text-[var(--text-main)] rounded-xl px-4 py-2 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500"
+                                                    />
+                                                </div>
+
+                                                <div className="flex flex-col gap-1.5">
+                                                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Платник комісії післяплати</label>
+                                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] lg:bg-gray-100 p-1 rounded-xl border border-[var(--border-color)]">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setAfterpaymentPayer('Recipient')}
+                                                            className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                                                                afterpaymentPayer === 'Recipient' 
+                                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                                : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                            }`}
+                                                        >
+                                                            Отримувач
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setAfterpaymentPayer('Sender')}
+                                                            className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                                                                afterpaymentPayer === 'Sender' 
+                                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                                : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                            }`}
+                                                        >
+                                                            Відправник
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -1098,7 +1248,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 type="button"
                                 onClick={handleChangeDataSubmit}
                                 disabled={submitting}
-                                className="mt-4 bg-red-500 hover:bg-red-600 disabled:bg-gray-700/50 lg:disabled:bg-gray-150 disabled:text-gray-400 lg:disabled:text-gray-400 text-white font-bold py-4 px-6 rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 select-none"
+                                className="mt-4 bg-red-500 hover:bg-red-600 disabled:bg-gray-700/50 lg:disabled:bg-gray-150 disabled:text-[var(--text-muted)] lg:disabled:text-[var(--text-muted)] text-[#ffffff] font-bold py-4 px-6 rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 select-none"
                             >
                                 {submitting ? (
                                     <>
@@ -1128,39 +1278,6 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
         return parcel.rawStatus?.PayerType || 'Не визначено';
     };
 
-    const getBackwardDeliveryInfo = () => {
-        const cleanVal = (val: any) => {
-            if (!val) return 0;
-            if (typeof val === 'number') return val;
-            if (typeof val === 'string') {
-                const cleaned = val.replace(',', '.').replace(/[^\d.]/g, '');
-                return parseFloat(cleaned) || 0;
-            }
-            return 0;
-        };
-
-        const sum = cleanVal(parcel.rawStatus?.BackwardDeliveryMoney) || 
-                    cleanVal(parcel.rawStatus?.BackwardDeliverySum) || 
-                    cleanVal(parcel.rawStatus?.RedeliverySum) ||
-                    cleanVal(parcel.rawStatus?.AfterpaymentOnGoodsCost) ||
-                    cleanVal(parcel.rawDoc?.BackwardDeliverySum) ||
-                    0;
-
-        if (sum <= 0) return null;
-
-        const isControl = 
-            JSON.stringify(parcel.rawStatus).toLowerCase().includes('контроль') || 
-            JSON.stringify(parcel.rawDoc).toLowerCase().includes('контроль') ||
-            (parcel.rawStatus?.ServiceType || '').toLowerCase().includes('control') ||
-            (parcel.rawDoc?.ServiceType || '').toLowerCase().includes('control');
-            
-        return {
-            amount: sum,
-            label: isControl ? 'Контроль оплати' : 'Післяплата',
-            isControl
-        };
-    };
-
     const formatServiceType = (type?: string) => {
         if (!type) return 'Стандарт';
         const typeMap: Record<string, string> = {
@@ -1177,39 +1294,36 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
         return typeMap[type] || type;
     };
 
-    const backwardInfo = getBackwardDeliveryInfo();
+    const backwardInfo = getBackwardDeliveryInfo(parcel);
 
     return (
         <div 
-           className="fixed inset-0 bg-black/40 lg:bg-black/60 lg:backdrop-blur-sm z-50 flex items-end landscape:items-center lg:items-center justify-center p-0 lg:p-6"
+           className="fixed inset-0 bg-[#0c0d10]/95 backdrop-blur-md z-50 flex items-center justify-center p-0 sm:p-2 overflow-hidden sm:overflow-y-auto no-scrollbar"
            onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             {/* Mobile View */}
-            <div className="lg:hidden bg-[#1b2b35] w-full max-w-[400px] landscape:max-w-[640px] h-[85dvh] landscape:h-[92dvh] sm:h-[600px] rounded-t-[2.5rem] landscape:rounded-[1.5rem] sm:rounded-3xl shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-300 ring-1 ring-gray-800">
-                <div className="flex justify-center pt-3 pb-1 shrink-0 landscape:hidden">
-                   <div className="w-12 h-1.5 bg-[#32363b] rounded-full"></div>
-                </div>
-                <div className="px-6 py-4 landscape:py-3.5 border-b border-[#32363b] flex items-center justify-between shrink-0 bg-[#1b2b35]">
+            <div className="lg:hidden bg-[var(--bg-main)] w-full max-w-lg h-[100dvh] sm:h-[880px] rounded-none sm:rounded-[32px] shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-300 border border-[var(--border-color)] relative font-sans overflow-hidden">
+                <div className="px-6 py-4 landscape:py-3.5 border-b border-[var(--border-color)] flex items-center justify-between shrink-0 bg-[var(--bg-main)]">
                     <div className="flex items-center gap-3">
                         <div className="bg-[#e33745] p-2 rounded-xl shadow-md shadow-red-900/20">
-                            <Box className="w-5 h-5 text-white stroke-[2]" />
+                            <Box className="w-5 h-5 text-[var(--text-main)] stroke-[2]" />
                         </div>
                         <div>
-                            <div className="font-mono font-bold text-lg text-white tracking-tight">{parcel.ttn}</div>
-                            <div className="text-[10px] uppercase text-[#a5acb5] font-bold tracking-wider">{parcel.accountName}</div>
+                            <div className="font-mono font-bold text-lg text-[var(--text-main)] tracking-tight">{parcel.ttn}</div>
+                            <div className="text-[10px] uppercase text-[var(--text-muted)] font-bold tracking-wider">{parcel.accountName}</div>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 -mr-2 text-[#a5acb5] hover:text-white rounded-full transition-colors bg-[#292D32]">
+                    <button onClick={onClose} className="p-2 -mr-2 text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-full transition-colors bg-[var(--bg-card-alt)]">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
                 
                 {activeTab !== 'details' ? (
-                    <div className="flex-1 overflow-auto bg-[#1b2b35]">
+                    <div className="flex-1 overflow-auto bg-[var(--bg-main)]">
                         {renderActiveForm()}
                     </div>
                 ) : (
-                    <div className="flex-1 overflow-auto p-6 landscape:p-5 pb-28 landscape:pb-8 flex flex-col landscape:grid landscape:grid-cols-2 gap-6 landscape:gap-5 text-sm bg-[#1b2b35] no-scrollbar">
+                    <div className="flex-1 overflow-auto p-6 landscape:p-5 pb-28 landscape:pb-8 flex flex-col landscape:grid landscape:grid-cols-2 gap-6 landscape:gap-5 text-sm bg-[var(--bg-main)] no-scrollbar">
                         {/* Error & Success Messages */}
                         {(errorMsg || successMsg) && (
                             <div className="col-span-full">
@@ -1230,23 +1344,23 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                     <div className="flex flex-col gap-6 landscape:gap-4_5">
                         {/* Status Section */}
                         <div>
-                            <div className="bg-[#292D32] p-5 landscape:p-4 rounded-2xl border border-[#32363b] shadow-sm">
-                                <div className="font-bold text-lg text-white mb-2 leading-tight">{parcel.status}</div>
-                                <div className="flex gap-4 text-xs text-[#a5acb5] pt-3 border-t border-[#32363b]">
-                                    <div><span className="font-medium text-gray-400">Створено:</span> <br/>{parcel.dateCreated || '-'}</div>
-                                    <div><span className="font-medium text-gray-400">Тип:</span> <br/>{formatServiceType(parcel.rawStatus?.ServiceType || parcel.rawDoc?.ServiceType)}</div>
+                            <div className="bg-[var(--bg-card-alt)] p-5 landscape:p-4 rounded-2xl border border-[var(--border-color)] shadow-sm">
+                                <div className="font-bold text-lg text-[var(--text-main)] mb-2 leading-tight">{parcel.status}</div>
+                                <div className="flex gap-4 text-xs text-[var(--text-muted)] pt-3 border-t border-[var(--border-color)]">
+                                    <div><span className="font-medium text-[var(--text-muted)]">Створено:</span> <br/>{parcel.dateCreated || '-'}</div>
+                                    <div><span className="font-medium text-[var(--text-muted)]">Тип:</span> <br/>{formatServiceType(parcel.rawStatus?.ServiceType || parcel.rawDoc?.ServiceType)}</div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Route Checkpoint Box */}
-                        <div className="bg-[#292D32] border border-[#32363b] rounded-2xl p-5 shadow-sm">
+                        <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-2xl p-5 shadow-sm">
                             <div className="flex justify-between items-center mb-4">
-                                <span className="font-bold text-base text-white">Маршрут</span>
+                                <span className="font-bold text-base text-[var(--text-main)]">Маршрут</span>
                                 <button 
                                     type="button"
                                     onClick={() => setShowFullRoute(true)}
-                                    className="text-xs font-semibold text-gray-400 hover:text-white flex items-center gap-1 transition-colors uppercase tracking-wider bg-[#32363b] px-3 py-1.5 rounded-lg border border-[#444950]"
+                                    className="text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] flex items-center gap-1 transition-colors uppercase tracking-wider bg-[#32363b] px-3 py-1.5 rounded-lg border border-[#444950]"
                                 >
                                     Повністю <span className="text-[#1bc285] font-bold">&gt;</span>
                                 </button>
@@ -1255,37 +1369,37 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 <div className="flex items-start gap-4">
                                     <div className="flex flex-col items-center shrink-0 pt-1">
                                         <div className="w-5 h-5 bg-[#1bc285] rounded-full flex items-center justify-center border-4 border-[#292D32]">
-                                            <div className="w-1.5 h-1.5 bg-[#292D32] rounded-full"></div>
+                                            <div className="w-1.5 h-1.5 bg-[var(--bg-card-alt)] rounded-full"></div>
                                         </div>
                                         <div className="w-[2px] h-6 bg-[#32363b]"></div>
                                     </div>
                                     <div className="flex-1">
-                                        <div className="font-semibold text-white leading-tight text-[15px] mb-1">
+                                        <div className="font-semibold text-[var(--text-main)] leading-tight text-[15px] mb-1">
                                             {routePoints.checkpoints[0].status}
                                         </div>
-                                        <div className="text-xs text-[#a5acb5]">
+                                        <div className="text-xs text-[var(--text-muted)]">
                                             {routePoints.checkpoints[0].location} · {routePoints.checkpoints[0].timestamp}
                                         </div>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="text-xs text-[#a5acb5] italic">Дані про пересування поки відсутні</div>
+                                <div className="text-xs text-[var(--text-muted)] italic">Дані про пересування поки відсутні</div>
                             )}
                         </div>
 
                         {parcel.basisChain && parcel.basisChain.length > 0 && (
-                            <div className="bg-[#292D32] p-5 rounded-2xl border border-yellow-500/30 shadow-md">
+                            <div className="bg-[var(--bg-card-alt)] p-5 rounded-2xl border border-yellow-500/30 shadow-md">
                                 <div className="text-[10px] font-bold uppercase tracking-widest text-[#febb14] mb-3 flex items-center gap-1.5">
                                     <span>Послідовність переадресацій / повернень</span>
                                 </div>
                                 
                                 <div className="flex flex-col gap-3">
                                     {parcel.basisChain.map((step: any, i: number) => (
-                                        <div key={step.ttn} className="flex flex-col gap-1.5 p-3 bg-[#1b2b35] rounded-xl border border-[#32363b] relative">
+                                        <div key={step.ttn} className="flex flex-col gap-1.5 p-3 bg-[var(--bg-main)] rounded-xl border border-[var(--border-color)] relative">
                                             {i < parcel.basisChain!.length - 1 && (
                                                 <div className="absolute -bottom-3 left-6 w-0.5 h-3 bg-[#32363b] z-0"></div>
                                             )}
-                                            <div className="font-bold text-sm text-white leading-tight">
+                                            <div className="font-bold text-sm text-[var(--text-main)] leading-tight">
                                                 {step.status || 'Оформлюється'}
                                             </div>
                                             <div className="flex items-center justify-between">
@@ -1299,7 +1413,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                         setCopied(true);
                                                         setTimeout(() => setCopied(false), 2000);
                                                     }}
-                                                    className="text-[#a5acb5] hover:text-white text-[10px] px-2 py-0.5 bg-[#292D32] rounded border border-[#32363b] transition-colors"
+                                                    className="text-[var(--text-muted)] hover:text-[var(--text-main)] text-[10px] px-2 py-0.5 bg-[var(--bg-card-alt)] rounded border border-[var(--border-color)] transition-colors"
                                                 >
                                                     {copied ? 'Скопійовано!' : 'Копіювати'}
                                                 </button>
@@ -1308,18 +1422,18 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                     ))}
                                 </div>
 
-                                <div className="space-y-3 text-xs text-[#a5acb5] pt-4 mt-1 border-t border-[#32363b]">
+                                <div className="space-y-3 text-xs text-[var(--text-muted)] pt-4 mt-1 border-t border-[var(--border-color)]">
                                     {(() => {
                                         const latestBasis = parcel.basisChain[parcel.basisChain.length - 1];
                                         return (
                                             <>
-                                                <div className="flex justify-between items-center bg-[#1b2b35]/40 p-2.5 rounded-xl border border-[#32363b]/60">
+                                                <div className="flex justify-between items-center bg-[var(--bg-main)]/40 p-2.5 rounded-xl border border-[var(--border-color)]/60">
                                                     <span>Поточне місце:</span>
-                                                    <span className="font-medium text-white text-right break-words max-w-[60%]">
+                                                    <span className="font-medium text-[var(--text-main)] text-right break-words max-w-[60%]">
                                                         {latestBasis.cityName || 'В дорозі'}
                                                     </span>
                                                 </div>
-                                                <div className="flex justify-between items-center bg-[#1b2b35]/40 p-2.5 rounded-xl border border-[#32363b]/60">
+                                                <div className="flex justify-between items-center bg-[var(--bg-main)]/40 p-2.5 rounded-xl border border-[var(--border-color)]/60">
                                                     <span>Очікувана дата:</span>
                                                     <span className="font-bold text-red-400 text-right">
                                                         {latestBasis.estimatedDeliveryDate || latestBasis.rawStatus?.ScheduledDeliveryDate || '-'}
@@ -1339,28 +1453,28 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                         <div className="grid grid-cols-1 gap-3 relative">
                             <div className="absolute left-[31px] top-10 bottom-10 w-[2px] bg-[#32363b] z-0"></div>
                             
-                            <div className="bg-[#292D32] border border-[#32363b] rounded-2xl p-4 landscape:p-3 shadow-sm relative z-10">
-                                <div className="flex items-center gap-2 mb-2 text-[#a5acb5]">
-                                    <div className="bg-[#1b2b35] p-1.5 rounded-lg border border-[#32363b]">
+                            <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-2xl p-4 landscape:p-3 shadow-sm relative z-10">
+                                <div className="flex items-center gap-2 mb-2 text-[var(--text-muted)]">
+                                    <div className="bg-[var(--bg-main)] p-1.5 rounded-lg border border-[var(--border-color)]">
                                         <User className="w-4 h-4 text-blue-400" />
                                     </div>
                                     <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">Відправник</span>
                                 </div>
-                                <div className="font-medium text-white mb-1.5 text-[15px] pl-10">{parcel.sender}</div>
-                                <div className="text-xs text-[#a5acb5] flex items-start gap-1.5 pl-10">
+                                <div className="font-medium text-[var(--text-main)] mb-1.5 text-[15px] pl-10">{parcel.sender}</div>
+                                <div className="text-xs text-[var(--text-muted)] flex items-start gap-1.5 pl-10">
                                     <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                                     <span>{parcel.rawStatus?.CitySender || parcel.rawDoc?.CitySenderDescription || 'Місто невідоме'}</span>
                                 </div>
                             </div>
 
-                            <div className="bg-[#292D32] border border-[#32363b] rounded-2xl p-4 landscape:p-3 shadow-sm relative z-10">
-                                <div className="flex items-center gap-2 mb-2 text-[#a5acb5]">
-                                    <div className="bg-[#1b2b35] p-1.5 rounded-lg border border-[#32363b]">
+                            <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-2xl p-4 landscape:p-3 shadow-sm relative z-10">
+                                <div className="flex items-center gap-2 mb-2 text-[var(--text-muted)]">
+                                    <div className="bg-[var(--bg-main)] p-1.5 rounded-lg border border-[var(--border-color)]">
                                         <UserCheck className="w-4 h-4 text-green-400" />
                                     </div>
                                     <span className="text-[10px] font-bold uppercase tracking-wider text-green-400">Одержувач</span>
                                 </div>
-                                <div className="font-medium text-white mb-1.5 text-[15px] pl-10">{parcel.recipient}</div>
+                                <div className="font-medium text-[var(--text-main)] mb-1.5 text-[15px] pl-10">{parcel.recipient}</div>
                                 {(() => {
                                     const phoneNum = parcel.rawStatus?.PhoneRecipient || parcel.rawDoc?.PhoneRecipient;
                                     if (!phoneNum) return null;
@@ -1368,7 +1482,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                     return (
                                         <a 
                                             href={`tel:${displayPhone}`}
-                                            className="text-[#a5acb5] hover:text-white flex items-center gap-1.5 text-xs pl-10 mb-1.5 transition-colors"
+                                            className="text-[var(--text-muted)] hover:text-[var(--text-main)] flex items-center gap-1.5 text-xs pl-10 mb-1.5 transition-colors"
                                             onClick={(e) => e.stopPropagation()}
                                         >
                                             <Phone className="w-3.5 h-3.5 mt-0.5 shrink-0" />
@@ -1376,7 +1490,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                         </a>
                                     );
                                 })()}
-                                <div className="text-xs text-[#a5acb5] flex items-start gap-1.5 pl-10">
+                                <div className="text-xs text-[var(--text-muted)] flex items-start gap-1.5 pl-10">
                                     <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                                     <span>{parcel.cityName}</span>
                                 </div>
@@ -1387,29 +1501,29 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                     {/* Right Column in Landscape: Meta stats & Description */}
                     <div className="flex flex-col gap-6 landscape:gap-4_5">
                         {/* Meta */}
-                        <div className="bg-[#292D32] border border-[#32363b] rounded-2xl shadow-sm divide-y divide-[#32363b]">
+                        <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-2xl shadow-sm divide-y divide-[#32363b]">
                             <div className="grid grid-cols-2 p-4 landscape:p-3 text-[13px]">
-                                <div className="text-[#a5acb5] flex items-center gap-2"><Scale className="w-4 h-4"/> Вага</div>
-                                <div className="font-medium text-right text-white">{parcel.weight} кг {parcel.rawStatus?.VolumeWeight ? `(${parcel.rawStatus.VolumeWeight} об'єм)` : ''}</div>
+                                <div className="text-[var(--text-muted)] flex items-center gap-2"><Scale className="w-4 h-4"/> Вага</div>
+                                <div className="font-medium text-right text-[var(--text-main)]">{parcel.weight} кг {parcel.rawStatus?.VolumeWeight ? `(${parcel.rawStatus.VolumeWeight} об'єм)` : ''}</div>
                             </div>
                             <div className="grid grid-cols-2 p-4 landscape:p-3 text-[13px]">
-                                <div className="text-[#a5acb5] flex items-center gap-2"><CreditCard className="w-4 h-4"/> Оплачує</div>
-                                <div className="font-medium text-right text-white">{parsePayer()}</div>
+                                <div className="text-[var(--text-muted)] flex items-center gap-2"><CreditCard className="w-4 h-4"/> Оплачує</div>
+                                <div className="font-medium text-right text-[var(--text-main)]">{parsePayer()}</div>
                             </div>
                             <div className="grid grid-cols-2 p-4 landscape:p-3 text-[13px]">
-                                <div className="text-[#a5acb5] flex items-center gap-2">Доставка</div>
-                                <div className="font-medium text-right font-mono text-[15px] text-white">{parcel.cost} ₴</div>
+                                <div className="text-[var(--text-muted)] flex items-center gap-2">Доставка</div>
+                                <div className="font-medium text-right font-mono text-[15px] text-[var(--text-main)]">{parcel.cost} ₴</div>
                             </div>
                             {parcel.announcedPrice && parseFloat(parcel.announcedPrice) > 0 && (
                                 <div className="grid grid-cols-2 p-4 landscape:p-3 text-[13px]">
-                                    <div className="text-[#a5acb5] flex items-center gap-2">Оголошена вартість</div>
-                                    <div className="font-medium text-right font-mono text-[15px] text-white">{parcel.announcedPrice} ₴</div>
+                                    <div className="text-[var(--text-muted)] flex items-center gap-2">Оголошена вартість</div>
+                                    <div className="font-medium text-right font-mono text-[15px] text-[var(--text-main)]">{parcel.announcedPrice} ₴</div>
                                 </div>
                             )}
                             {backwardInfo && (
                                 <>
                                     <div className="grid grid-cols-2 p-4 landscape:p-3 text-[13px]">
-                                        <div className="text-[#a5acb5] flex items-center gap-2">
+                                        <div className="text-[var(--text-muted)] flex items-center gap-2">
                                             <CreditCard className="w-4 h-4 text-emerald-400"/> {backwardInfo.label}
                                         </div>
                                         <div className="font-bold text-right text-emerald-400 font-mono text-[15px]">
@@ -1418,7 +1532,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                     </div>
                                     {!backwardInfo.isControl && (
                                         <div className="grid grid-cols-2 p-4 landscape:p-3 text-[13px]">
-                                            <div className="text-[#a5acb5] flex items-center gap-2">Комісія за переказ</div>
+                                            <div className="text-[var(--text-muted)] flex items-center gap-2">Комісія за переказ</div>
                                             <div className="font-medium text-right text-emerald-400/80 font-mono text-[14px]">
                                                 {parcel.rawStatus?.RedeliveryPaymentCard ? 'Сплачено онлайн' : `~${(backwardInfo.amount * 0.02 + 20).toFixed(2)} ₴`}
                                             </div>
@@ -1427,24 +1541,24 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 </>
                             )}
                             <div className="grid grid-cols-2 p-4 landscape:p-3 bg-[#32363b]/30 rounded-b-2xl text-[13px]">
-                                <div className="text-[#a5acb5] font-medium flex items-center gap-2">Орієнтовно</div>
+                                <div className="text-[var(--text-muted)] font-medium flex items-center gap-2">Орієнтовно</div>
                                 <div className="font-bold text-[#e33745] text-right flex items-center justify-end gap-1.5"><Calendar className="w-4 h-4" />{parcel.estimatedDeliveryDate || '-'}</div>
                             </div>
                         </div>
 
                         {/* Description */}
                         {parcel.rawDoc?.Description && (
-                            <div className="bg-[#292D32] border border-[#32363b] rounded-2xl p-4 landscape:p-3 text-[13px] text-[#a5acb5] shadow-sm leading-relaxed mb-6 landscape:mb-0">
-                                <span className="font-medium text-white block mb-1">Опис:</span>
+                            <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-2xl p-4 landscape:p-3 text-[13px] text-[var(--text-muted)] shadow-sm leading-relaxed mb-6 landscape:mb-0">
+                                <span className="font-medium text-[var(--text-main)] block mb-1">Опис:</span>
                                 {parcel.rawDoc.Description}
                             </div>
                         )}
 
                         {/* Redirection / Return management buttons inside Card */}
-                        <div className="bg-[#292D32] border border-[#32363b] rounded-2xl p-5 shadow-sm text-center flex flex-col gap-3">
-                            <div className="text-xs font-bold uppercase tracking-wider text-gray-400 text-left mb-1">Керування відправленням</div>
+                        <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-2xl p-5 shadow-sm text-center flex flex-col gap-3">
+                            <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] text-left mb-1">Керування відправленням</div>
                             {isCreatedStatus && selectedAccount?.apiKey && (
-                                <div className="flex flex-col gap-2.5 border-b border-[#32363b]/60 pb-3.5 mb-1.5">
+                                <div className="flex flex-col gap-2.5 border-b border-[var(--border-color)]/60 pb-3.5 mb-1.5">
                                     <div className="text-xs font-semibold tracking-wider text-[#1bc285] uppercase flex items-center gap-1.5 justify-start">
                                         <Printer className="w-3.5 h-3.5" />
                                         <span>Швидкий друк</span>
@@ -1454,7 +1568,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                             href={`https://my.novaposhta.ua/orders/printMarkings/orders[]/${parcel.ttn}/type/pdf/apiKey/${selectedAccount.apiKey}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex items-center justify-center gap-1.5 bg-[#32363b] hover:bg-[#43484e] text-white border border-[#4a4f56] font-semibold py-2.5 px-3 rounded-xl text-xs transition-colors cursor-pointer text-center"
+                                            className="flex items-center justify-center gap-1.5 bg-[#32363b] hover:bg-[#43484e] text-[var(--text-main)] border border-[#4a4f56] font-semibold py-2.5 px-3 rounded-xl text-xs transition-colors cursor-pointer text-center"
                                         >
                                             <Printer className="w-3.5 h-3.5 shrink-0 text-amber-500" />
                                             <span>Маркування</span>
@@ -1463,7 +1577,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 </div>
                             )}
                             {accounts.length === 0 && parcel.accountId !== 'manual' ? (
-                                <div className="text-[#a5acb5] text-xs text-left leading-relaxed">
+                                <div className="text-[var(--text-muted)] text-xs text-left leading-relaxed">
                                     Додайте аккаунт Нової Пошти в налаштуваннях, щоб здійснювати переадресацію та повернення онлайн.
                                 </div>
                             ) : (
@@ -1478,9 +1592,8 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                     setNote('');
                                                     setActiveTab('redirect');
                                                 }}
-                                                className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-3 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 text-center"
+                                                className="bg-red-500 hover:bg-red-600 text-[#ffffff] font-bold py-3 px-3 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 text-center"
                                             >
-                                                <ArrowLeftRight className="w-3.5 h-3.5 shrink-0" />
                                                 <span>Переадресувати</span>
                                             </button>
                                             <button 
@@ -1491,9 +1604,8 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                     setNote('');
                                                     setActiveTab('return');
                                                 }}
-                                                className="bg-[#32363b] hover:bg-[#43484e] text-white border border-[#4a4f56] font-bold py-3 px-3 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 text-center"
+                                                className="bg-[#32363b] hover:bg-[#43484e] text-[var(--text-main)] border border-[#4a4f56] font-bold py-3 px-3 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 text-center"
                                             >
-                                                <CornerDownLeft className="w-3.5 h-3.5 shrink-0" />
                                                 <span>Повернути</span>
                                             </button>
                                         </div>
@@ -1505,7 +1617,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                             setErrorMsg(null);
                                             setActiveTab('change_data');
                                         }}
-                                        className="w-full bg-[#1b2b35] text-[#a5acb5] hover:text-white border border-[#32363b] hover:bg-[#292D32] font-bold py-3 px-3 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 text-center"
+                                        className="w-full bg-[var(--bg-main)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] hover:bg-[var(--bg-card-alt)] font-bold py-3 px-3 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 text-center"
                                     >
                                         <Edit className="w-3.5 h-3.5 shrink-0" />
                                         <span>Змінити дані ТТН</span>
@@ -1528,7 +1640,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                             type="button"
                                                             onClick={handleDeleteTtn}
                                                             disabled={submitting}
-                                                            className="flex-1 bg-[#e33745] hover:bg-red-700 disabled:bg-red-900 text-white font-bold py-2.5 px-3 rounded-lg text-[10.5px] uppercase tracking-wider transition-all select-none cursor-pointer"
+                                                            className="flex-1 bg-[#e33745] hover:bg-red-700 disabled:bg-red-900 text-[#ffffff] font-bold py-2.5 px-3 rounded-lg text-[10.5px] uppercase tracking-wider transition-all select-none cursor-pointer"
                                                         >
                                                             {submitting ? 'Видалення...' : 'Так, видалити'}
                                                         </button>
@@ -1539,7 +1651,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                                 setDeleteError(null);
                                                             }}
                                                             disabled={submitting}
-                                                            className="flex-1 bg-[#32363b] hover:bg-[#43484e] text-gray-300 border border-[#4a4f56] font-bold py-2.5 px-3 rounded-lg text-[10.5px] uppercase tracking-wider transition-all select-none cursor-pointer"
+                                                            className="flex-1 bg-[#32363b] hover:bg-[#43484e] text-[var(--text-muted)] border border-[#4a4f56] font-bold py-2.5 px-3 rounded-lg text-[10.5px] uppercase tracking-wider transition-all select-none cursor-pointer"
                                                         >
                                                             Скасувати
                                                         </button>
@@ -1588,7 +1700,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                             <div className="text-[11px] uppercase text-gray-500 font-bold tracking-wider">{parcel.accountName}</div>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2.5 text-gray-400 hover:text-gray-900 hover:bg-gray-200 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-200">
+                    <button onClick={onClose} className="p-2.5 text-[var(--text-muted)] hover:text-gray-900 hover:bg-gray-200 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-200">
                         <X className="w-6 h-6" />
                     </button>
                </div>
@@ -1764,7 +1876,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                    
                    {/* Right Col - Details */}
                    <div className="w-[320px] shrink-0 bg-[#FAFAFA] p-8 overflow-y-auto hidden lg:block">
-                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-8">Деталі</h3>
+                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-8">Деталі</h3>
                         
                         <div className="space-y-8">
                             <div className="flex flex-col gap-1.5">
@@ -1837,7 +1949,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
 
                             {/* Redirection / Return management buttons block */}
                             <div className="pt-6 mt-6 border-t border-gray-200 flex flex-col gap-2.5">
-                                <div className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Керування відправленням</div>
+                                <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">Керування відправленням</div>
                                 {isCreatedStatus && selectedAccount?.apiKey && (
                                     <div className="flex flex-col gap-2 border-b border-gray-100 pb-4 mb-2">
                                         <div className="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1.5 self-start mb-1">
@@ -1858,7 +1970,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                     </div>
                                 )}
                                 {accounts.length === 0 && parcel.accountId !== 'manual' ? (
-                                    <div className="text-gray-400 text-xs italic">
+                                    <div className="text-[var(--text-muted)] text-xs italic">
                                         Додайте хоча б один аккаунт Нової Пошти, щоб здійснювати переадресацію та повернення онлайн.
                                     </div>
                                 ) : (
@@ -1873,9 +1985,8 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                         setNote('');
                                                         setActiveTab('redirect');
                                                     }}
-                                                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-sm"
+                                                    className="w-full bg-red-600 hover:bg-red-700 text-[#ffffff] font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-sm"
                                                 >
-                                                    <ArrowLeftRight className="w-4 h-4 shrink-0" />
                                                     <span>Переадресувати</span>
                                                 </button>
                                                 <button 
@@ -1888,7 +1999,6 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                     }}
                                                     className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-200 font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-sm"
                                                 >
-                                                    <CornerDownLeft className="w-4 h-4 shrink-0" />
                                                     <span>Повернути відправлення</span>
                                                 </button>
                                             </>
@@ -1923,7 +2033,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                                 type="button"
                                                                 onClick={handleDeleteTtn}
                                                                 disabled={submitting}
-                                                                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-all shadow-sm select-none cursor-pointer"
+                                                                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-[#ffffff] font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-all shadow-sm select-none cursor-pointer"
                                                             >
                                                                 {submitting ? 'Видалення...' : 'Так, видалити'}
                                                             </button>
@@ -1977,7 +2087,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                  onClick={() => setShowFullRoute(false)}
              >
                  <div 
-                     className="bg-[#111d24] sm:bg-[#1b2b35] text-white w-full max-w-[400px] h-[100dvh] sm:h-[650px] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+                     className="bg-[var(--bg-nav)] sm:bg-[var(--bg-main)] text-[var(--text-main)] w-full max-w-[400px] h-[100dvh] sm:h-[650px] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
                      onClick={(e) => e.stopPropagation()}
                   >
                      {/* Upper Handle */}
@@ -1988,16 +2098,16 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                      {/* Modal Header */}
                      <div className="p-6 pb-4 flex items-center justify-between shrink-0 bg-transparent">
                          <div>
-                             <h3 className="text-xl font-bold text-white tracking-tight">
+                             <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight">
                                  {routePoints.senderCityClean} - {routePoints.recipientCityClean}
                              </h3>
-                             <p className="text-sm text-gray-400 mt-1 font-medium">
+                             <p className="text-sm text-[var(--text-muted)] mt-1 font-medium">
                                  {Number(parcel.statusCode || '0') >= 9 ? 'Було в дорозі:' : 'В дорозі:'} <span className="font-bold text-[#1bc285]">{routePoints.durationText}</span>
                              </p>
                          </div>
                          <button 
                              onClick={() => setShowFullRoute(false)}
-                             className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-full transition-colors shrink-0"
+                             className="p-2.5 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-gray-800 rounded-full transition-colors shrink-0"
                          >
                              <X className="w-5 h-5" />
                          </button>
@@ -2016,18 +2126,18 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                           <div key={idx} className="relative z-10 flex flex-col gap-1">
                                               {/* Dots */}
                                               {isNewest ? (
-                                                  <div className="absolute -left-[23px] top-1 w-5 h-5 bg-[#1bc285] rounded-full flex items-center justify-center shadow-lg shadow-emerald-950/40 ring-4 ring-[#111d24] sm:ring-[#1b2b35]">
+                                                  <div className="absolute -left-[23px] top-1 w-5 h-5 bg-[#1bc285] rounded-full flex items-center justify-center shadow-lg shadow-emerald-950/40 ring-4 ring-[var(--bg-main)]">
                                                       <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
                                                   </div>
                                               ) : (
-                                                  <div className="absolute -left-[19px] top-1.5 w-3 h-3 bg-gray-500 rounded-full ring-4 ring-[#111d24] sm:ring-[#1b2b35]"></div>
+                                                  <div className="absolute -left-[19px] top-1.5 w-3 h-3 bg-gray-500 rounded-full ring-4 ring-[var(--bg-main)]"></div>
                                               )}
                                               
                                               {/* Info text */}
-                                              <div className={`font-semibold text-[15px] leading-tight ${isNewest ? 'text-[#1bc285]' : 'text-gray-100'}`}>
+                                              <div className={`font-semibold text-[15px] leading-tight ${isNewest ? 'text-emerald-400 lg:text-emerald-600' : 'text-[var(--text-main)]'}`}>
                                                   {cp.status}
                                               </div>
-                                              <div className="text-xs text-gray-400 flex items-center gap-1">
+                                              <div className="text-xs text-[var(--text-muted)] flex items-center gap-1">
                                                   {cp.location} <span className="text-gray-650 font-light">·</span> {cp.timestamp}
                                               </div>
                                           </div>
@@ -2035,7 +2145,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                  })}
                              </div>
                          ) : (
-                             <div className="text-center py-20 text-gray-400 italic font-medium">
+                             <div className="text-center py-20 text-[var(--text-muted)] italic font-medium">
                                  Дані маршруту оновлюються...
                              </div>
                          )}
@@ -2046,7 +2156,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                          <button
                              type="button"
                              onClick={() => setShowFullRoute(false)}
-                             className="w-full bg-[#1bc285] hover:bg-[#19b078] active:bg-[#159a68] text-white font-bold py-4 px-6 rounded-xl text-sm uppercase tracking-wider transition-colors shadow-lg shadow-emerald-950/25 cursor-pointer text-center"
+                             className="w-full bg-[#1bc285] hover:bg-[#19b078] active:bg-[#159a68] text-[var(--text-main)] font-bold py-4 px-6 rounded-xl text-sm uppercase tracking-wider transition-colors shadow-lg shadow-emerald-950/25 cursor-pointer text-center"
                          >
                              Зрозуміло
                          </button>

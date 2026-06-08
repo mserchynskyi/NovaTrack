@@ -10,8 +10,10 @@ import { AddTtnModal } from './components/AddTtnModal';
 import { CreateTtnModal } from './components/CreateTtnModal';
 import { useAuth } from './lib/AuthContext';
 import { AuthScreen } from './components/AuthScreen';
+import { useTheme } from './lib/useTheme';
 
 export default function App() {
+    useTheme(); // Initialize theme logic globally
     const { user } = useAuth();
     const { accounts, saveAccounts, manualTtns, saveManualTtns, isLoaded } = useAccounts();
     const { parcels, loading, error, refresh, lastRefresh } = useDashboardData(accounts, manualTtns, (newTtns) => {
@@ -28,19 +30,20 @@ export default function App() {
         }
     });
     const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
+    const [accountsModalTab, setAccountsModalTab] = useState<'profile' | 'api'>('api');
     const [isAddTtnModalOpen, setIsAddTtnModalOpen] = useState(false);
     const [isCreateTtnModalOpen, setIsCreateTtnModalOpen] = useState(false);
     const [autoSelectTtn, setAutoSelectTtn] = useState<string | null>(null);
 
     if (!isLoaded) {
         return (
-            <div className="flex bg-[#1b2b35] min-h-[100dvh] items-center justify-center p-4 antialiased">
+            <div className="flex bg-[var(--bg-main)] min-h-[100dvh] items-center justify-center p-4 antialiased">
                 <div className="flex flex-col items-center">
                     <div className="w-20 h-20 bg-[#e33745]/10 rounded-3xl flex items-center justify-center mb-6 border border-[#e33745]/20 shadow-[0_0_30px_rgba(227,55,69,0.15)] relative">
                         <Box className="w-10 h-10 text-[#e33745] animate-pulse" />
                         <div className="absolute inset-0 rounded-3xl border-2 border-[#e33745]/30 animate-ping opacity-20" />
                     </div>
-                    <h1 className="text-3xl font-extrabold text-white tracking-tight mb-2 animate-pulse">
+                    <h1 className="text-3xl font-extrabold text-[var(--text-main)] tracking-tight mb-2 animate-pulse">
                         Nova Track
                     </h1>
                     <div className="flex gap-1.5 mt-4">
@@ -59,14 +62,15 @@ export default function App() {
 
     return (
         <Layout 
-            onManageAccounts={() => setIsAccountsModalOpen(true)}
+            onManageAccounts={() => { setAccountsModalTab('profile'); setIsAccountsModalOpen(true); }}
+            onManageApiKeys={() => { setAccountsModalTab('api'); setIsAccountsModalOpen(true); }}
             onAddTtn={() => setIsAddTtnModalOpen(true)}
             onCreateTtn={() => setIsCreateTtnModalOpen(true)}
             onRefresh={() => refresh(true)}
             loading={loading}
         >
            {accounts.length === 0 ? (
-               <Onboarding onAddAccount={() => setIsAccountsModalOpen(true)} />
+               <Onboarding onAddAccount={() => { setAccountsModalTab('api'); setIsAccountsModalOpen(true); }} />
            ) : (
                 <Dashboard 
                      parcels={parcels} 
@@ -89,11 +93,18 @@ export default function App() {
                      }}
                      autoSelectTtn={autoSelectTtn}
                      onAutoSelectClear={() => setAutoSelectTtn(null)}
-                     onAddManualTtn={(ttn) => {
+                     onAddManualTtn={(rawTtn) => {
+                         const ttn = rawTtn.trim();
                          // Avoid adding duplicates
+                         let needsRefresh = false;
                          if (!manualTtns.some(m => m.ttn === ttn)) {
                              saveManualTtns([...manualTtns, { ttn }]);
+                             needsRefresh = true;
+                         } else if (!parcels.some(p => p.ttn === ttn)) {
+                             needsRefresh = true;
                          }
+                         if (needsRefresh) refresh(true);
+                         
                          setAutoSelectTtn(ttn);
                      }}
                      accounts={accounts}
@@ -106,6 +117,7 @@ export default function App() {
                 onClose={() => setIsAccountsModalOpen(false)} 
                 accounts={accounts} 
                 onSave={saveAccounts} 
+                initialTab={accountsModalTab}
            />
 
            <AddTtnModal
