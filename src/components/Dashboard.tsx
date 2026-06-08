@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Parcel } from '../types';
-import { Package, Truck, CheckCircle2, AlertCircle, RefreshCw, Box, MapPin, Calendar, Wallet, SlidersHorizontal, ArrowUpDown, Search, X } from 'lucide-react';
+import { Parcel, NpAccount } from '../types';
+import { Package, Truck, CheckCircle2, AlertCircle, RefreshCw, Box, MapPin, Calendar, Wallet, SlidersHorizontal, ArrowUpDown, Search, X, Plus } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ParcelDetailsModal } from './ParcelDetailsModal';
 
@@ -8,15 +8,18 @@ interface DashboardProps {
   parcels: Parcel[];
   loading: boolean;
   error: string | null;
-  onRefresh: () => void;
+  onRefresh: (force?: boolean) => void;
   lastRefresh: Date | null;
   onDeleteManualTtn: (ttn: string) => void;
+  onUpdateManualTtn?: (ttn: string, phone?: string) => void;
   autoSelectTtn?: string | null;
   onAutoSelectClear?: () => void;
   onAddManualTtn?: (ttn: string) => void;
+  accounts: NpAccount[];
+  onCreateTtn?: () => void;
 }
 
-export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onDeleteManualTtn, autoSelectTtn, onAutoSelectClear, onAddManualTtn }: DashboardProps) {
+export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onDeleteManualTtn, onUpdateManualTtn, autoSelectTtn, onAutoSelectClear, onAddManualTtn, accounts, onCreateTtn }: DashboardProps) {
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [sortBy, setSortBy] = useState<string>('DateCreated (Newest)');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -131,6 +134,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
      if (filterStatus !== 'All') {
          result = result.filter(p => {
              const code = Number(p.statusCode);
+             if (filterStatus === 'Created') return [1, 3, 0].includes(code) || !p.statusCode || isNaN(code);
              if (filterStatus === 'Pending') return code === 1;
              if (filterStatus === 'Delivered') return [9, 10, 11, 14, 106, 108].includes(code);
              if (filterStatus === 'Issues') return [2, 3, 102, 103].includes(code);
@@ -189,7 +193,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
       )}
 
       {/* Controls & Filters */}
-      <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3 shrink-0 bg-transparent lg:bg-white p-4 pb-2 lg:p-3 lg:pb-3 rounded-none lg:rounded border-none lg:border lg:border-gray-200 shadow-none lg:shadow-sm">
+      <div className="sticky top-0 z-30 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3 shrink-0 bg-[#1b2b35] lg:bg-white p-4 pb-3 lg:p-3 rounded-none lg:rounded border-b border-[#25323d]/60 lg:border lg:border-gray-200 shadow-md lg:shadow-sm">
         
         {/* Left Side: Search + Filters group */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
@@ -226,6 +230,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                      onChange={e => setFilterStatus(e.target.value)}
                  >
                      <option value="All">Всі статуси</option>
+                     <option value="Created">Створені</option>
                      <option value="Pending">Очікують</option>
                      <option value="In Transit">В дорозі</option>
                      <option value="At Branch">У відділенні</option>
@@ -255,9 +260,19 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
            </div>
         </div>
 
-        <div className="flex items-center gap-2 w-full landscape:w-auto lg:w-auto shrink-0 justify-end">
+        <div className="hidden lg:flex items-center gap-2 w-full landscape:w-auto lg:w-auto shrink-0 justify-end">
+          {onCreateTtn && (
+             <button
+                type="button"
+                onClick={onCreateTtn}
+                className="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border border-transparent px-4 lg:px-3.5 py-2.5 lg:py-1.5 rounded-lg lg:rounded text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-emerald-500/10 cursor-pointer text-center whitespace-nowrap"
+             >
+                <Plus className="w-4 h-4" />
+                <span>Створити ТТН</span>
+             </button>
+          )}
           <button 
-            onClick={onRefresh} 
+            onClick={() => onRefresh(true)} 
             disabled={loading}
             className="flex items-center justify-center gap-1.5 bg-[#e33745]/10 lg:bg-gray-50 border border-[#e33745]/30 lg:border-gray-200 px-4 lg:px-3 py-2.5 lg:py-1.5 rounded-lg lg:rounded text-xs font-medium hover:bg-[#e33745]/20 lg:hover:bg-gray-100 disabled:opacity-50 transition-colors text-[#e33745] lg:text-gray-700"
           >
@@ -506,10 +521,15 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
       {selectedParcel && (
           <ParcelDetailsModal 
               parcel={selectedParcel} 
+              accounts={accounts}
+              onRefresh={onRefresh}
               onClose={() => setSelectedParcel(null)} 
               onDeleteManualTtn={selectedParcel.accountId === 'manual' ? () => {
                    onDeleteManualTtn(selectedParcel.ttn);
                    setSelectedParcel(null);
+              } : undefined}
+              onUpdateManualTtn={selectedParcel.accountId === 'manual' ? (phone?: string) => {
+                   if (onUpdateManualTtn) onUpdateManualTtn(selectedParcel.ttn, phone);
               } : undefined}
           />
       )}

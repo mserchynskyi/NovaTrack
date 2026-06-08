@@ -1,26 +1,124 @@
 import { NpAccount, Parcel } from "../types";
 
-async function safeFetch(url: string, options: RequestInit, retries = 3): Promise<any> {
+const apiCache = new Map<string, { data: any; expiry: number }>();
+let lastRateLimitTime = 0;
+
+async function safeFetch(url: string, options: RequestInit, retries = 5): Promise<any> {
+  const isBypass = options.headers && (options.headers as any)["x-bypass-cache"] === "true";
+  
+  if (options.headers && (options.headers as any)["x-bypass-cache"]) {
+    const headersCopy = { ...options.headers };
+    delete (headersCopy as any)["x-bypass-cache"];
+    options.headers = headersCopy;
+  }
+
+  const now = Date.now();
+  if (now - lastRateLimitTime < 10000) {
+    throw new Error("Перевищено ліміт запитів до Нової Пошти. Рекомендуємо зачекати кілька секунд перед повторною спробою.");
+  }
+
+  const bodyStr = options.body ? String(options.body) : "";
+  const cacheKey = url + "_" + bodyStr;
+
+  const isCacheable = !isBypass && options.body && 
+    (bodyStr.includes("getCities") || 
+     bodyStr.includes("getWarehouses") || 
+     bodyStr.includes("getStatusDocuments") ||
+     bodyStr.includes("getDocumentList"));
+
+  if (isCacheable) {
+    const cached = apiCache.get(cacheKey);
+    const cacheDuration = (bodyStr.includes("getCities") || bodyStr.includes("getWarehouses"))
+      ? 10 * 60 * 1000 // 10 minutes for cities and warehouses
+      : 30 * 1000;    // 30 seconds for parcel statuses/lists
+    
+    if (cached && now < cached.expiry) {
+      return JSON.parse(JSON.stringify(cached.data));
+    }
+  }
+
   const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
   for (let i = 0; i < retries; i++) {
     try {
       const response = await fetch(url, options);
       if (response.status === 429) {
-        await delay(3000 * (i + 1));
+        if (i === retries - 1) {
+          lastRateLimitTime = Date.now();
+        }
+        await delay(3500 * (i + 1));
         continue;
       }
       const cloned = response.clone();
       const text = await cloned.text();
-      if (text.toLowerCase().includes("many requests")) {
-        await delay(3000 * (i + 1));
+      const textLower = text.toLowerCase();
+      if (textLower.includes("many requests") || textLower.includes("too many requests")) {
+        if (i === retries - 1) {
+          lastRateLimitTime = Date.now();
+        }
+        await delay(3500 * (i + 1));
         continue;
       }
-      return await response.json();
+      try {
+        const parsed = JSON.parse(text);
+        
+        // Handle custom JSON error indications of rate limiting or limit exceeded
+        let isRateLimitError = false;
+        if (parsed && parsed.success === false) {
+          const errorsArray = Array.isArray(parsed.errors) ? parsed.errors : [];
+          const joinedErrors = errorsArray.join(" ").toLowerCase();
+          if (
+            joinedErrors.includes("limit") ||
+            joinedErrors.includes("ліміт") ||
+            joinedErrors.includes("перевищено") ||
+            joinedErrors.includes("excessive") ||
+            joinedErrors.includes("too many") ||
+            joinedErrors.includes("rate") ||
+            joinedErrors.includes("запит")
+          ) {
+            isRateLimitError = true;
+          }
+        }
+
+        if (isRateLimitError) {
+          if (i === retries - 1) {
+            lastRateLimitTime = Date.now();
+          }
+          await delay(3500 * (i + 1));
+          continue;
+        }
+
+        if (parsed && parsed.success && isCacheable) {
+          const cacheDuration = (bodyStr.includes("getCities") || bodyStr.includes("getWarehouses"))
+            ? 10 * 60 * 1000
+            : 30 * 1000;
+          apiCache.set(cacheKey, { data: parsed, expiry: Date.now() + cacheDuration });
+        }
+        return parsed;
+      } catch (jsonErr) {
+        const lowerText = text.toLowerCase();
+        if (
+          lowerText.includes("invalid api key") ||
+          lowerText.includes("api key in not valid") ||
+          lowerText.includes("api key is not valid") ||
+          lowerText.includes("invalid key")
+        ) {
+          throw new Error("Недійсний або некоректний API ключ Нової Пошти. Перевірте правильність ключа в налаштуваннях акаунту.");
+        }
+        const plainText = text.replace(/<[^>]*>/g, "").trim();
+        throw new Error(`Некоректна відповідь від сервера Нової Пошти: ${plainText.slice(0, 150)}...`);
+      }
     } catch (error: any) {
-      if (i === retries - 1) throw error;
-      await delay(3000 * (i + 1));
+      if (i === retries - 1) {
+        const errStr = String(error.message || "").toLowerCase();
+        if (errStr.includes("limit") || errStr.includes("ліміт") || errStr.includes("rate") || errStr.includes("429")) {
+          lastRateLimitTime = Date.now();
+        }
+        throw error;
+      }
+      await delay(3500 * (i + 1));
     }
   }
+  lastRateLimitTime = Date.now();
   throw new Error("Перевищено ліміт запитів до Нової Пошти. Спробуйте пізніше.");
 }
 
@@ -32,7 +130,7 @@ function getFriendlyStatus(status: string, statusCode: string): string {
   return status;
 }
 
-export async function fetchAccountParcels(account: NpAccount): Promise<Parcel[]> {
+export async function fetchAccountParcels(account: NpAccount, bypassCache = false): Promise<Parcel[]> {
   const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
   const dTo = new Date();
@@ -46,7 +144,10 @@ export async function fetchAccountParcels(account: NpAccount): Promise<Parcel[]>
   // 1. Get documents list created by this token owner
   const docListData = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      "Content-Type": "application/json",
+      ...(bypassCache ? { "x-bypass-cache": "true" } : {})
+    },
     body: JSON.stringify({
       apiKey: account.apiKey,
       modelName: "InternetDocument",
@@ -81,7 +182,10 @@ export async function fetchAccountParcels(account: NpAccount): Promise<Parcel[]>
     const chunk = documentsQuery.slice(i, i + chunkSize);
     const statusData = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        ...(bypassCache ? { "x-bypass-cache": "true" } : {})
+      },
       body: JSON.stringify({
         apiKey: account.apiKey,
         modelName: "TrackingDocument",
@@ -115,7 +219,10 @@ export async function fetchAccountParcels(account: NpAccount): Promise<Parcel[]>
 
     const basisStatusData = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        ...(bypassCache ? { "x-bypass-cache": "true" } : {})
+      },
       body: JSON.stringify({
         apiKey: account.apiKey,
         modelName: "TrackingDocument",
@@ -215,7 +322,7 @@ export async function fetchAccountParcels(account: NpAccount): Promise<Parcel[]>
   });
 }
 
-export async function fetchManualParcels(apiKey: string, manualTtns: { ttn: string; phone?: string }[]): Promise<Parcel[]> {
+export async function fetchManualParcels(apiKey: string, manualTtns: { ttn: string; phone?: string }[], bypassCache = false): Promise<Parcel[]> {
   if (manualTtns.length === 0) return [];
   const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
@@ -232,7 +339,10 @@ export async function fetchManualParcels(apiKey: string, manualTtns: { ttn: stri
     const chunk = documentsQuery.slice(i, i + chunkSize);
     const statusData = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        ...(bypassCache ? { "x-bypass-cache": "true" } : {})
+      },
       body: JSON.stringify({
         apiKey,
         modelName: "TrackingDocument",
@@ -265,7 +375,10 @@ export async function fetchManualParcels(apiKey: string, manualTtns: { ttn: stri
 
     const basisStatusData = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        ...(bypassCache ? { "x-bypass-cache": "true" } : {})
+      },
       body: JSON.stringify({
         apiKey,
         modelName: "TrackingDocument",
@@ -363,3 +476,458 @@ export async function fetchManualParcels(apiKey: string, manualTtns: { ttn: stri
     };
   });
 }
+
+export interface NpCity {
+  Ref: string;
+  Description: string;
+  AreaDescription: string;
+}
+
+export interface NpWarehouse {
+  Ref: string;
+  Description: string;
+  Number: string;
+  ShortAddress: string;
+}
+
+export async function searchCities(apiKey: string, query: string): Promise<NpCity[]> {
+  let cleanedQuery = query.trim();
+  // Strip common Ukrainian city prefixes/abbreviations to prevent empty API searches
+  cleanedQuery = cleanedQuery.replace(/^(м\.|м\s+|смт\.|смт\s+|с\.|с\s+|село\s+|селище\s+)/gi, "").trim();
+
+  if (!cleanedQuery) return [];
+
+  const data = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      apiKey,
+      modelName: "Address",
+      calledMethod: "getCities",
+      methodProperties: {
+        FindByString: cleanedQuery,
+        Limit: "20",
+      },
+    }),
+  });
+
+  if (!data?.success) {
+    const errText = data?.errors?.join(", ") || "";
+    if (
+      errText.toLowerCase().includes("city not found") || 
+      errText.toLowerCase().includes("not found")
+    ) {
+      return [];
+    }
+    throw new Error(errText || "Помилка при завантаженні міст");
+  }
+
+  return (data.data || []).map((city: any) => ({
+    Ref: city.Ref,
+    Description: city.Description,
+    AreaDescription: city.AreaDescription || city.Area,
+  }));
+}
+
+export async function getWarehouses(apiKey: string, cityRef: string, query?: string): Promise<NpWarehouse[]> {
+  const data = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      apiKey,
+      modelName: "Address",
+      calledMethod: "getWarehouses",
+      methodProperties: {
+        CityRef: cityRef,
+        FindByString: query || "",
+        Limit: "100",
+      },
+    }),
+  });
+
+  if (!data?.success) {
+    const errText = data?.errors?.join(", ") || "";
+    if (
+      errText.toLowerCase().includes("city not found") || 
+      errText.toLowerCase().includes("cityrecipient") || 
+      errText.toLowerCase().includes("citysender") || 
+      errText.toLowerCase().includes("not found")
+    ) {
+      console.warn("Nova Poshta returned City not found for Ref:", cityRef);
+      return [];
+    }
+    throw new Error(errText || "Помилка при завантаженні відділень");
+  }
+
+  return (data.data || []).map((w: any) => ({
+    Ref: w.Ref,
+    Description: w.Description,
+    Number: w.Number,
+    ShortAddress: w.ShortAddress,
+  }));
+}
+
+export async function checkRedirectionOpportunity(apiKey: string, ttn: string, phone: string): Promise<{ success: boolean; error?: string; info?: any }> {
+  try {
+    const data = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        apiKey,
+        modelName: "AdditionalService",
+        calledMethod: "checkRedirection",
+        methodProperties: {
+          DocumentNumber: ttn,
+          Phone: phone,
+        },
+      }),
+    });
+
+    if (!data?.success) {
+      return {
+        success: false,
+        error: data?.errors?.join(", ") || "Не вдалося перевірити можливість переадресації",
+      };
+    }
+
+    return {
+      success: true,
+      info: data.data?.[0],
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || "Помилка мережі при перевірці переадресації",
+    };
+  }
+}
+
+export async function submitRedirection(
+  apiKey: string,
+  params: {
+    IntDocNumber: string;
+    PaymentMethod: string;
+    PayerType: string;
+    RecipientWarehouseRef: string;
+    Note?: string;
+  }
+): Promise<{ success: boolean; ttn?: string; error?: string }> {
+  const data = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      apiKey,
+      modelName: "AdditionalService",
+      calledMethod: "save",
+      methodProperties: {
+        IntDocNumber: params.IntDocNumber,
+        PaymentMethod: params.PaymentMethod,
+        PayerType: params.PayerType,
+        OrderType: "Redirection",
+        RecipientWarehouse: params.RecipientWarehouseRef,
+        Note: params.Note || "",
+      },
+    }),
+  });
+
+  if (!data?.success) {
+    throw new Error(data?.errors?.join(", ") || "Помилка при створенні переадресації");
+  }
+
+  return {
+    success: true,
+    ttn: data.data?.[0]?.Number || data.data?.[0]?.Ref || "",
+  };
+}
+
+export async function submitReturn(
+  apiKey: string,
+  params: {
+    IntDocNumber: string;
+    PaymentMethod: string;
+    PayerType: string;
+    Note?: string;
+  }
+): Promise<{ success: boolean; ttn?: string; error?: string }> {
+  const data = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      apiKey,
+      modelName: "AdditionalService",
+      calledMethod: "save",
+      methodProperties: {
+        IntDocNumber: params.IntDocNumber,
+        PaymentMethod: params.PaymentMethod,
+        PayerType: params.PayerType,
+        OrderType: "Return",
+        Note: params.Note || "",
+      },
+    }),
+  });
+
+  if (!data?.success) {
+    throw new Error(data?.errors?.join(", ") || "Помилка при замовленні повернення");
+  }
+
+  return {
+    success: true,
+    ttn: data.data?.[0]?.Number || data.data?.[0]?.Ref || "",
+  };
+}
+
+export async function submitChangeData(
+  apiKey: string,
+  params: {
+    IntDocNumber: string;
+    PaymentMethod: string;
+    PayerType: string;
+    RecipientContactPerson: string;
+    RecipientPhone: string;
+  }
+): Promise<{ success: boolean; ttn?: string; error?: string }> {
+  const data = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      apiKey,
+      modelName: "AdditionalService",
+      calledMethod: "save",
+      methodProperties: {
+        IntDocNumber: params.IntDocNumber,
+        OrderType: "ChangeSenderRecipientData",
+        RecipientContactPerson: params.RecipientContactPerson,
+        RecipientPhone: params.RecipientPhone,
+        PaymentMethod: params.PaymentMethod,
+        PayerType: params.PayerType,
+      },
+    }),
+  });
+
+  if (!data?.success) {
+    throw new Error(data?.errors?.join(", ") || "Помилка при зміні даних ТТН");
+  }
+
+  return {
+    success: true,
+    ttn: data.data?.[0]?.Number || data.data?.[0]?.Ref || "",
+  };
+}
+
+export interface SenderCounterparty {
+  Ref: string;
+  Description: string;
+  FirstName: string;
+  LastName: string;
+  MiddleName: string;
+  OwnershipFormRef: string;
+  OwnershipFormDescription: string;
+  EDRPOU: string;
+  CounterpartyType: string;
+}
+
+export interface SenderContactPerson {
+  Ref: string;
+  Description: string;
+  LastName: string;
+  FirstName: string;
+  MiddleName: string;
+  Phones: string;
+  Email: string;
+}
+
+export async function getSenderCounterparties(apiKey: string): Promise<SenderCounterparty[]> {
+  const data = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      apiKey,
+      modelName: "Counterparty",
+      calledMethod: "getCounterparties",
+      methodProperties: {
+        CounterpartyProperty: "Sender",
+        Page: "1"
+      },
+    }),
+  });
+
+  if (!data?.success) {
+    throw new Error(data?.errors?.join(", ") || "Помилка при завантаженні контрагентів відправника");
+  }
+
+  return data.data || [];
+}
+
+export async function getCounterpartyContactPersons(apiKey: string, counterpartyRef: string): Promise<SenderContactPerson[]> {
+  const data = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      apiKey,
+      modelName: "Counterparty",
+      calledMethod: "getCounterpartyContactPersons",
+      methodProperties: {
+        Ref: counterpartyRef,
+        Page: "1"
+      },
+    }),
+  });
+
+  if (!data?.success) {
+    throw new Error(data?.errors?.join(", ") || "Помилка при завантаженні контактних осіб");
+  }
+
+  return data.data || [];
+}
+
+export interface BackwardDelivery {
+  PayerType: "Sender" | "Recipient";
+  CargoType: "Money" | string;
+  RedeliveryString: string;
+}
+
+export interface CreateTtnParams {
+  SenderRef: string;
+  SenderAddressRef: string;
+  SenderContactRef: string;
+  SenderPhone: string;
+  CitySenderRef: string;
+  
+  CityRecipientRef: string;
+  RecipientAddressRef: string;
+  RecipientPhone: string;
+  RecipientLastName: string;
+  RecipientFirstName: string;
+  RecipientMiddleName?: string;
+  
+  Weight: string;
+  VolumeGeneral?: string;
+  SeatsAmount: string;
+  Cost: string;
+  Description: string;
+  PayerType: "Sender" | "Recipient";
+  PaymentMethod: "Cash" | "NonCash";
+  CargoType?: string;
+  ServiceType?: string;
+  BackwardDeliveryData?: BackwardDelivery[];
+}
+
+export async function submitCreateTtn(apiKey: string, params: CreateTtnParams): Promise<{ success: boolean; ttn: string; cost: string; estimatedDeliveryDate: string }> {
+  // 1. Create recipient counterparty
+  const recipientData = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      apiKey,
+      modelName: "Counterparty",
+      calledMethod: "save",
+      methodProperties: {
+        FirstName: params.RecipientFirstName,
+        LastName: params.RecipientLastName,
+        MiddleName: params.RecipientMiddleName || "",
+        Phone: params.RecipientPhone,
+        Email: "",
+        CounterpartyType: "PrivatePerson",
+        CounterpartyProperty: "Recipient",
+      },
+    }),
+  });
+
+  if (!recipientData?.success) {
+    throw new Error(recipientData?.errors?.join(", ") || "Помилка при реєстрації отримувача у базі Нової Пошти");
+  }
+
+  const recipientRef = recipientData.data?.[0]?.Ref;
+  const recipientContactRef = recipientData.data?.[0]?.ContactPerson?.data?.[0]?.Ref;
+
+  if (!recipientRef || !recipientContactRef) {
+    throw new Error("Не вдалося отримати референси створеного отримувача");
+  }
+
+  // 2. Prepare today's date in DD.MM.YYYY format
+  const today = new Date();
+  const day = String(today.getDate()).padStart(2, "0");
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const formattedDate = `${day}.${month}.${today.getFullYear()}`;
+
+  // 3. Create Internet Document
+  const documentProps: any = {
+    NewAddress: "1",
+    PayerType: params.PayerType,
+    PaymentMethod: params.PaymentMethod,
+    DateTime: formattedDate,
+    CargoType: params.CargoType || "Cargo",
+    VolumeGeneral: params.VolumeGeneral || "0.01",
+    Weight: params.Weight,
+    ServiceType: params.ServiceType || "WarehouseWarehouse",
+    SeatsAmount: params.SeatsAmount,
+    Description: params.Description,
+    Cost: params.Cost,
+    
+    Sender: params.SenderRef,
+    CitySender: params.CitySenderRef,
+    SenderAddress: params.SenderAddressRef,
+    ContactSender: params.SenderContactRef,
+    SendersPhone: params.SenderPhone,
+    
+    Recipient: recipientRef,
+    CityRecipient: params.CityRecipientRef,
+    RecipientAddress: params.RecipientAddressRef,
+    ContactRecipient: recipientContactRef,
+    RecipientsPhone: params.RecipientPhone,
+  };
+
+  if (params.BackwardDeliveryData && params.BackwardDeliveryData.length > 0) {
+    documentProps.BackwardDeliveryData = params.BackwardDeliveryData;
+  }
+
+  const documentRes = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      apiKey,
+      modelName: "InternetDocument",
+      calledMethod: "save",
+      methodProperties: documentProps,
+    }),
+  });
+
+  if (!documentRes?.success) {
+    throw new Error(documentRes?.errors?.join(", ") || "Помилка при створенні ТТН");
+  }
+
+  const docData = documentRes.data?.[0];
+  if (!docData) {
+    throw new Error("Нова Пошта повернула порожню відповідь при створенні ТТН");
+  }
+
+  return {
+    success: true,
+    ttn: docData.IntDocNumber,
+    cost: docData.CostOnSite || docData.Cost || "0",
+    estimatedDeliveryDate: docData.EstimatedDeliveryDate || "",
+  };
+}
+
+export async function deleteInternetDocument(apiKey: string, documentRef: string): Promise<{ success: boolean }> {
+  const deleteRes = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      apiKey,
+      modelName: "InternetDocument",
+      calledMethod: "delete",
+      methodProperties: {
+        DocumentRefs: [documentRef],
+      },
+    }),
+  });
+
+  if (!deleteRes?.success) {
+    throw new Error(deleteRes?.errors?.join(", ") || "Помилка при видаленні ТТН з Нової Пошти");
+  }
+
+  return { success: true };
+}
+
+

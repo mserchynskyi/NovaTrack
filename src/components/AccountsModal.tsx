@@ -65,10 +65,11 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave }: AccountsMod
 
   const handleAdd = () => {
     if (!name || !apiKey) return;
+    const cleanedApiKey = apiKey.trim().replace(/[\r\n\s]+/g, '');
     const newAccount: NpAccount = {
       id: Math.random().toString(36).substr(2, 9),
       name,
-      apiKey
+      apiKey: cleanedApiKey
     };
     onSave([...accounts, newAccount]);
     setName('');

@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { X, Plus, Trash2, Ticket, Phone, AlertCircle, Info } from 'lucide-react';
+import { X, Plus, Trash2, Ticket, Phone, AlertCircle, Info, Truck } from 'lucide-react';
 import { ManualTtn } from '../lib/useAccounts';
 
 interface AddTtnModalProps {
@@ -8,9 +8,10 @@ interface AddTtnModalProps {
   manualTtns: ManualTtn[];
   onSave: (newTtns: ManualTtn[], addedTtn?: string) => void;
   hasAccounts: boolean;
+  onCreateNewTtn?: () => void;
 }
 
-export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts }: AddTtnModalProps) {
+export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, onCreateNewTtn }: AddTtnModalProps) {
     const [ttn, setTtn] = useState('');
     const [phone, setPhone] = useState('');
     const [validationError, setValidationError] = useState('');
@@ -63,7 +64,7 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts }
     };
 
     return (
-        <div className="fixed inset-0 bg-black/40 lg:bg-black/60 lg:backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/40 lg:bg-black/60 lg:backdrop-blur-sm z-[100] flex items-center justify-center p-4">
             <div className="bg-[#1b2b35] lg:bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-[#32363b] lg:border-none">
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-[#32363b] lg:border-gray-100 flex items-center justify-between bg-[#1b2b35] lg:bg-gray-50">
@@ -86,6 +87,25 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts }
                                 <p className="font-bold">Акаунт не знайдено</p>
                                 <p className="opacity-90 mt-0.5">Щоб відстежувати сторонні ТТН, спершу додайте хоча б один свій акаунт Нової Пошти у профілі.</p>
                             </div>
+                        </div>
+                    )}
+
+                    {hasAccounts && onCreateNewTtn && (
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-100 lg:bg-emerald-50 lg:border-emerald-200 lg:text-emerald-800 p-4 rounded-xl text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md shadow-emerald-950/10">
+                            <div className="flex gap-2.5">
+                                <Truck className="w-5 h-5 shrink-0 text-emerald-400 mt-0.5" />
+                                <div>
+                                    <p className="font-bold">Оформити нову посилку?</p>
+                                    <p className="opacity-85 mt-0.5">Ви можете створити, розрахувати та зареєструвати нову ТТН онлайн.</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={onCreateNewTtn}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2 px-3.5 rounded-xl text-[10px] uppercase tracking-wider transition-colors shrink-0 text-center cursor-pointer shadow-lg shadow-emerald-500/15"
+                            >
+                                Створити ТТН
+                            </button>
                         </div>
                     )}
 

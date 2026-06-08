@@ -7,15 +7,29 @@ import { Dashboard } from './components/Dashboard';
 import { AccountsModal } from './components/AccountsModal';
 import { Onboarding } from './components/Onboarding';
 import { AddTtnModal } from './components/AddTtnModal';
+import { CreateTtnModal } from './components/CreateTtnModal';
 import { useAuth } from './lib/AuthContext';
 import { AuthScreen } from './components/AuthScreen';
 
 export default function App() {
     const { user } = useAuth();
     const { accounts, saveAccounts, manualTtns, saveManualTtns, isLoaded } = useAccounts();
-    const { parcels, loading, error, refresh, lastRefresh } = useDashboardData(accounts, manualTtns);
+    const { parcels, loading, error, refresh, lastRefresh } = useDashboardData(accounts, manualTtns, (newTtns) => {
+        const updated = [...manualTtns];
+        let changed = false;
+        newTtns.forEach(newTtn => {
+            if (!updated.some(item => item.ttn === newTtn)) {
+                updated.push({ ttn: newTtn });
+                changed = true;
+            }
+        });
+        if (changed) {
+            saveManualTtns(updated);
+        }
+    });
     const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
     const [isAddTtnModalOpen, setIsAddTtnModalOpen] = useState(false);
+    const [isCreateTtnModalOpen, setIsCreateTtnModalOpen] = useState(false);
     const [autoSelectTtn, setAutoSelectTtn] = useState<string | null>(null);
 
     if (!isLoaded) {
@@ -47,30 +61,44 @@ export default function App() {
         <Layout 
             onManageAccounts={() => setIsAccountsModalOpen(true)}
             onAddTtn={() => setIsAddTtnModalOpen(true)}
+            onCreateTtn={() => setIsCreateTtnModalOpen(true)}
+            onRefresh={() => refresh(true)}
+            loading={loading}
         >
            {accounts.length === 0 ? (
                <Onboarding onAddAccount={() => setIsAccountsModalOpen(true)} />
            ) : (
-               <Dashboard 
-                    parcels={parcels} 
-                    loading={loading} 
-                    error={error} 
-                    onRefresh={refresh} 
-                    lastRefresh={lastRefresh} 
-                    onDeleteManualTtn={(ttn) => {
-                        const updated = manualTtns.filter(item => item.ttn !== ttn);
-                        saveManualTtns(updated);
-                    }}
-                    autoSelectTtn={autoSelectTtn}
-                    onAutoSelectClear={() => setAutoSelectTtn(null)}
-                    onAddManualTtn={(ttn) => {
-                        // Avoid adding duplicates
-                        if (!manualTtns.some(m => m.ttn === ttn)) {
-                            saveManualTtns([...manualTtns, { ttn }]);
-                        }
-                        setAutoSelectTtn(ttn);
-                    }}
-               />
+                <Dashboard 
+                     parcels={parcels} 
+                     loading={loading} 
+                     error={error} 
+                     onRefresh={refresh} 
+                     lastRefresh={lastRefresh} 
+                     onDeleteManualTtn={(ttn) => {
+                         const updated = manualTtns.filter(item => item.ttn !== ttn);
+                         saveManualTtns(updated);
+                     }}
+                     onUpdateManualTtn={(ttn, phone) => {
+                         const updated = manualTtns.map(item => {
+                             if (item.ttn === ttn) {
+                                 return { ...item, phone };
+                             }
+                             return item;
+                         });
+                         saveManualTtns(updated);
+                     }}
+                     autoSelectTtn={autoSelectTtn}
+                     onAutoSelectClear={() => setAutoSelectTtn(null)}
+                     onAddManualTtn={(ttn) => {
+                         // Avoid adding duplicates
+                         if (!manualTtns.some(m => m.ttn === ttn)) {
+                             saveManualTtns([...manualTtns, { ttn }]);
+                         }
+                         setAutoSelectTtn(ttn);
+                     }}
+                     accounts={accounts}
+                     onCreateTtn={() => setIsCreateTtnModalOpen(true)}
+                />
            )}
            
            <AccountsModal 
@@ -92,6 +120,22 @@ export default function App() {
                     }
                 }}
                 hasAccounts={accounts.length > 0}
+                onCreateNewTtn={() => {
+                    setIsAddTtnModalOpen(false);
+                    setIsCreateTtnModalOpen(true);
+                }}
+           />
+
+           <CreateTtnModal
+                isOpen={isCreateTtnModalOpen}
+                onClose={() => setIsCreateTtnModalOpen(false)}
+                accounts={accounts}
+                onTtnCreated={(newTtn) => {
+                    if (!manualTtns.some(m => m.ttn === newTtn)) {
+                        saveManualTtns([...manualTtns, { ttn: newTtn }]);
+                    }
+                    setAutoSelectTtn(newTtn);
+                }}
            />
         </Layout>
     );
