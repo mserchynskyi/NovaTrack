@@ -8,7 +8,7 @@ export function Onboarding({ onAddAccount }: { onAddAccount: () => void }) {
               <KeyRound className="w-8 h-8 text-[#e33745]" />
           </div>
           <h1 className="text-2xl font-bold text-[var(--text-main)] mb-2 tracking-tight">
-              Nova Track
+              МультиПошта
           </h1>
           <p className="text-[var(--text-muted)] mb-8 text-sm max-w-sm mx-auto">
               Додайте API ключі з кабінету Нової Пошти, щоб відслідковувати всі ваші відправлення та отримання на одному екрані.

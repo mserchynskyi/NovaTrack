@@ -1360,7 +1360,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 <button 
                                     type="button"
                                     onClick={() => setShowFullRoute(true)}
-                                    className="text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] flex items-center gap-1 transition-colors uppercase tracking-wider bg-[#32363b] px-3 py-1.5 rounded-lg border border-[#444950]"
+                                    className="text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] flex items-center gap-1 transition-colors uppercase tracking-wider bg-[var(--bg-main)] hover:bg-[var(--bg-hover)] px-3 py-1.5 rounded-lg border border-[var(--border-color)]"
                                 >
                                     Повністю <span className="text-[#1bc285] font-bold">&gt;</span>
                                 </button>
@@ -1740,7 +1740,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 <button 
                                     type="button"
                                     onClick={() => setShowFullRoute(true)}
-                                    className="text-xs font-semibold text-gray-500 hover:text-gray-950 flex items-center gap-1 transition-colors uppercase tracking-wider bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg border border-gray-200 cursor-pointer animate-pulse"
+                                    className="text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] flex items-center gap-1 transition-colors uppercase tracking-wider bg-[var(--bg-main)] hover:bg-[var(--bg-hover)] px-3 py-1.5 rounded-lg border border-[var(--border-color)] cursor-pointer"
                                 >
                                     Повністю <span className="text-[#1bc285] font-bold">&gt;</span>
                                 </button>

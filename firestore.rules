@@ -21,6 +21,14 @@ service cloud.firestore {
        && data.userId is string;
     }
     
+    // Validation for UserSubscription
+    function isValidSubscription(data, uid) {
+       return data.userId == uid
+       && data.userId is string
+       && data.status is string
+       && (data.status == 'trial' || data.status == 'active' || data.status == 'expired' || data.status == 'none');
+    }
+    
     // Match userAccounts/{userId}
     match /userAccounts/{userId} {
        allow get: if isSignedIn() && request.auth.uid == userId;
@@ -37,6 +45,24 @@ service cloud.firestore {
                      && incoming().userId == existing().userId; // Immutable
                      
        allow delete: if isSignedIn() 
+                     && request.auth.uid == userId;
+    }
+    
+    // Match userSubscriptions/{userId}
+    match /userSubscriptions/{userId} {
+       allow get: if isSignedIn() && request.auth.uid == userId;
+       allow list: if false;
+       
+       allow create: if isSignedIn()
+                     && request.auth.uid == userId
+                     && isValidSubscription(incoming(), request.auth.uid);
+                     
+       allow update: if isSignedIn()
+                     && request.auth.uid == userId
+                     && isValidSubscription(incoming(), request.auth.uid)
+                     && incoming().userId == existing().userId; // Immutable
+                     
+       allow delete: if isSignedIn()
                      && request.auth.uid == userId;
     }
   }

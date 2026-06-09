@@ -72,7 +72,7 @@ export function AuthScreen() {
                         <Box className="w-8 h-8 text-[#e33745]" />
                     </div>
                     <h1 className="text-3xl font-extrabold text-[var(--text-main)] tracking-tight">
-                        Nova Track
+                        МультиПошта
                     </h1>
                     <p className="text-[var(--text-muted)] text-sm mt-1.5 font-medium">
                         {isRegisterMode 

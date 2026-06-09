@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Package as Box } from 'lucide-react';
 import { useAccounts } from './lib/useAccounts';
 import { useDashboardData } from './lib/useDashboardData';
@@ -8,13 +8,17 @@ import { AccountsModal } from './components/AccountsModal';
 import { Onboarding } from './components/Onboarding';
 import { AddTtnModal } from './components/AddTtnModal';
 import { CreateTtnModal } from './components/CreateTtnModal';
+import { SubscriptionModal } from './components/SubscriptionModal';
 import { useAuth } from './lib/AuthContext';
 import { AuthScreen } from './components/AuthScreen';
 import { useTheme } from './lib/useTheme';
+import { useSubscription } from './lib/useSubscription';
+import { SubscriptionPaywall } from './components/SubscriptionPaywall';
 
 export default function App() {
     useTheme(); // Initialize theme logic globally
     const { user } = useAuth();
+    const { subscription, loading: subLoading, activateSubscription, isAccessAllowed } = useSubscription();
     const { accounts, saveAccounts, manualTtns, saveManualTtns, isLoaded } = useAccounts();
     const { parcels, loading, error, refresh, lastRefresh } = useDashboardData(accounts, manualTtns, (newTtns) => {
         const updated = [...manualTtns];
@@ -29,13 +33,26 @@ export default function App() {
             saveManualTtns(updated);
         }
     });
+
+    useEffect(() => {
+        if (!user) return;
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('payment') === 'success') {
+            activateSubscription(params.get('order') || undefined).then(() => {
+                const newUrl = window.location.origin + window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            });
+        }
+    }, [user]);
+
     const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
+    const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
     const [accountsModalTab, setAccountsModalTab] = useState<'profile' | 'api'>('api');
     const [isAddTtnModalOpen, setIsAddTtnModalOpen] = useState(false);
     const [isCreateTtnModalOpen, setIsCreateTtnModalOpen] = useState(false);
     const [autoSelectTtn, setAutoSelectTtn] = useState<string | null>(null);
 
-    if (!isLoaded) {
+    if (!isLoaded || subLoading) {
         return (
             <div className="flex bg-[var(--bg-main)] min-h-[100dvh] items-center justify-center p-4 antialiased">
                 <div className="flex flex-col items-center">
@@ -44,7 +61,7 @@ export default function App() {
                         <div className="absolute inset-0 rounded-3xl border-2 border-[#e33745]/30 animate-ping opacity-20" />
                     </div>
                     <h1 className="text-3xl font-extrabold text-[var(--text-main)] tracking-tight mb-2 animate-pulse">
-                        Nova Track
+                        МультиПошта
                     </h1>
                     <div className="flex gap-1.5 mt-4">
                         <div className="w-2 h-2 rounded-full bg-[#e33745] animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -60,10 +77,15 @@ export default function App() {
         return <AuthScreen />;
     }
 
+    if (!isAccessAllowed()) {
+        return <SubscriptionPaywall />;
+    }
+
     return (
         <Layout 
             onManageAccounts={() => { setAccountsModalTab('profile'); setIsAccountsModalOpen(true); }}
             onManageApiKeys={() => { setAccountsModalTab('api'); setIsAccountsModalOpen(true); }}
+            onManageSubscription={() => setIsSubscriptionModalOpen(true)}
             onAddTtn={() => setIsAddTtnModalOpen(true)}
             onCreateTtn={() => setIsCreateTtnModalOpen(true)}
             onRefresh={() => refresh(true)}
@@ -118,6 +140,11 @@ export default function App() {
                 accounts={accounts} 
                 onSave={saveAccounts} 
                 initialTab={accountsModalTab}
+           />
+
+           <SubscriptionModal 
+                isOpen={isSubscriptionModalOpen}
+                onClose={() => setIsSubscriptionModalOpen(false)}
            />
 
            <AddTtnModal

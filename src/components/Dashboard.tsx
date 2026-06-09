@@ -21,6 +21,20 @@ interface DashboardProps {
 
 export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onDeleteManualTtn, onUpdateManualTtn, autoSelectTtn, onAutoSelectClear, onAddManualTtn, accounts, onCreateTtn }: DashboardProps) {
   const [filterStatus, setFilterStatus] = useState<string>('All');
+  const [filterDate, setFilterDate] = useState<string>('AllTime');
+  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
+  const filterMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filterMenuRef.current && !filterMenuRef.current.contains(event.target as Node)) {
+        setIsFilterMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const [sortBy, setSortBy] = useState<string>('DateCreated (Newest)');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null);
@@ -155,6 +169,30 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
          });
      }
 
+     // Apply Date Filter
+     if (filterDate !== 'AllTime') {
+         result = result.filter(p => {
+             const ts = parseDateString(p.dateCreated);
+             if (ts === 0) return false;
+             
+             const now = new Date();
+             const msInDay = 1000 * 60 * 60 * 24;
+             
+             if (filterDate === 'Today') {
+                 return (now.getTime() - ts) < msInDay;
+             } else if (filterDate === 'Yesterday') {
+                 const diff = now.getTime() - ts;
+                 return diff >= msInDay && diff < msInDay * 2;
+             } else if (filterDate === 'Last7Days') {
+                 return (now.getTime() - ts) < msInDay * 7;
+             } else if (filterDate === 'ThisMonth') {
+                 const date = new Date(ts);
+                 return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+             }
+             return true;
+         });
+     }
+
      // Apply Sort
      result = [...result].sort((a, b) => {
           if (sortBy === 'DateCreated (Newest)') return parseDateString(b.dateCreated) - parseDateString(a.dateCreated);
@@ -221,29 +259,61 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
            </div>
 
            {/* Select Dropdowns */}
-           <div className="flex items-center gap-3 flex-nowrap w-full sm:w-auto">
-              <div className="flex items-center gap-2 text-xs flex-1 sm:flex-none">
-                 <SlidersHorizontal className="w-4 h-4 text-[var(--text-muted)] hidden lg:block" />
-                 <select 
-                     className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 lg:focus:border-red-400 text-[var(--text-main)] font-medium"
-                     value={filterStatus}
-                     onChange={e => setFilterStatus(e.target.value)}
+           <div className="flex items-center gap-3 flex-nowrap w-full sm:w-auto text-xs">
+              
+              <div className="relative" ref={filterMenuRef}>
+                 <div 
+                   onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
+                   className="relative flex items-center justify-center bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg h-[42px] lg:h-[30px] w-[42px] lg:w-[36px] shrink-0 hover:bg-[var(--bg-hover)] transition-colors group cursor-pointer" 
+                   title="Фільтри"
                  >
-                     <option value="All">Всі статуси</option>
-                     <option value="Created">Створені</option>
-                     <option value="Pending">Очікують</option>
-                     <option value="In Transit">В дорозі</option>
-                     <option value="At Branch">У відділенні</option>
-                     <option value="Stored 5+ Days">Зберігається 5+ днів</option>
-                     <option value="Delivered">Отримані</option>
-                     <option value="Issues">Проблемні</option>
-                 </select>
+                    <SlidersHorizontal className="w-4 h-4 text-[var(--text-main)] group-hover:text-red-500 transition-colors" />
+                    {(filterStatus !== 'All' || filterDate !== 'AllTime') && (
+                        <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full shadow-sm shadow-red-900/50"></div>
+                    )}
+                 </div>
+                 
+                 {isFilterMenuOpen && (
+                   <div className="absolute top-full left-0 mt-2 w-56 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl shadow-xl z-50 p-3 flex flex-col gap-3 origin-top-left animate-in fade-in zoom-in-95 duration-100">
+                     <div className="flex flex-col gap-1.5">
+                       <label className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-wider px-1">За статусом</label>
+                       <select 
+                           className="w-full bg-[var(--bg-main)] border border-[var(--border-color)] rounded-lg px-2.5 py-2 focus:outline-none focus:border-red-500 text-[var(--text-main)] text-sm"
+                           value={filterStatus}
+                           onChange={e => setFilterStatus(e.target.value)}
+                       >
+                           <option value="All">Всі статуси</option>
+                           <option value="Created">Створені</option>
+                           <option value="Pending">Очікують</option>
+                           <option value="In Transit">В дорозі</option>
+                           <option value="At Branch">У відділенні</option>
+                           <option value="Stored 5+ Days">Зберігається 5+ днів</option>
+                           <option value="Delivered">Отримані</option>
+                           <option value="Issues">Проблемні</option>
+                       </select>
+                     </div>
+                     <div className="flex flex-col gap-1.5">
+                       <label className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-wider px-1">За датою відправки</label>
+                       <select 
+                           className="w-full bg-[var(--bg-main)] border border-[var(--border-color)] rounded-lg px-2.5 py-2 focus:outline-none focus:border-red-500 text-[var(--text-main)] text-sm"
+                           value={filterDate}
+                           onChange={e => setFilterDate(e.target.value)}
+                       >
+                           <option value="AllTime">За весь час</option>
+                           <option value="Today">Сьогодні</option>
+                           <option value="Yesterday">Вчора</option>
+                           <option value="Last7Days">За тиждень</option>
+                           <option value="ThisMonth">Цього місяця</option>
+                       </select>
+                     </div>
+                   </div>
+                 )}
               </div>
               
               <div className="flex items-center gap-2 text-xs flex-1 sm:flex-none">
                  <ArrowUpDown className="w-4 h-4 text-[var(--text-muted)] hidden lg:block" />
                  <select 
-                     className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 lg:focus:border-red-400 text-[var(--text-main)] font-medium"
+                     className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 lg:focus:border-red-400 text-[var(--text-main)] font-medium text-xs lg:text-xs"
                      value={sortBy}
                      onChange={e => setSortBy(e.target.value)}
                  >
@@ -261,16 +331,6 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
         </div>
 
         <div className="hidden lg:flex items-center gap-2 w-full landscape:w-auto lg:w-auto shrink-0 justify-end">
-          {onCreateTtn && (
-             <button
-                type="button"
-                onClick={onCreateTtn}
-                className="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-[var(--text-main)] border border-transparent px-4 lg:px-3.5 py-2.5 lg:py-1.5 rounded-lg lg:rounded text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-emerald-500/10 cursor-pointer text-center whitespace-nowrap"
-             >
-                <Plus className="w-4 h-4" />
-                <span>Створити ТТН</span>
-             </button>
-          )}
           <button 
             onClick={() => onRefresh(true)} 
             disabled={loading}
@@ -315,8 +375,8 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
               {/* Header Row (fake table) */}
               <div className="bg-[var(--bg-card)] sticky top-0 border-b border-[var(--border-color)] z-10 flex text-[10px] uppercase text-[var(--text-muted)] font-bold tracking-wider">
                 <div className="px-4 py-3 w-40 shrink-0">ТТН</div>
-                <div className="px-4 py-3 w-40 shrink-0">Акаунт</div>
-                <div className="px-4 py-3 w-32 shrink-0">Статус</div>
+                <div className="px-4 py-3 w-40 shrink-0">Профіль</div>
+                <div className="px-4 py-3 w-56 shrink-0">Статус</div>
                 <div className="px-4 py-3 flex-1 min-w-[200px]">Одержувач / Маршрут</div>
                 <div className="px-4 py-3 w-28 shrink-0">Вартість</div>
                 <div className="px-4 py-3 w-28 shrink-0 text-right">Очікується</div>
@@ -347,8 +407,8 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                       </div>
 
                       {/* Status */}
-                      <div className="px-4 py-2.5 w-32 shrink-0">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase inline-block truncate max-w-[120px] ${getStatusColorTheme(parcel.statusCode)}`} title={parcel.status}>
+                      <div className="px-4 py-2.5 w-56 shrink-0 flex items-center">
+                        <span className={`px-2 py-1.5 rounded-md text-[10px] font-bold uppercase leading-snug break-words ${getStatusColorTheme(parcel.statusCode)}`} title={parcel.status}>
                             {parcel.status}
                         </span>
                       </div>
@@ -414,9 +474,21 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                  
                  const code = Number(parcel.statusCode);
                  let progress = 50;
-                 let progressColor = "bg-[#25c468]";
-                 if (code === 1) progress = 10;
-                 else if ([7, 8, 9, 10, 11, 14, 106, 108].includes(code)) progress = 100;
+                 let progressColor = "bg-blue-500";
+                 let showProgressBar = true;
+                 
+                 if (code === 1) {
+                     progress = 10;
+                     progressColor = "bg-[var(--text-muted)]";
+                 } else if ([7, 8].includes(code)) {
+                     progress = 100;
+                     progressColor = "bg-orange-500";
+                 } else if ([9, 10, 11, 14, 106, 108].includes(code)) {
+                     showProgressBar = false;
+                 } else if ([2, 3, 102, 103].includes(code)) {
+                     progress = 100;
+                     progressColor = "bg-red-500";
+                 }
 
                  // Parse the locations slightly. Assuming "Відправка" -> "CityName" based on usual data.
                  // We don't have true sender city in standard parcel interface without extra fetch, 
@@ -488,27 +560,28 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                                 );
                             })}
                             
-                            {/* Progress Bar Container */}
-                            <div className="pr-4 mt-1">
-                                <div className="relative w-full h-[3px] bg-[var(--progress-track)] rounded-full mb-3 flex items-center">
-                                    <div 
-                                        className={`h-[3px] rounded-full ${progressColor} relative`} 
-                                        style={{ width: `${progress}%` }}
-                                    >
-                                        <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${progressColor} shadow-[0_0_0_2px_var(--bg-card-alt)] translate-x-1/2`}></div>
+                            {showProgressBar && (
+                                <div className="pr-4 mt-1">
+                                    <div className="relative w-full h-[3px] bg-[var(--progress-track)] rounded-full mb-3 flex items-center">
+                                        <div 
+                                            className={`h-[3px] rounded-full ${progressColor} relative`} 
+                                            style={{ width: `${progress}%` }}
+                                        >
+                                            <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${progressColor} shadow-[0_0_0_2px_var(--bg-card-alt)] translate-x-1/2`}></div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Bottom texts */}
+                                    <div className="mt-2.5 flex justify-between items-center text-[12px] text-[var(--text-muted)] font-medium tracking-wide">
+                                        <div className="truncate pr-2">
+                                            {parcel.rawStatus?.CitySender || 'Відправка'} · {dateCreated}
+                                        </div>
+                                        <div className="truncate text-right">
+                                            {parcel.cityName} · {dateEst}
+                                        </div>
                                     </div>
                                 </div>
-                                
-                                {/* Bottom texts */}
-                                <div className="mt-2.5 flex justify-between items-center text-[12px] text-[var(--text-muted)] font-medium tracking-wide">
-                                    <div className="truncate pr-2">
-                                        {parcel.rawStatus?.CitySender || 'Відправка'} · {dateCreated}
-                                    </div>
-                                    <div className="truncate text-right">
-                                        {parcel.cityName} · {dateEst}
-                                    </div>
-                                </div>
-                            </div>
+                            )}
                         </div>
                     </motion.div>
                  );

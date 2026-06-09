@@ -1,20 +1,23 @@
 import React, { ReactNode, useState, useEffect, useRef } from 'react';
-import { Home, MapPin, User, Package as Box, LogOut, Plus, FileText, X, Search, Globe, Copy, Check, Barcode, RefreshCw, Key } from 'lucide-react';
+import { Home, MapPin, User, Package as Box, LogOut, Plus, FileText, X, Search, Globe, Copy, Check, Barcode, RefreshCw, Key, CreditCard } from 'lucide-react';
 import { useAuth } from '../lib/AuthContext';
 import { searchCities, getWarehouses } from '../lib/np-api';
+import { useSubscription } from '../lib/useSubscription';
 
 interface LayoutProps {
   children: ReactNode;
   onManageAccounts: () => void;
   onManageApiKeys: () => void;
+  onManageSubscription?: () => void;
   onAddTtn: () => void;
   onCreateTtn?: () => void;
   onRefresh?: () => void;
   loading?: boolean;
 }
 
-export function Layout({ children, onManageAccounts, onManageApiKeys, onAddTtn, onCreateTtn, onRefresh, loading }: LayoutProps) {
+export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSubscription, onAddTtn, onCreateTtn, onRefresh, loading }: LayoutProps) {
   const { user, logout } = useAuth();
+  const { subscription, daysLeft } = useSubscription();
 
   // Scroll and Pull to refresh state
   const mainRef = useRef<HTMLDivElement>(null);
@@ -200,40 +203,56 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onAddTtn, 
   return (
     <div className="flex bg-[var(--bg-main)] min-h-[100dvh] font-sans selection:bg-red-200">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-64 bg-[var(--bg-main)] text-[var(--text-main)] flex-col h-screen sticky top-0 shadow-lg shrink-0">
+      <aside className="hidden lg:flex w-56 bg-[var(--bg-main)] text-[var(--text-main)] flex-col h-screen sticky top-0 shadow-lg shrink-0">
          <div className="p-6 flex items-center gap-3">
              <div className="bg-[#e33745] p-2 rounded-xl shadow-md shadow-red-900/20">
                  <Box className="w-5 h-5 text-[var(--text-main)] stroke-[2]" />
              </div>
-             <span className="font-bold text-lg tracking-tight">Nova Track</span>
+             <span className="font-bold text-lg tracking-tight">МультиПошта</span>
          </div>
+
+         {subscription && (
+             <div onClick={onManageSubscription} className="mx-4 mb-4 p-3 bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]/50 rounded-xl cursor-pointer transition-all flex items-center justify-between text-left group">
+                <div className="flex items-center gap-2.5 min-w-0">
+                   <div className="p-1.5 rounded-lg bg-red-500/10 text-[#e33745]">
+                      <CreditCard className="w-3.5 h-3.5" />
+                   </div>
+                   <div className="min-w-0">
+                      <div className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Підписка</div>
+                      <div className="text-[11px] font-semibold text-[var(--text-main)] truncate mt-0.5">
+                         {subscription.status === 'trial' ? 'Пробний період' : `Активна до ${subscription.activeEndDate ? new Date(subscription.activeEndDate).toLocaleDateString('uk-UA') : ''}`}
+                      </div>
+                   </div>
+                </div>
+             </div>
+          )}
          
          <nav className="flex-1 px-4 space-y-1.5 mt-2">
              <div className="flex items-center gap-3 px-3 py-2.5 bg-[var(--bg-active-alpha)] rounded-lg text-[var(--text-main)] cursor-pointer font-medium text-sm">
                 <Home className="w-4 h-4" />
-                Головна (Посилки)
+                Посилки
              </div>
              {onCreateTtn && (
                 <div onClick={onCreateTtn} className="flex items-center gap-3 px-3 py-2.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover-alpha)] hover:text-[var(--text-main)] rounded-lg cursor-pointer font-medium text-sm transition-colors">
                    <FileText className="w-4 h-4 text-emerald-400" />
-                   Створити посилку
+                   Створити
                 </div>
              )}
              <div onClick={onAddTtn} className="flex items-center gap-3 px-3 py-2.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover-alpha)] hover:text-[var(--text-main)] rounded-lg cursor-pointer font-medium text-sm transition-colors">
                 <Plus className="w-4 h-4" />
-                Додати ТТН вручну
+                Відстежити
              </div>
              <div onClick={() => setIsMapOpen(true)} className="flex items-center gap-3 px-3 py-2.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover-alpha)] hover:text-[var(--text-main)] rounded-lg cursor-pointer font-medium text-sm transition-colors">
                 <MapPin className="w-4 h-4" />
-                Мапа відділень
+                Мапа
              </div>
              <div onClick={onManageAccounts} className="flex items-center gap-3 px-3 py-2.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover-alpha)] hover:text-[var(--text-main)] rounded-lg cursor-pointer font-medium text-sm transition-colors">
                 <User className="w-4 h-4" />
-                Профіль
+                Користувач
              </div>
              <div onClick={onManageApiKeys} className="flex items-center gap-3 px-3 py-2.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover-alpha)] hover:text-[var(--text-main)] rounded-lg cursor-pointer font-medium text-sm transition-colors">
                 <Key className="w-4 h-4" />
-                API Ключі
+                Профілі (ключі API)
              </div>
          </nav>
 
@@ -325,14 +344,10 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onAddTtn, 
               className="flex flex-col items-center justify-center w-16 h-[54px] cursor-pointer hover:text-[var(--text-main)] text-[#7d8c97] transition-all pb-1"
               onClick={onManageAccounts}
             >
-              <div className="w-6 h-6 rounded-full bg-[#3d4b53]/80 flex items-center justify-center text-[9px] font-bold text-[var(--text-main)] tracking-tighter uppercase border border-gray-650 shrink-0">
-                {getEmailInitials(user?.email)}
-              </div>
+              <User className="w-6 h-6 stroke-[1.8]" />
               <span className="text-[10px] mt-1 font-semibold tracking-wide">Користувач</span>
             </div>
 
-            {/* Sublte iOS home indicator simulated bar at the bottom center to match the visual in the screenshot */}
-            <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1 bg-[var(--text-muted)] opacity-30 rounded-full sm:hidden"></div>
           </nav>
       </div>
 

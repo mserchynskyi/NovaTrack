@@ -29,6 +29,50 @@
         }
       },
       "required": ["userId", "tokens"]
+    },
+    "subscription": {
+      "title": "Subscription",
+      "description": "Subscription details for a user with WayForPay integration",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who owns this subscription"
+        },
+        "status": {
+          "type": "string",
+          "description": "Current status of the subscription (trial, active, expired, none)"
+        },
+        "trialStartDate": {
+          "type": "string",
+          "description": "Start date of the 14-day trial (ISO string)"
+        },
+        "trialEndDate": {
+          "type": "string",
+          "description": "End date of the 14-day trial (ISO string)"
+        },
+        "activeEndDate": {
+          "type": "string",
+          "description": "End date of the active subscription period (ISO string)"
+        },
+        "wayforpayCardPan": {
+          "type": "string",
+          "description": "Masked card number used for subscription"
+        },
+        "merchantAccount": {
+          "type": "string",
+          "description": "WayForPay merchant account details"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Document creation timestamp in ISO format"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last updated timestamp in ISO format"
+        }
+      },
+      "required": ["userId", "status", "trialStartDate", "trialEndDate"]
     }
   },
   "firestore": {
@@ -37,6 +81,12 @@
         "$ref": "#/entities/account"
       },
       "description": "Stores user API tokens. The document ID is the userId."
+    },
+    "userSubscriptions/{userId}": {
+      "schema": {
+        "$ref": "#/entities/subscription"
+      },
+      "description": "Stores user subscription information. The document ID is the userId."
     }
   }
 }

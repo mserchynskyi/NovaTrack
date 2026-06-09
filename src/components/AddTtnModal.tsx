@@ -154,7 +154,7 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, 
                         {manualTtns.length === 0 ? (
                             <p className="text-xs text-[var(--text-muted)] italic py-2">Немає доданих вручну номерів.</p>
                         ) : (
-                            <div className="max-h-40 overflow-y-auto space-y-2 pr-1 no-scrollbar">
+                            <div className="max-h-[400px] sm:max-h-[450px] overflow-y-auto space-y-2 pr-1 no-scrollbar">
                                 {manualTtns.map(item => (
                                     <div key={item.ttn} className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:border-gray-150 rounded-xl p-3 flex items-center justify-between text-[var(--text-main)]">
                                         <div className="flex flex-col">

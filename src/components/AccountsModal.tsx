@@ -1,8 +1,9 @@
 import { useState, FormEvent, useEffect } from 'react';
-import { X, Trash2, Plus, Key, LogOut, CheckCircle2, Mail, ChevronRight, ArrowLeft, Sun, Moon, Monitor } from 'lucide-react';
+import { X, Trash2, Plus, Key, LogOut, CheckCircle2, Mail, ChevronRight, ArrowLeft, Sun, Moon, Monitor, CreditCard, Settings } from 'lucide-react';
 import { NpAccount } from '../types';
 import { useAuth } from '../lib/AuthContext';
 import { useTheme } from '../lib/useTheme';
+import { useSubscription } from '../lib/useSubscription';
 
 interface AccountsModalProps {
   isOpen: boolean;
@@ -15,14 +16,75 @@ interface AccountsModalProps {
 export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 'profile' }: AccountsModalProps) {
   const { user, loading, loginEmail, registerEmail, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { 
+    subscription, 
+    loading: subLoading, 
+    activateSubscription, 
+    cancelSubscription,
+    setTrialExpired, 
+    resetTrial, 
+    daysLeft,
+    merchantAccount,
+    merchantSecret,
+    saveMerchantConfig,
+    getWayForPayParams
+  } = useSubscription();
   const [name, setName] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [activeTab, setActiveTab] = useState<'profile' | 'api'>(initialTab);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+  const handleSubscribe = (e: any) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    const params = getWayForPayParams();
+    if (!params) {
+      alert('Помилка: Не вдалося згенерувати параметри оплати. Перевірте статус авторизації.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Build standard hidden HTML form and submit to WayForPay
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = params.action;
+    form.target = '_blank'; // Open in a new tab for seamless flow in iframe
+
+    // Append regular parameters
+    Object.entries(params.fields).forEach(([key, val]) => {
+      if (Array.isArray(val)) {
+        val.forEach((item) => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = `${key}[]`;
+          input.value = String(item);
+          form.appendChild(input);
+        });
+      } else {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = String(val);
+        form.appendChild(input);
+      }
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+
+    setTimeout(() => {
+      setIsSubmitting(false);
+    }, 2000);
+  };
 
   // Sync activeTab when modal opens/changes
   useEffect(() => {
      if (isOpen) {
          setActiveTab(initialTab);
+         setShowCancelConfirm(false);
      }
   }, [isOpen, initialTab]);
 
@@ -104,7 +166,7 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
             )}
             
             <h2 className="text-lg font-bold text-[var(--text-main)] tracking-tight text-center">
-              {activeTab === 'api' ? 'API Ключі' : 'Користувач'}
+              {activeTab === 'api' ? 'Профілі (ключі API)' : 'Користувач'}
             </h2>
 
             <button onClick={onClose} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors shrink-0">
@@ -130,7 +192,7 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
                         setIsEmailFormOpen(true);
                         setAuthError('');
                       }}
-                      className="flex items-center justify-center gap-2 bg-[#292d32] hover:bg-[var(--bg-hover)] text-[var(--text-muted)] lg:bg-white lg:border lg:border-gray-300 lg:text-gray-700 lg:hover:bg-gray-50 text-xs py-2.5 rounded-lg font-medium transition cursor-pointer"
+                      className="flex items-center justify-center gap-2 bg-[var(--bg-card-alt)] border border-[var(--border-color)] hover:bg-[var(--bg-hover)] text-[var(--text-main)] text-xs py-2.5 rounded-lg font-medium transition cursor-pointer"
                     >
                       <Mail className="w-4 h-4" /> Вхід через Email / Пароль
                     </button>
@@ -182,7 +244,7 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
                             setIsEmailFormOpen(false);
                             setAuthError('');
                           }}
-                          className="px-3 bg-transparent border border-[var(--border-color)] text-[var(--text-muted)] lg:text-gray-600 rounded-lg text-xs hover:bg-[#131b20] lg:hover:bg-gray-100 transition cursor-pointer"
+                          className="px-3 bg-transparent border border-[var(--border-color)] text-[var(--text-muted)] rounded-lg text-xs hover:bg-[var(--bg-hover)] transition cursor-pointer"
                         >
                           Скасувати
                         </button>
@@ -232,6 +294,92 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
                 )}
               </div>
 
+              {/* WayForPay Subscription Status Panel */}
+              {user && (
+                <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-5 rounded-xl flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className="font-bold text-[var(--text-main)] text-sm flex items-center gap-2">
+                      <CreditCard className="w-4.5 h-4.5 text-[#e33745]" />
+                      <span>Підписка WayForPay</span>
+                    </div>
+                    <span className={`text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full ${
+                      subscription?.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/10' :
+                      subscription?.status === 'trial' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/10' :
+                      'bg-red-500/10 text-red-500 border border-red-500/10'
+                    }`}>
+                      {subscription?.status === 'active' ? 'Активна' :
+                       subscription?.status === 'trial' ? `Пробна (${daysLeft()} дн.)` :
+                       'Закінчилась'}
+                    </span>
+                  </div>
+
+                  <div className="text-xs text-[var(--text-muted)] space-y-1.5 leading-relaxed text-left">
+                    {subscription?.status === 'trial' && (
+                      <p>Пробний 14-денний період активний. Дата завершення: <strong className="text-[var(--text-main)]">{new Date(subscription.trialEndDate).toLocaleDateString('uk-UA')}</strong></p>
+                    )}
+                    {subscription?.status === 'active' && subscription?.activeEndDate && (
+                      subscription?.wayforpayCardPan ? (
+                        <p>Ваша підписка активна (100 грн/міс). Наступне списання: <strong className="text-[var(--text-main)]">{new Date(subscription.activeEndDate).toLocaleDateString('uk-UA')}</strong></p>
+                      ) : (
+                        <p>Автопродовження підписки скасовано. Доступ залишається активним до: <strong className="text-[var(--text-main)]">{new Date(subscription.activeEndDate).toLocaleDateString('uk-UA')}</strong></p>
+                      )
+                    )}
+                    {subscription?.status === 'expired' && (
+                      <p className="text-[#e33745] font-semibold">Ваш пробний період або термін дії підписки закінчився. Будь ласка, активуйте підписку для подальшої роботи з посилками.</p>
+                    )}
+                    {subscription?.wayforpayCardPan && (
+                      <p className="font-mono text-[11px] bg-[var(--bg-main)] p-1.5 rounded border border-[var(--border-color)]/40 text-center">Прив'язана картка: {subscription.wayforpayCardPan}</p>
+                    )}
+                  </div>
+
+                  {subscription?.wayforpayCardPan && (
+                    <div className="space-y-2">
+                      {!showCancelConfirm ? (
+                        <button
+                          onClick={() => setShowCancelConfirm(true)}
+                          className="w-full flex items-center justify-center gap-2 bg-[var(--bg-main)] border border-[var(--border-color)]/60 hover:bg-[var(--bg-hover)] text-[#e33745] hover:text-red-700 py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all transform active:scale-98 cursor-pointer shadow-sm"
+                        >
+                          Скасувати підписку
+                        </button>
+                      ) : (
+                        <div className="bg-[var(--bg-main)]/50 p-3 rounded-lg border border-[#e33745]/30 text-center space-y-2.5">
+                          <p className="text-[11px] text-[var(--text-muted)] leading-normal">
+                            Ви впевнені, що хочете скасувати підписку? Автоплатежі буде відключено.
+                          </p>
+                          <div className="flex gap-2 text-[10px] font-bold uppercase tracking-wider">
+                            <button
+                              onClick={async () => {
+                                await cancelSubscription();
+                                setShowCancelConfirm(false);
+                              }}
+                              className="flex-1 bg-[#e33745] hover:bg-red-700 text-[#ffffff] py-2 rounded-md cursor-pointer transition-colors"
+                            >
+                              Так, скасувати
+                            </button>
+                            <button
+                              onClick={() => setShowCancelConfirm(false)}
+                              className="flex-1 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] py-2 rounded-md cursor-pointer transition-colors"
+                            >
+                              Ні, залишити
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {(subscription?.status !== 'active' || !subscription?.wayforpayCardPan) && (
+                    <button
+                      onClick={handleSubscribe}
+                      disabled={isSubmitting}
+                      className="w-full flex items-center justify-center gap-2 mt-3 bg-[#e33745] hover:bg-red-700 text-[#ffffff] py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all transform active:scale-98 shadow-md shadow-red-950/10 disabled:opacity-50 cursor-pointer"
+                    >
+                      {isSubmitting ? 'Генерація лінку...' : 'Оплатити підписку 100 ₴'}
+                    </button>
+                  )}
+                </div>
+              )}
+
               {/* Theme Selector */}
               <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-4 rounded-xl flex flex-col gap-3">
                 <div className="font-semibold text-[var(--text-main)] text-sm">Тема оформлення</div>
@@ -260,18 +408,18 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
               {/* API Keys Menu Item */}
               <div 
                 onClick={() => setActiveTab('api')}
-                className="bg-[var(--bg-card)] border border-[var(--border-color)] border-[var(--border-color)] p-4 rounded-xl flex items-center justify-between cursor-pointer hover:bg-[#2a3038] lg:hover:bg-gray-50 transition-colors group"
+                className="bg-[var(--bg-card)] border border-[var(--border-color)] p-4 rounded-xl flex items-center justify-between cursor-pointer hover:bg-[var(--bg-hover)] transition-colors group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[var(--bg-main)] lg:bg-gray-100 rounded-lg text-[var(--text-muted)] lg:text-gray-600">
+                  <div className="p-2 bg-[var(--bg-main)] rounded-lg text-[var(--text-muted)]">
                     <Key className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="font-semibold text-[var(--text-main)] text-sm">API Ключі</div>
+                    <div className="font-semibold text-[var(--text-main)] text-sm">Профілі (ключі API)</div>
                     <div className="text-xs text-[var(--text-muted)] mt-0.5">Керування підключеннями НП</div>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-[var(--text-muted)] lg:text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors" />
+                <ChevronRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors" />
               </div>
             </>
           ) : (
@@ -282,7 +430,7 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
                     <div key={acc.id} className="flex justify-between items-center p-3.5 bg-[var(--bg-card-alt)] border border-[var(--border-color)] border-[var(--border-color)] rounded-xl">
                       <div>
                         <div className="font-medium text-[var(--text-main)] lg:text-gray-800 text-sm tracking-wide">{acc.name}</div>
-                        <div className="text-[11px] text-[var(--text-muted)] font-mono mt-0.5" title={acc.apiKey}>{acc.apiKey.substring(0, 8)}••••••••</div>
+                        <div className="text-[11px] text-[var(--text-muted)] font-mono mt-0.5 break-all" title={acc.apiKey}>{acc.apiKey}</div>
                       </div>
                       <button onClick={() => handleRemove(acc.id)} className="p-2 text-[var(--text-muted)] hover:text-[#e33745] lg:text-red-500 lg:hover:bg-red-50 hover:bg-[#e33745]/10 rounded-lg transition-colors" title="Видалити">
                         <Trash2 className="w-4 h-4" />
@@ -323,6 +471,10 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
                 >
                   <Plus className="w-4 h-4" /> Зберегти
                 </button>
+                <div className="mt-3 text-center text-[10px] text-[var(--text-muted)] leading-relaxed">
+                  <p>Як знайти токен?</p>
+                  <p>Увійдіть у <b>веб-кабінет</b> Нової Пошти, перейдіть у меню <br/> <span className="font-medium">Налаштування → Безпека → API 2.0</span> і створіть новий ключ.</p>
+                </div>
               </div>
             </>
           )}

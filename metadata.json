@@ -1,5 +1,5 @@
 {
-  "name": "NovaTrack",
+  "name": "МультиПошта",
   "description": "Єдина панель відстеження посилок Нової Пошти для кількох акаунтів (через API-токени).",
   "requestFramePermissions": [],
   "majorCapabilities": [
