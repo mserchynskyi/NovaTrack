@@ -283,7 +283,7 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSu
                   height: loading ? '54px' : `${pullDistance}px`, 
                   opacity: loading ? 1 : Math.min(1, pullDistance / 40) 
                 }}
-                className="flex items-center justify-center w-full transition-all duration-150 overflow-hidden shrink-0 bg-transparent mt-2 self-center z-40"
+                className={`flex items-center justify-center w-full transition-all duration-150 ${loading ? 'overflow-visible' : 'overflow-hidden'} shrink-0 bg-transparent mt-2 self-center z-40`}
               >
                 <div className="flex items-center gap-2 bg-[var(--bg-card-alt)]/90 border border-[var(--border-color)] rounded-full px-4 py-2 text-xs font-bold shadow-lg shadow-black/25">
                   <RefreshCw className={`w-4 h-4 text-[#e33745] ${loading ? 'animate-spin' : pullDistance > 55 ? 'rotate-180 transition-all duration-200' : ''}`} />

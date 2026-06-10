@@ -2,7 +2,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.novatrack.app',
-  appName: 'Nova Track',
+  appName: 'МультиПошта',
   webDir: 'dist',
 };
 

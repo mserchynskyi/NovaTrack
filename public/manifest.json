@@ -1,6 +1,6 @@
 {
-  "name": "Nova Track",
-  "short_name": "NovaTrack",
+  "name": "МультиПошта",
+  "short_name": "МультиПошта",
   "description": "Єдина панель відстеження посилок Нової Пошти для кількох акаунтів через API-токени.",
   "start_url": ".",
   "display": "standalone",
