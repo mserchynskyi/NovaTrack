@@ -765,9 +765,9 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                             <div id="section-primary-info" className="space-y-2.5">
                                 <h3 className="text-[var(--text-main)] font-bold text-sm tracking-tight px-1 uppercase text-[var(--text-muted)] tracking-wider">Основна інформація</h3>
                                 
-                                {/* 1.1 Служба доставки selection (accounts) */}
+                                {/* 1.1 Профіль selection (accounts) */}
                                 <div className="space-y-1">
-                                    <label className="text-[11px] text-[var(--text-muted)] font-bold block">Служба доставки</label>
+                                    <label className="text-[11px] text-[var(--text-muted)] font-bold block">Профіль</label>
                                     <div 
                                         id="interactive-account-picker"
                                         className="bg-[var(--bg-card)] hover:bg-[var(--bg-main)] rounded-2xl p-4 border border-[var(--border-color)] flex items-center justify-between cursor-pointer transition-colors"
@@ -859,24 +859,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                                 </div>
                             </div>
 
-                            {/* ACCOUNT SELECTION */}
-                            {accounts.length > 1 && (
-                                <div className="space-y-2 mt-4 mb-2">
-                                    <label className="text-[11px] text-[var(--text-muted)] font-bold block uppercase tracking-wider px-1">Оберіть кабінет (токен)</label>
-                                    <div className="relative">
-                                        <select
-                                            value={selectedAccountId}
-                                            onChange={(e) => setSelectedAccountId(e.target.value)}
-                                            className="w-full bg-[var(--bg-card)] hover:bg-[var(--bg-main)] rounded-2xl p-4 pr-10 border border-[var(--border-color)] text-[var(--text-main)] text-sm font-semibold appearance-none cursor-pointer outline-none focus:ring-1 focus:ring-[#e33745]"
-                                        >
-                                            {accounts.map(acc => (
-                                                <option key={acc.id} value={acc.id}>{acc.name}</option>
-                                            ))}
-                                        </select>
-                                        <ChevronRight className="w-4 h-4 text-[var(--text-muted)] absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none rotate-90" />
-                                    </div>
-                                </div>
-                            )}
+
 
                             {/* SECTION 1.5: АДРЕСА ВІДПРАВНИКА */}
                             <div id="section-sender-address" className="space-y-2">
