@@ -108,13 +108,9 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
     const [loadingSender, setLoadingSender] = useState(false);
 
     // Route Selection - Sender Location (Default Lviv usually to match test tokens)
-    const [senderCitySearch, setSenderCitySearch] = useState('м. Львів');
+    const [senderCitySearch, setSenderCitySearch] = useState('');
     const [senderCities, setSenderCities] = useState<NpCity[]>([]);
-    const [selectedSenderCity, setSelectedSenderCity] = useState<NpCity | null>({
-        Ref: "db5c88f5-391c-11dd-90d9-001a4d5b2d19",
-        Description: "м. Львів",
-        AreaDescription: "Львівська"
-    });
+    const [selectedSenderCity, setSelectedSenderCity] = useState<NpCity | null>(null);
     const [searchingSenderCity, setSearchingSenderCity] = useState(false);
     const [senderWarehouses, setSenderWarehouses] = useState<NpWarehouse[]>([]);
     const [selectedSenderWarehouseRef, setSelectedSenderWarehouseRef] = useState('');
@@ -184,7 +180,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
     // Derived active warehouse labels
     const selectedSenderWarehouseLabel = useMemo(() => {
         const found = senderWarehouses.find(w => w.Ref === selectedSenderWarehouseRef);
-        return found ? found.Description : 'Відділення №1: вул. Городоцька, 359';
+        return found ? found.Description : '';
     }, [senderWarehouses, selectedSenderWarehouseRef]);
 
     const selectedRecipientWarehouseLabel = useMemo(() => {
@@ -273,28 +269,23 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
         loadSenderInfo();
     }, [selectedAccountId, isOpen]);
 
-    // Dynamically resolve Lviv and Derazhnya Refs on load to prevent "City not found" in different environments
+    // Dynamically load last used sender location from localStorage
     useEffect(() => {
         if (!isOpen || !activeAccount) return;
 
-        const resolveDefaultCities = async () => {
-            try {
-                const lvivResults = await searchCities(activeAccount.apiKey, 'Львів');
-                if (lvivResults && lvivResults.length > 0) {
-                    const lviv = lvivResults[0];
-                    setSelectedSenderCity({
-                        Ref: lviv.Ref,
-                        Description: lviv.Description,
-                        AreaDescription: lviv.AreaDescription
-                    });
+        const loadSenderDefaults = () => {
+            const savedCityStr = localStorage.getItem('np_lastSenderCity');
+            if (savedCityStr) {
+                try {
+                    const savedCity = JSON.parse(savedCityStr);
+                    setSelectedSenderCity(savedCity);
+                } catch (err) {
+                    console.warn('Error parsing saved sender city:', err);
                 }
-            } catch (err) {
-                console.warn('Error resolving default sender city (Lviv):', err);
             }
-
         };
 
-        resolveDefaultCities();
+        loadSenderDefaults();
     }, [selectedAccountId, isOpen]);
 
     const handleSenderChange = async (ref: string) => {
@@ -350,7 +341,12 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                 const res = await getWarehouses(activeAccount.apiKey, selectedSenderCity.Ref);
                 setSenderWarehouses(res);
                 if (res.length > 0) {
-                    setSelectedSenderWarehouseRef(res[0].Ref);
+                    const savedWarehouseRef = localStorage.getItem('np_lastSenderWarehouseRef');
+                    if (savedWarehouseRef && res.some(w => w.Ref === savedWarehouseRef)) {
+                        setSelectedSenderWarehouseRef(savedWarehouseRef);
+                    } else {
+                        setSelectedSenderWarehouseRef(res[0].Ref);
+                    }
                 }
             } catch (err) {
                 console.error(err);
@@ -544,6 +540,13 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
             });
 
             if (apiResult.success) {
+                if (selectedSenderCity) {
+                    localStorage.setItem('np_lastSenderCity', JSON.stringify(selectedSenderCity));
+                }
+                if (selectedSenderWarehouseRef) {
+                    localStorage.setItem('np_lastSenderWarehouseRef', selectedSenderWarehouseRef);
+                }
+
                 setSuccessData({
                     ttn: apiResult.ttn,
                     cost: apiResult.cost,
@@ -635,10 +638,10 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
         <div id="create-ttn-modal-overlay" className="fixed inset-0 bg-[#0c0d10]/90 backdrop-blur-md z-[100] flex items-center justify-center p-0 sm:p-2 overflow-hidden sm:overflow-y-auto no-scrollbar">
             
             {/* Phone simulator boundary wrapper with exact colors shown in the screenshot */}
-            <div id="create-ttn-phone-boundary" className="bg-[var(--bg-main)] text-zinc-150 w-full max-w-lg sm:rounded-[32px] shadow-2xl flex flex-col h-[100dvh] sm:h-[880px] overflow-hidden border border-[var(--border-color)] relative font-sans">
+            <div id="create-ttn-phone-boundary" className="bg-[var(--bg-main)] text-[var(--text-main)] w-full max-w-lg lg:max-w-4xl sm:rounded-[32px] shadow-2xl flex flex-col h-[100dvh] sm:h-[880px] lg:h-[85vh] overflow-hidden border border-[var(--border-color)] relative font-sans">
                 
                 {/* Fixed Premium Header */}
-                <div id="ttn-modal-header" className="px-5 py-4 border-b border-[var(--border-color)]/40 flex items-center justify-between bg-[var(--bg-main)] shrink-0 z-20">
+                <div id="ttn-modal-header" className="px-5 py-4 lg:py-5 lg:px-8 border-b border-[var(--border-color)]/40 flex items-center justify-between bg-[var(--bg-main)] shrink-0 z-20">
                     <div className="w-8 h-8" />
                     <span className="font-bold text-lg text-[var(--text-main)] font-sans tracking-tight">Створення ТТН</span>
                     <button 
@@ -658,7 +661,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                             animate={{ scale: 1, opacity: 1 }}
                             className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/30 relative"
                         >
-                            <CheckCircle className="w-11 h-11 text-emerald-400" />
+                            <CheckCircle className="w-11 h-11 text-emerald-500" />
                             <div className="absolute inset-0 rounded-full border border-emerald-400/20 animate-ping opacity-25" />
                         </motion.div>
                         
@@ -683,7 +686,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                                         className="p-1.5 hover:bg-[var(--bg-hover)] rounded-lg transition-colors text-[var(--text-muted)] hover:text-[var(--text-main)] group relative"
                                         title="Копіювати TTN"
                                     >
-                                        {copiedTtn ? <Check className="w-5 h-5 text-emerald-400" /> : <Copy className="w-5 h-5" />}
+                                        {copiedTtn ? <Check className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
                                     </button>
                                 </div>
                             </div>
@@ -707,7 +710,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                                     href={`https://my.novaposhta.ua/orders/printMarkings/orders[]/${successData.ttn}/type/pdf/apiKey/${activeAccount?.apiKey}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center justify-center gap-1.5 bg-[#32363b] hover:bg-zinc-700 border border-[#3e424c] text-[var(--text-main)] font-bold py-3 px-3 rounded-xl text-xs transition-colors cursor-pointer text-center"
+                                    className="flex items-center justify-center gap-1.5 bg-[var(--bg-hover)] hover:bg-[var(--bg-active-alpha)] border border-[var(--border-color)] text-[var(--text-main)] font-bold py-3 px-3 rounded-xl text-xs transition-colors cursor-pointer text-center"
                                 >
                                     <Printer className="w-4 h-4 shrink-0 text-amber-500" />
                                     <span>Маркування</span>
@@ -737,8 +740,8 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                     </div>
                 ) : (
                     /* SCROLLABLE FORM WIZARD FLOW OVERVIEW */
-                    <form id="ttn-interactive-scrollable-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar flex flex-col justify-between">
-                        <div className="space-y-4">
+                    <form id="ttn-interactive-scrollable-form" onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+                        <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 no-scrollbar pb-8 relative">
                             {errorMsg && (
                                 <div id="ttn-form-error-banner" className="bg-red-500/10 border border-red-500/35 text-red-350 p-3.5 rounded-2xl text-xs leading-relaxed font-semibold flex flex-col gap-3">
                                     <p className="whitespace-pre-line">{errorMsg}</p>
@@ -746,7 +749,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                                         <button
                                             type="button"
                                             onClick={handleFallbackToMoney}
-                                            className="w-full bg-[#e33745] hover:bg-red-700 text-[#ffffff] font-bold py-2.5 py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-lg hover:shadow-[#e33745]/20"
+                                            className="w-full bg-[#e33745] hover:bg-red-700 text-[#ffffff] font-bold py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-lg hover:shadow-[#e33745]/20"
                                         >
                                             Створити зі «Звичайною післяплатою» (Money)
                                         </button>
@@ -761,9 +764,10 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                                 </div>
                             )}
 
-                            {/* SECTION 1: ОСНОВНА ІНФОРМАЦІЯ */}
-                            <div id="section-primary-info" className="space-y-2.5">
-                                <h3 className="text-[var(--text-main)] font-bold text-sm tracking-tight px-1 uppercase text-[var(--text-muted)] tracking-wider">Основна інформація</h3>
+                            <div className="columns-1 lg:columns-2 lg:gap-6 space-y-4 lg:space-y-0">
+                                {/* SECTION 1: ОСНОВНА ІНФОРМАЦІЯ */}
+                                <div id="section-primary-info" className="space-y-2.5 break-inside-avoid lg:mb-4">
+                                    <h3 className="text-[var(--text-main)] font-bold text-sm tracking-tight px-1 uppercase text-[var(--text-muted)] tracking-wider">Основна інформація</h3>
                                 
                                 {/* 1.1 Профіль selection (accounts) */}
                                 <div className="space-y-1">
@@ -775,7 +779,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                                     >
                                         <div className="flex items-center gap-3">
                                             <NpLogo className="w-5 h-5 shrink-0" />
-                                            <span className="text-[var(--text-main)] text-sm font-semibold">{activeAccount?.name || 'Вадим НП'}</span>
+                                            <span className="text-[var(--text-main)] text-sm font-semibold">{activeAccount ? (activeAccount.name || 'Без назви') : 'Немає підключених профілів'}</span>
                                         </div>
                                         <ChevronRight className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${isEditingSenderInfo ? 'rotate-90' : ''}`} />
                                     </div>
@@ -788,7 +792,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                                             initial={{ height: 0, opacity: 0 }}
                                             animate={{ height: 'auto', opacity: 1 }}
                                             exit={{ height: 0, opacity: 0 }}
-                                            className="overflow-hidden bg-[#32363b] border border-[var(--border-color)] rounded-2xl p-2.5 space-y-2 shadow-inner"
+                                            className="overflow-hidden bg-[var(--bg-hover)] border border-[var(--border-color)] rounded-2xl p-2.5 space-y-2 shadow-inner"
                                         >
                                             <label className="text-[10px] text-[var(--text-muted)] font-black block uppercase tracking-widest px-1">Обрати інший кабінет</label>
                                             <div className="grid grid-cols-1 gap-1.5">
@@ -802,7 +806,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                                                         className={`px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between cursor-pointer transition-all ${
                                                             acc.id === selectedAccountId 
                                                             ? 'bg-[#e33745]/10 text-[#e33745]' 
-                                                            : 'text-[var(--text-muted)] hover:bg-zinc-700/60'
+                                                            : 'text-[var(--text-muted)] hover:bg-[var(--bg-active-alpha)]/60'
                                                         }`}
                                                     >
                                                         <span>{acc.name}</span>
@@ -862,7 +866,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
 
 
                             {/* SECTION 1.5: АДРЕСА ВІДПРАВНИКА */}
-                            <div id="section-sender-address" className="space-y-2">
+                            <div id="section-sender-address" className="space-y-2 break-inside-avoid lg:mb-4">
                                 <div className="flex items-center justify-between px-1">
                                     <h3 className="text-[var(--text-muted)] font-bold text-sm uppercase tracking-wider">Адреса відправника</h3>
                                     <button 
@@ -891,7 +895,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                                             <div className="space-y-1 overflow-hidden min-w-0 pr-6">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-[var(--text-main)] text-xs font-bold leading-none tracking-tight">
-                                                        {selectedSenderCity ? selectedSenderCity.Description : 'м. Львів'}
+                                                        {selectedSenderCity ? selectedSenderCity.Description : <span className="text-red-500">Порожньо</span>}
                                                     </span>
                                                     <span className="text-[9px] text-[#e33745] font-black uppercase tracking-wider bg-[#e33745]/5 px-1 py-0.5 rounded leading-none">
                                                         Відправник
@@ -901,7 +905,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                                                     {selectedSenderWarehouseLabel || 'Оберіть місто та відділення відправника'}
                                                 </p>
                                                 {senderCounterparties.find(cp => cp.Ref === selectedSenderRef) && (
-                                                    <p className="text-emerald-400 text-[10px] font-bold flex items-center gap-1.5 pt-0.5">
+                                                    <p className="text-emerald-500 text-[10px] font-bold flex items-center gap-1.5 pt-0.5">
                                                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
                                                         ФОП/Особа: {senderCounterparties.find(cp => cp.Ref === selectedSenderRef)?.Description}
                                                     </p>
@@ -975,7 +979,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                                                                     setSelectedSenderCity(city);
                                                                     setSenderCitySearch(city.Description);
                                                                 }}
-                                                                className="w-full text-left px-3 py-2.5 text-xs text-zinc-100 hover:bg-[#323642] border-b border-[var(--border-color)]/30 font-medium flex flex-col transition-colors"
+                                                                className="w-full text-left px-3 py-2.5 text-xs text-[var(--text-main)] hover:bg-[#323642] border-b border-[var(--border-color)]/30 font-medium flex flex-col transition-colors"
                                                             >
                                                                 <span className="font-bold text-[var(--text-main)]">{city.Description}</span>
                                                                 <span className="text-[9px] text-[#e33745] tracking-wider uppercase">{city.AreaDescription} область</span>
@@ -1017,7 +1021,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                                                 <button
                                                     type="button"
                                                     onClick={() => setIsEditingSenderAddress(false)}
-                                                    className="bg-[#1e293b] hover:bg-slate-800 text-[var(--text-main)] font-bold text-xs uppercase px-4 py-2 rounded-xl transition-all cursor-pointer"
+                                                    className="bg-[#1e293b] hover:bg-slate-800 text-[#ffffff] font-bold text-xs uppercase px-4 py-2 rounded-xl transition-all cursor-pointer"
                                                 >
                                                     Зберегти адресу
                                                 </button>
@@ -1028,7 +1032,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                             </div>
 
                             {/* SECTION 2: ОПЛАТА ПОСИЛКИ */}
-                            <div id="section-payment-info" className="space-y-2">
+                            <div id="section-payment-info" className="space-y-2 break-inside-avoid lg:mb-4">
                                 <div className="flex items-center justify-between px-1">
                                     <h3 className="text-[var(--text-muted)] font-bold text-sm uppercase tracking-wider">Оплата посилки</h3>
                                     <button 
@@ -1213,7 +1217,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                                                     <span className="text-[var(--text-muted)] font-semibold">Послуга післяплати:</span>
                                                     <span className="text-[var(--text-main)] font-semibold text-right text-[11px] font-bold">
                                                         {afterpaymentType === 'PaymentControl' ? (
-                                                            <span className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold tracking-wide text-[10px] uppercase">
+                                                            <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold tracking-wide text-[10px] uppercase">
                                                                 Контроль оплати
                                                             </span>
                                                         ) : (
@@ -1240,7 +1244,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                             </div>
 
                             {/* SECTION 3: АДРЕСА ДОСТАВКИ */}
-                            <div id="section-address-delivery" className="space-y-2">
+                            <div id="section-address-delivery" className="space-y-2 break-inside-avoid lg:mb-4">
                                 <div className="flex items-center justify-between px-1">
                                     <h3 className="text-[var(--text-muted)] font-bold text-sm uppercase tracking-wider">Адреса доставки</h3>
                                     <button 
@@ -1398,7 +1402,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                                             {/* Red diamond icon and header name */}
                                             <div className="flex items-start gap-2.5 border-b border-[var(--border-color)]/50 pb-3 mb-2">
                                                 <NpLogo className="w-5 h-5 shrink-0 mt-0.5" />
-                                                <div className="text-[var(--text-main)] font-semibold text-[13px] leading-tight text-zinc-100">
+                                                <div className="text-[var(--text-main)] font-semibold text-[13px] leading-tight">
                                                     {selectedRecipientWarehouseLabel}
                                                 </div>
                                             </div>
@@ -1429,7 +1433,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                             </div>
 
                             {/* SECTION 4: ДОДАТКОВІ ПОЛЯ */}
-                            <div id="section-additional-fields" className="space-y-2">
+                            <div id="section-additional-fields" className="space-y-2 break-inside-avoid lg:mb-4">
                                 <div className="flex items-center justify-between px-1">
                                     <h3 className="text-[var(--text-muted)] font-bold text-sm uppercase tracking-wider">Додаткові поля</h3>
                                     <button 
@@ -1526,7 +1530,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                             </div>
 
                             {/* SECTION 5: МІСЦЯ В ПОСИЛЦІ */}
-                            <div id="section-places-packages" className="space-y-2.5">
+                            <div id="section-places-packages" className="space-y-2.5 break-inside-avoid lg:mb-4">
                                 <h3 className="text-[var(--text-muted)] font-bold text-sm uppercase tracking-wider px-1">Місця в посилці</h3>
                                 
                                 {/* 5.1 Шаблон відправок selector row */}
@@ -1573,7 +1577,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                                                             e.stopPropagation();
                                                             removeCargoPlace(place.id);
                                                         }}
-                                                        className="text-red-400 p-1 hover:text-red-300 transition-colors cursor-pointer"
+                                                        className="text-red-500 p-1 hover:text-red-500 transition-colors cursor-pointer"
                                                     >
                                                         <Trash2 className="w-3.5 h-3.5" />
                                                     </button>
@@ -1603,14 +1607,14 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                                     disabled={isCalculating}
                                     className={`w-full text-center border py-3.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2.5 shadow-sm cursor-pointer ${
                                         calculationSuccess 
-                                            ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400' 
+                                            ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-500' 
                                             : 'border-[#e33745]/40 hover:bg-[#e33745]/5 bg-transparent text-[#e33745]'
                                     }`}
                                 >
                                     {isCalculating ? (
                                         <Loader2 className="w-4 h-4 text-[#e33745] animate-spin" />
                                     ) : calculationSuccess ? (
-                                        <Check className="w-4 h-4 text-emerald-400" />
+                                        <Check className="w-4 h-4 text-emerald-500" />
                                     ) : (
                                         <Calculator className="w-4 h-4 shrink-0" />
                                     )}
@@ -1620,9 +1624,10 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                                 </button>
                             </div>
                         </div>
+                        </div>
 
                         {/* STICKY SPLIT BOTTOM CTA BUTTONS matching the canceling & creating flow on screenshot */}
-                        <div id="ttn-modal-split-ctas" className="pt-5 border-t border-[var(--border-color)] mt-6 grid grid-cols-2 gap-3.5 shrink-0">
+                        <div id="ttn-modal-split-ctas" className="p-4 border-t border-[var(--border-color)] bg-[var(--bg-main)] shrink-0 z-10 grid grid-cols-2 gap-3.5">
                             <button
                                 id="btn-cancel-ttn-creation"
                                 type="button"

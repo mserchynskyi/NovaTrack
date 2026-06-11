@@ -4,7 +4,7 @@ export function Onboarding({ onAddAccount }: { onAddAccount: () => void }) {
   return (
     <div className="flex-1 flex items-center justify-center h-full p-4">
       <div className="bg-[var(--bg-card-alt)] p-8 lg:p-10 rounded-2xl lg:rounded border border-[var(--border-color)] shadow-xl lg:shadow-sm max-w-lg w-full text-center my-8">
-          <div className="w-16 h-16 bg-[#e33745]/10 lg:bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-[#e33745]/20 lg:border-red-100">
+          <div className="w-16 h-16 bg-[#e33745]/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-[#e33745]/20">
               <KeyRound className="w-8 h-8 text-[#e33745]" />
           </div>
           <h1 className="text-2xl font-bold text-[var(--text-main)] mb-2 tracking-tight">

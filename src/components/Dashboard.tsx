@@ -130,17 +130,35 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
      // Apply Search Filter (real-time filtering by TTN, Recipient phone/last name, or Destination city)
      if (searchQuery.trim()) {
          const query = searchQuery.trim().toLowerCase();
+         // Extract only digits for phone matching
+         const phoneQuery = query.replace(/\D/g, '');
+         const ttnQuery = query.replace(/\s+/g, '');
+
          result = result.filter(p => {
-             const ttnMatch = p.ttn ? p.ttn.toLowerCase().includes(query) : false;
+             const ttnMatch = p.ttn ? p.ttn.toLowerCase().replace(/\s+/g, '').includes(ttnQuery) : false;
              const recipientMatch = p.recipient ? p.recipient.toLowerCase().includes(query) : false;
+             const senderMatch = p.sender ? p.sender.toLowerCase().includes(query) : false;
              const cityMatch = p.cityName ? p.cityName.toLowerCase().includes(query) : false;
              
-             const phone1 = p.rawStatus?.PhoneRecipient ? String(p.rawStatus.PhoneRecipient).toLowerCase() : '';
-             const phone2 = p.rawDoc?.PhoneRecipient ? String(p.rawDoc.PhoneRecipient).toLowerCase() : '';
-             const senderPhone = p.rawStatus?.PhoneSender ? String(p.rawStatus.PhoneSender).toLowerCase() : '';
-             const phoneMatch = phone1.includes(query) || phone2.includes(query) || senderPhone.includes(query);
+             let phoneMatch = false;
+             // Only try matching digits if there are at least 3 digits in the query (avoids false positives on addresses with numbers)
+             if (phoneQuery.length >= 3) {
+                 const phone1 = p.rawStatus?.PhoneRecipient ? String(p.rawStatus.PhoneRecipient).replace(/\D/g, '') : '';
+                 const phone2 = p.rawDoc?.PhoneRecipient ? String(p.rawDoc.PhoneRecipient).replace(/\D/g, '') : '';
+                 const senderPhone = p.rawStatus?.PhoneSender ? String(p.rawStatus.PhoneSender).replace(/\D/g, '') : '';
+                 
+                 phoneMatch = (phone1 && phone1.includes(phoneQuery)) || 
+                              (phone2 && phone2.includes(phoneQuery)) || 
+                              (senderPhone && senderPhone.includes(phoneQuery));
+             } else {
+                 // Fallback to basic string includes if no digit extraction makes sense
+                 const phone1 = p.rawStatus?.PhoneRecipient ? String(p.rawStatus.PhoneRecipient).toLowerCase() : '';
+                 const phone2 = p.rawDoc?.PhoneRecipient ? String(p.rawDoc.PhoneRecipient).toLowerCase() : '';
+                 const senderPhone = p.rawStatus?.PhoneSender ? String(p.rawStatus.PhoneSender).toLowerCase() : '';
+                 phoneMatch = phone1.includes(query) || phone2.includes(query) || senderPhone.includes(query);
+             }
              
-             return ttnMatch || recipientMatch || cityMatch || phoneMatch;
+             return ttnMatch || recipientMatch || senderMatch || cityMatch || phoneMatch;
          });
      }
 
@@ -243,7 +261,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
              <input
                type="text"
                placeholder="Пошук за ТТН, телефоном, прізвищем, містом..."
-               className="w-full pl-9 pr-8 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 lg:focus:border-red-400 text-[var(--text-main)] font-medium text-xs placeholder:text-[var(--text-muted)]"
+               className="w-full pl-9 pr-8 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 text-[var(--text-main)] font-medium text-xs placeholder:text-[var(--text-muted)]"
                value={searchQuery}
                onChange={e => setSearchQuery(e.target.value)}
              />
@@ -251,7 +269,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                <button
                  type="button"
                  onClick={() => setSearchQuery('')}
-                 className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-[var(--text-muted)] hover:text-[var(--text-main)] lg:hover:text-[var(--text-muted)]"
+                 className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-[var(--text-muted)] hover:text-[var(--text-main)]"
                >
                  <X className="h-4 w-4" />
                </button>
@@ -313,7 +331,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
               <div className="flex items-center gap-2 text-xs flex-1 sm:flex-none">
                  <ArrowUpDown className="w-4 h-4 text-[var(--text-muted)] hidden lg:block" />
                  <select 
-                     className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 lg:focus:border-red-400 text-[var(--text-main)] font-medium text-xs lg:text-xs"
+                     className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 text-[var(--text-main)] font-medium text-xs"
                      value={sortBy}
                      onChange={e => setSortBy(e.target.value)}
                  >
@@ -346,7 +364,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
       <div className="flex-1 flex flex-col min-h-0 bg-transparent  lg:border  lg:rounded lg:shadow-sm lg:overflow-hidden">
         {filteredAndSortedParcels.length === 0 && !loading && !error && (
           <div className="text-center py-12  rounded lg:border ">
-            <Package className="w-10 h-10 text-[var(--text-muted)] lg:text-[var(--text-muted)] mx-auto mb-2" />
+            <Package className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-2" />
             <p className="text-[var(--text-muted)]  text-xs">Не знайдено посилок, що відповідають критеріям</p>
           </div>
         )}
@@ -467,7 +485,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
             </div>
 
             {/* Mobile View */}
-            <div className="lg:hidden divide-y divide-[#32363b] bg-[var(--bg-card-alt)] overflow-hidden pb-6">
+            <div className="lg:hidden divide-y divide-[var(--border-color)] bg-[var(--bg-card-alt)] overflow-hidden pb-6">
               {filteredAndSortedParcels.map((parcel, idx) => {
                  const initials = getInitials(parcel.recipient);
                  const ttnSuffix = "'" + parcel.ttn.slice(-4);

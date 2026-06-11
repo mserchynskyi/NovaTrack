@@ -598,7 +598,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
     const renderActiveForm = () => {
         if (activeTab === 'redirect') {
             return (
-                <div className="flex flex-col gap-5 p-6 bg-[var(--bg-main)] text-[var(--text-main)] lg:bg-white  rounded-2xl h-full overflow-y-auto no-scrollbar">
+                <div className="flex flex-col gap-5 p-6 bg-[var(--bg-main)] text-[var(--text-main)]  rounded-2xl h-full overflow-y-auto no-scrollbar">
                     <div className="flex items-center justify-between border-b pb-4 border-[var(--border-color)] border-[var(--border-color)]">
                         <h4 className="text-base font-bold flex items-center gap-2">
                             <ArrowLeftRight className="w-5 h-5 text-red-500" />
@@ -607,15 +607,15 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                         <button 
                             type="button"
                             onClick={() => setActiveTab('details')}
-                            className="text-xs uppercase bg-[#32363b] hover:bg-[#43484e] lg:bg-gray-100 lg:hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors font-bold text-[var(--text-main)] lg:text-gray-800"
+                            className="text-xs uppercase bg-[var(--bg-hover)] hover:bg-[var(--progress-track)] px-3 py-1.5 rounded-lg transition-colors font-bold text-[var(--text-main)]"
                         >
                             Назад
                         </button>
                     </div>
 
                     {successMsg ? (
-                        <div className="bg-emerald-500/25 border border-emerald-500/40 text-emerald-100 lg:bg-emerald-50 lg:text-emerald-800 p-5 rounded-2xl text-sm flex flex-col items-center gap-3 text-center my-4">
-                            <CheckCircle className="w-10 h-10 text-emerald-400 shrink-0" />
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 p-5 rounded-2xl text-sm flex flex-col items-center gap-3 text-center my-4">
+                            <CheckCircle className="w-10 h-10 text-emerald-500 shrink-0" />
                             <div className="font-semibold">{successMsg}</div>
                             <button 
                                 type="button"
@@ -630,7 +630,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                         </div>
                     ) : (
                         <div className="flex flex-col gap-4">
-                            <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-red-50/50 lg:border-red-100/30 p-4 rounded-2xl text-[13px] text-[var(--text-muted)] lg:text-gray-700 leading-relaxed">
+                            <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)]/50/30 p-4 rounded-2xl text-[13px] text-[var(--text-muted)] leading-relaxed">
                                 За допомогою цієї послуги ви можете змінити адресу доставки посилки на інше відділення або поштомат Нової Пошти.
                             </div>
 
@@ -646,22 +646,22 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                             setCitySearchQuery(e.target.value);
                                             if (selectedCity) setSelectedCity(null);
                                         }}
-                                        className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-200 text-[var(--text-main)] rounded-xl pl-10 pr-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500"
+                                        className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] text-[var(--text-main)] rounded-xl pl-10 pr-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500"
                                     />
-                                    <Search className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-[var(--text-muted)] lg:text-[var(--text-muted)]" />
+                                    <Search className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-[var(--text-muted)]" />
                                     {cityLoading && (
                                         <Loader2 className="absolute right-3 top-3.5 w-4.5 h-4.5 text-[#e33745] animate-spin" />
                                     )}
                                 </div>
 
                                 {selectedCity && (
-                                    <div className="text-[12px] text-emerald-400 lg:text-emerald-600 font-bold mt-1">
+                                    <div className="text-[12px] text-emerald-500 font-bold mt-1">
                                         ✓ Обрано місто: {selectedCity.Description} ({selectedCity.AreaDescription})
                                     </div>
                                 )}
 
                                 {!selectedCity && cities.length > 0 && (
-                                    <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-200 rounded-xl max-h-40 overflow-y-auto mt-1 divide-y divide-[#32363b] lg:divide-gray-100 shadow-xl z-30">
+                                    <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-xl max-h-40 overflow-y-auto mt-1 divide-y divide-[var(--border-color)] lg:divide-gray-100 shadow-xl z-30">
                                         {cities.map((city) => (
                                             <button
                                                 type="button"
@@ -671,7 +671,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                     setCitySearchQuery(city.Description);
                                                     setCities([]);
                                                 }}
-                                                className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-[var(--bg-hover)] lg:hover:bg-gray-100 text-[var(--text-main)] lg:text-gray-800 transition-colors"
+                                                className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-[var(--bg-hover)] text-[var(--text-main)] transition-colors"
                                             >
                                                 {city.Description} ({city.AreaDescription})
                                             </button>
@@ -686,9 +686,9 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                     <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Нове відділення або поштомат</label>
                                     
                                     {selectedWarehouse ? (
-                                        <div className="bg-[var(--bg-card-alt)]/60 lg:bg-red-50/30 border border-emerald-500/20 lg:border-emerald-100 p-3.5 rounded-xl flex items-center justify-between gap-3 animate-in fade-in duration-200">
+                                        <div className="bg-[var(--bg-card-alt)]/60/30 border border-emerald-500/20 p-3.5 rounded-xl flex items-center justify-between gap-3 animate-in fade-in duration-200">
                                             <div className="flex flex-col gap-0.5 min-w-0">
-                                                <span className="text-[9px] text-emerald-400 lg:text-emerald-600 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                                <span className="text-[9px] text-emerald-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
                                                     <span className="inline-block w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                                                     ✓ Обрано відділення
                                                 </span>
@@ -701,7 +701,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                 onClick={() => {
                                                     setSelectedWarehouse(null);
                                                 }}
-                                                className="text-[11px] font-bold text-red-400 hover:text-red-500 shrink-0 bg-[#32363b] hover:bg-[#43484e] lg:bg-gray-100 lg:hover:bg-gray-200 py-1.5 px-3 rounded-xl transition-colors cursor-pointer"
+                                                className="text-[11px] font-bold text-red-500 hover:text-red-500 shrink-0 bg-[var(--bg-hover)] hover:bg-[var(--progress-track)] py-1.5 px-3 rounded-xl transition-colors cursor-pointer"
                                             >
                                                 Змінити
                                             </button>
@@ -714,16 +714,16 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                     placeholder="Пошук відділення за номером чи назвою..."
                                                     value={warehouseSearch}
                                                     onChange={(e) => setWarehouseSearch(e.target.value)}
-                                                    className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-200 text-[var(--text-main)] rounded-xl pl-10 pr-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500"
+                                                    className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] text-[var(--text-main)] rounded-xl pl-10 pr-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500"
                                                 />
-                                                <Search className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-[var(--text-muted)] lg:text-[var(--text-muted)]" />
+                                                <Search className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-[var(--text-muted)]" />
                                                 {warehouseLoading && (
                                                     <Loader2 className="absolute right-3 top-3.5 w-4.5 h-4.5 text-[#e33745] animate-spin" />
                                                 )}
                                             </div>
 
                                             {warehouses.length > 0 ? (
-                                                <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-200 rounded-xl max-h-44 overflow-y-auto mt-1 divide-y divide-[#32363b] lg:divide-gray-100 shadow-md animate-in slide-in-from-top-1">
+                                                <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-xl max-h-44 overflow-y-auto mt-1 divide-y divide-[var(--border-color)] lg:divide-gray-100 shadow-md animate-in slide-in-from-top-1">
                                                     {filteredWarehouses.slice(0, 50).map((w) => {
                                                         const isSel = selectedWarehouse?.Ref === w.Ref;
                                                         return (
@@ -733,8 +733,8 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                                 onClick={() => setSelectedWarehouse(w)}
                                                                 className={`w-full text-left px-4 py-3 text-xs font-medium transition-colors ${
                                                                     isSel 
-                                                                    ? 'bg-red-500/15 text-red-400 lg:bg-red-50 lg:text-red-700 font-bold' 
-                                                                    : 'hover:bg-[var(--bg-hover)] lg:hover:bg-gray-100 text-[var(--text-main)] lg:text-gray-800'
+                                                                    ? 'bg-red-500/15 text-red-500 font-bold' 
+                                                                    : 'hover:bg-[var(--bg-hover)] text-[var(--text-main)]'
                                                                 }`}
                                                             >
                                                                 {w.Description} {w.ShortAddress ? `(${w.ShortAddress})` : ''}
@@ -742,14 +742,14 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                         );
                                                     })}
                                                     {filteredWarehouses.length === 0 && (
-                                                        <div className="p-4 text-xs font-semibold text-[var(--text-muted)] lg:text-gray-450 italic text-center">
+                                                        <div className="p-4 text-xs font-semibold text-[var(--text-muted)] italic text-center">
                                                             Відділень не знайдено за цим фільтром
                                                         </div>
                                                     )}
                                                 </div>
                                             ) : (
                                                 !warehouseLoading && (
-                                                    <div className="text-[12px] italic text-[var(--text-muted)] lg:text-[var(--text-muted)]">
+                                                    <div className="text-[12px] italic text-[var(--text-muted)]">
                                                         Введіть та оберіть місто спочатку
                                                     </div>
                                                 )
@@ -763,14 +763,14 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1.5">
                                     <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Хто оплачує</label>
-                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] lg:bg-gray-100 p-1 rounded-xl border border-[var(--border-color)]">
+                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
                                         <button
                                             type="button"
                                             onClick={() => setPayerType('Recipient')}
                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                 payerType === 'Recipient' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                : 'text-[var(--text-muted)] lg:text-gray-600 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                             }`}
                                         >
                                             Отримувач
@@ -781,7 +781,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                 payerType === 'Sender' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                : 'text-[var(--text-muted)] lg:text-gray-600 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                             }`}
                                         >
                                             Відправник
@@ -791,14 +791,14 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
 
                                 <div className="flex flex-col gap-1.5">
                                     <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Форма оплати</label>
-                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] lg:bg-gray-100 p-1 rounded-xl border border-[var(--border-color)]">
+                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
                                         <button
                                             type="button"
                                             onClick={() => setPaymentMethod('Cash')}
                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                 paymentMethod === 'Cash' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                : 'text-[var(--text-muted)] lg:text-gray-600 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                             }`}
                                         >
                                             Готівка
@@ -809,7 +809,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                 paymentMethod === 'NonCash' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                : 'text-[var(--text-muted)] lg:text-gray-600 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                             }`}
                                         >
                                             Безготівка
@@ -826,12 +826,12 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                     placeholder="Введіть особливу примітку для переадресації..."
                                     value={note}
                                     onChange={(e) => setNote(e.target.value)}
-                                    className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-200 text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                                    className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 resize-none"
                                 />
                             </div>
 
                             {errorMsg && (
-                                <div className="text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 p-3.5 rounded-xl leading-relaxed mt-2">
+                                <div className="text-xs font-bold text-red-500 bg-red-500/10 border border-red-500/20 p-3.5 rounded-xl leading-relaxed mt-2">
                                     Помилка: {errorMsg}
                                 </div>
                             )}
@@ -841,7 +841,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 type="button"
                                 onClick={handleRedirectionSubmit}
                                 disabled={submitting || !selectedCity || !selectedWarehouse}
-                                className="mt-4 bg-red-500 hover:bg-red-600 disabled:bg-gray-700/50 lg:disabled:bg-gray-150 disabled:text-[var(--text-muted)] lg:disabled:text-[var(--text-muted)] text-[#ffffff] font-bold py-4 px-6 rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 select-none"
+                                className="mt-4 bg-red-500 hover:bg-red-600 disabled:bg-gray-700/50 disabled:text-[var(--text-muted)] text-[#ffffff] font-bold py-4 px-6 rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 select-none"
                             >
                                 {submitting ? (
                                     <>
@@ -863,7 +863,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
 
         if (activeTab === 'return') {
             return (
-                <div className="flex flex-col gap-5 p-6 bg-[var(--bg-main)] text-[var(--text-main)] lg:bg-white  rounded-2xl h-full overflow-y-auto no-scrollbar">
+                <div className="flex flex-col gap-5 p-6 bg-[var(--bg-main)] text-[var(--text-main)]  rounded-2xl h-full overflow-y-auto no-scrollbar">
                     <div className="flex items-center justify-between border-b pb-4 border-[var(--border-color)] border-[var(--border-color)]">
                         <h4 className="text-base font-bold flex items-center gap-2">
                             <CornerDownLeft className="w-5 h-5 text-red-500" />
@@ -872,15 +872,15 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                         <button 
                             type="button"
                             onClick={() => setActiveTab('details')}
-                            className="text-xs uppercase bg-[#32363b] hover:bg-[#43484e] lg:bg-gray-100 lg:hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors font-bold text-[var(--text-main)] lg:text-gray-800"
+                            className="text-xs uppercase bg-[var(--bg-hover)] hover:bg-[var(--progress-track)] px-3 py-1.5 rounded-lg transition-colors font-bold text-[var(--text-main)]"
                         >
                             Назад
                         </button>
                     </div>
 
                     {successMsg ? (
-                        <div className="bg-emerald-500/25 border border-emerald-500/40 text-emerald-100 lg:bg-emerald-50 lg:text-emerald-800 p-5 rounded-2xl text-sm flex flex-col items-center gap-3 text-center my-4">
-                            <CheckCircle className="w-10 h-10 text-emerald-400 shrink-0" />
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 p-5 rounded-2xl text-sm flex flex-col items-center gap-3 text-center my-4">
+                            <CheckCircle className="w-10 h-10 text-emerald-500 shrink-0" />
                             <div className="font-semibold">{successMsg}</div>
                             <button 
                                 type="button"
@@ -895,23 +895,23 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                         </div>
                     ) : (
                         <div className="flex flex-col gap-4">
-                            <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-red-50/50 lg:border-red-100/30 p-4.5 rounded-2xl text-[13px] leading-relaxed text-[var(--text-muted)] lg:text-gray-700">
+                            <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)]/50/30 p-4.5 rounded-2xl text-[13px] leading-relaxed text-[var(--text-muted)]">
                                 <span className="font-bold text-[var(--text-main)] block mb-1.5">✓ Зворотня доставка</span>
-                                Ви збираєтесь замовити послугу <strong className="text-red-400 lg:text-red-500 font-bold">"Повернення посилки"</strong>. Відправлений вантаж буде направлено назад від отримувача до початкового відправника (<strong className="text-[var(--text-main)] font-bold">{parcel.sender}</strong>) на його первинне відділення відправки.
+                                Ви збираєтесь замовити послугу <strong className="text-red-500 font-bold">"Повернення посилки"</strong>. Відправлений вантаж буде направлено назад від отримувача до початкового відправника (<strong className="text-[var(--text-main)] font-bold">{parcel.sender}</strong>) на його первинне відділення відправки.
                             </div>
 
                             {/* Payer and Payment Method Selection */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1.5">
                                     <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Хто оплачує повернення</label>
-                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] lg:bg-gray-100 p-1 rounded-xl border border-[var(--border-color)]">
+                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
                                         <button
                                             type="button"
                                             onClick={() => setPayerType('Recipient')}
                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                 payerType === 'Recipient' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                : 'text-[var(--text-muted)] lg:text-gray-600 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                             }`}
                                         >
                                             Отримувач
@@ -922,7 +922,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                 payerType === 'Sender' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                             }`}
                                         >
                                             Відправник
@@ -932,14 +932,14 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
 
                                 <div className="flex flex-col gap-1.5">
                                     <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Форма оплати</label>
-                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] lg:bg-gray-100 p-1 rounded-xl border border-[var(--border-color)]">
+                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
                                         <button
                                             type="button"
                                             onClick={() => setPaymentMethod('Cash')}
                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                 paymentMethod === 'Cash' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                             }`}
                                         >
                                             Готівка
@@ -950,7 +950,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                 paymentMethod === 'NonCash' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                             }`}
                                         >
                                             Безготівка
@@ -967,12 +967,12 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                     placeholder="Вкажіть примітку або причину повернення..."
                                     value={note}
                                     onChange={(e) => setNote(e.target.value)}
-                                    className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-200 text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                                    className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 resize-none"
                                 />
                             </div>
 
                             {errorMsg && (
-                                <div className="text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 p-3.5 rounded-xl leading-relaxed mt-2">
+                                <div className="text-xs font-bold text-red-500 bg-red-500/10 border border-red-500/20 p-3.5 rounded-xl leading-relaxed mt-2">
                                     Помилка: {errorMsg}
                                 </div>
                             )}
@@ -982,7 +982,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 type="button"
                                 onClick={handleReturnSubmit}
                                 disabled={submitting}
-                                className="mt-4 bg-red-500 hover:bg-red-600 disabled:bg-gray-700/50 lg:disabled:bg-gray-150 disabled:text-[var(--text-muted)] lg:disabled:text-[var(--text-muted)] text-[#ffffff] font-bold py-4 px-6 rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 select-none"
+                                className="mt-4 bg-red-500 hover:bg-red-600 disabled:bg-gray-700/50 disabled:text-[var(--text-muted)] text-[#ffffff] font-bold py-4 px-6 rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 select-none"
                             >
                                 {submitting ? (
                                     <>
@@ -1004,7 +1004,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
 
         if (activeTab === 'change_data') {
             return (
-                <div className="flex flex-col gap-5 p-6 bg-[var(--bg-main)] text-[var(--text-main)] lg:bg-white  rounded-2xl h-full overflow-y-auto no-scrollbar">
+                <div className="flex flex-col gap-5 p-6 bg-[var(--bg-main)] text-[var(--text-main)]  rounded-2xl h-full overflow-y-auto no-scrollbar">
                     <div className="flex items-center justify-between border-b pb-4 border-[var(--border-color)] border-[var(--border-color)]">
                         <h4 className="text-base font-bold flex items-center gap-2">
                             <CheckCircle className="w-5 h-5 text-red-500" />
@@ -1017,15 +1017,15 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 setErrorMsg(null);
                                 setActiveTab('details');
                             }}
-                            className="text-xs uppercase bg-[#32363b] hover:bg-[#43484e] lg:bg-gray-100 lg:hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors font-bold text-[var(--text-main)] lg:text-gray-800"
+                            className="text-xs uppercase bg-[var(--bg-hover)] hover:bg-[var(--progress-track)] px-3 py-1.5 rounded-lg transition-colors font-bold text-[var(--text-main)]"
                         >
                             Назад
                         </button>
                     </div>
 
                     {successMsg ? (
-                        <div className="bg-emerald-500/25 border border-emerald-500/40 text-emerald-100 lg:bg-emerald-50 lg:text-emerald-800 p-5 rounded-2xl text-sm flex flex-col items-center gap-3 text-center my-4">
-                            <CheckCircle className="w-10 h-10 text-emerald-400 shrink-0" />
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 p-5 rounded-2xl text-sm flex flex-col items-center gap-3 text-center my-4">
+                            <CheckCircle className="w-10 h-10 text-emerald-500 shrink-0" />
                             <div className="font-semibold">{successMsg}</div>
                             <button 
                                 type="button"
@@ -1040,7 +1040,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                         </div>
                     ) : (
                         <div className="flex flex-col gap-4">
-                            <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-red-50/50 lg:border-red-100/30 p-4.5 rounded-2xl text-[13px] leading-relaxed text-[var(--text-muted)] lg:text-gray-700">
+                            <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)]/50/30 p-4.5 rounded-2xl text-[13px] leading-relaxed text-[var(--text-muted)]">
                                 <span className="font-bold text-[var(--text-main)] block mb-1.5">✓ Заява про зміну даних ЕН</span>
                                 {parcel.accountId === 'manual' ? (
                                     <span>Ви редагуєте дані вручну доданої ТТН локально. Ви можете змінити номер телефону отримувача, щоб система змогла завантажувати статус посилки в кабінеті.</span>
@@ -1058,7 +1058,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                         placeholder="Прізвище Ім'я По батькові отримувача..."
                                         value={editRecipientName}
                                         onChange={(e) => setEditRecipientName(e.target.value)}
-                                        className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-200 text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500"
+                                        className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500"
                                     />
                                 </div>
                             )}
@@ -1071,7 +1071,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                     placeholder="380991234567"
                                     value={editRecipientPhone}
                                     onChange={(e) => setEditRecipientPhone(e.target.value)}
-                                    className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-200 text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 font-mono"
+                                    className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 font-mono"
                                 />
                             </div>
 
@@ -1080,14 +1080,14 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="flex flex-col gap-1.5">
                                         <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Хто оплачує доставку</label>
-                                        <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] lg:bg-gray-100 p-1 rounded-xl border border-[var(--border-color)]">
+                                        <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
                                             <button
                                                 type="button"
                                                 onClick={() => setPayerType('Recipient')}
                                                 className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                     payerType === 'Recipient' 
                                                     ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                    : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                                 }`}
                                             >
                                                 Отримувач
@@ -1098,7 +1098,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                 className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                     payerType === 'Sender' 
                                                     ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                    : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                                 }`}
                                             >
                                                 Відправник
@@ -1108,14 +1108,14 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
 
                                     <div className="flex flex-col gap-1.5">
                                         <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Форма оплати</label>
-                                        <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] lg:bg-gray-100 p-1 rounded-xl border border-[var(--border-color)]">
+                                        <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
                                             <button
                                                 type="button"
                                                 onClick={() => setPaymentMethod('Cash')}
                                                 className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                     paymentMethod === 'Cash' 
                                                     ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                    : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                                 }`}
                                             >
                                                 Готівка
@@ -1126,7 +1126,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                 className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                     paymentMethod === 'NonCash' 
                                                     ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                    : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                                 }`}
                                             >
                                                 Безготівка
@@ -1138,7 +1138,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
 
                             {/* Backward Delivery (Afterpayment / Payment Control) */}
                             {parcel.accountId !== 'manual' && (
-                                <div className="border border-[var(--border-color)]/80 rounded-2xl p-4 flex flex-col gap-4 bg-[var(--bg-card-alt)]/40 lg:bg-gray-50/60 shadow-inner">
+                                <div className="border border-[var(--border-color)]/80 rounded-2xl p-4 flex flex-col gap-4 bg-[var(--bg-card-alt)]/40/60 shadow-inner">
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-2">
                                             <CreditCard className="w-4 h-4 text-red-500" />
@@ -1151,7 +1151,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                 onChange={(e) => setHasAfterpayment(e.target.checked)}
                                                 className="sr-only peer"
                                             />
-                                            <div className="w-11 h-6 bg-[#32363b] lg:bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                                            <div className="w-11 h-6 bg-[var(--bg-hover)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
                                         </label>
                                     </div>
 
@@ -1160,14 +1160,14 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                             {/* Afterpayment Type */}
                                             <div className="flex flex-col gap-1.5">
                                                 <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Тип послуги</label>
-                                                <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] lg:bg-gray-100 p-1 rounded-xl border border-[var(--border-color)]">
+                                                <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
                                                     <button
                                                         type="button"
                                                         onClick={() => setAfterpaymentType('Money')}
                                                         className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                             afterpaymentType === 'Money' 
                                                             ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                            : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                            : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                                         }`}
                                                     >
                                                         Післяплата
@@ -1178,7 +1178,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                         className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                             afterpaymentType === 'PaymentControl' 
                                                             ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                            : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                            : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                                         }`}
                                                     >
                                                         Контроль оплати
@@ -1200,20 +1200,20 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                         placeholder="Сума..."
                                                         value={afterpaymentSum}
                                                         onChange={(e) => setAfterpaymentSum(e.target.value)}
-                                                        className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] lg:bg-white lg:border-gray-250 text-[var(--text-main)] rounded-xl px-4 py-2 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500"
+                                                        className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] text-[var(--text-main)] rounded-xl px-4 py-2 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500"
                                                     />
                                                 </div>
 
                                                 <div className="flex flex-col gap-1.5">
                                                     <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Платник комісії післяплати</label>
-                                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] lg:bg-gray-100 p-1 rounded-xl border border-[var(--border-color)]">
+                                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
                                                         <button
                                                             type="button"
                                                             onClick={() => setAfterpaymentPayer('Recipient')}
                                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                                 afterpaymentPayer === 'Recipient' 
                                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                                : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                                             }`}
                                                         >
                                                             Отримувач
@@ -1224,7 +1224,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                             className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
                                                                 afterpaymentPayer === 'Sender' 
                                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                                : 'text-[var(--text-muted)] lg:text-gray-650 hover:text-[var(--text-main)] lg:hover:text-gray-900 bg-transparent'
+                                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                                             }`}
                                                         >
                                                             Відправник
@@ -1238,7 +1238,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                             )}
 
                             {errorMsg && (
-                                <div className="text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 p-3.5 rounded-xl leading-relaxed mt-2">
+                                <div className="text-xs font-bold text-red-500 bg-red-500/10 border border-red-500/20 p-3.5 rounded-xl leading-relaxed mt-2">
                                     Помилка: {errorMsg}
                                 </div>
                             )}
@@ -1248,7 +1248,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 type="button"
                                 onClick={handleChangeDataSubmit}
                                 disabled={submitting}
-                                className="mt-4 bg-red-500 hover:bg-red-600 disabled:bg-gray-700/50 lg:disabled:bg-gray-150 disabled:text-[var(--text-muted)] lg:disabled:text-[var(--text-muted)] text-[#ffffff] font-bold py-4 px-6 rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 select-none"
+                                className="mt-4 bg-red-500 hover:bg-red-600 disabled:bg-gray-700/50 disabled:text-[var(--text-muted)] text-[#ffffff] font-bold py-4 px-6 rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 select-none"
                             >
                                 {submitting ? (
                                     <>
@@ -1301,9 +1301,9 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
            className="fixed inset-0 bg-[#0c0d10]/95 backdrop-blur-md z-50 flex items-center justify-center p-0 sm:p-2 overflow-hidden sm:overflow-y-auto no-scrollbar"
            onClick={(e) => e.target === e.currentTarget && onClose()}
         >
-            {/* Mobile View */}
-            <div className="lg:hidden bg-[var(--bg-main)] w-full max-w-lg h-[100dvh] sm:h-[880px] rounded-none sm:rounded-[32px] shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-300 border border-[var(--border-color)] relative font-sans overflow-hidden">
-                <div className="px-6 py-4 landscape:py-3.5 border-b border-[var(--border-color)] flex items-center justify-between shrink-0 bg-[var(--bg-main)]">
+            {/* Unified View */}
+            <div className="bg-[var(--bg-main)] w-full max-w-lg lg:max-w-4xl h-[100dvh] sm:h-[880px] lg:h-[85vh] rounded-none sm:rounded-[32px] shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-300 border border-[var(--border-color)] relative font-sans overflow-hidden">
+                <div className="px-6 py-4 lg:py-5 lg:px-8 border-b border-[var(--border-color)] flex items-center justify-between shrink-0 bg-[var(--bg-main)]">
                     <div className="flex items-center gap-3">
                         <div className="bg-[#e33745] p-2 rounded-xl shadow-md shadow-red-900/20">
                             <Box className="w-5 h-5 text-[var(--text-main)] stroke-[2]" />
@@ -1323,17 +1323,17 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                         {renderActiveForm()}
                     </div>
                 ) : (
-                    <div className="flex-1 overflow-auto p-6 landscape:p-5 pb-28 landscape:pb-8 flex flex-col landscape:grid landscape:grid-cols-2 gap-6 landscape:gap-5 text-sm bg-[var(--bg-main)] no-scrollbar">
+                    <div className="flex-1 overflow-auto p-6 lg:p-8 pb-28 lg:pb-8 flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-8 text-sm bg-[var(--bg-main)] no-scrollbar">
                         {/* Error & Success Messages */}
                         {(errorMsg || successMsg) && (
                             <div className="col-span-full">
                                 {errorMsg && (
-                                    <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl text-red-400 text-xs font-semibold leading-relaxed">
+                                    <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl text-red-500 text-xs font-semibold leading-relaxed">
                                         Помилка: {errorMsg}
                                     </div>
                                 )}
                                 {successMsg && (
-                                    <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl text-emerald-400 text-xs font-semibold leading-relaxed">
+                                    <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl text-emerald-500 text-xs font-semibold leading-relaxed">
                                         {successMsg}
                                     </div>
                                 )}
@@ -1371,7 +1371,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                         <div className="w-5 h-5 bg-[#1bc285] rounded-full flex items-center justify-center border-4 border-[#292D32]">
                                             <div className="w-1.5 h-1.5 bg-[var(--bg-card-alt)] rounded-full"></div>
                                         </div>
-                                        <div className="w-[2px] h-6 bg-[#32363b]"></div>
+                                        <div className="w-[2px] h-6 bg-[var(--bg-hover)]"></div>
                                     </div>
                                     <div className="flex-1">
                                         <div className="font-semibold text-[var(--text-main)] leading-tight text-[15px] mb-1">
@@ -1397,13 +1397,13 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                     {parcel.basisChain.map((step: any, i: number) => (
                                         <div key={step.ttn} className="flex flex-col gap-1.5 p-3 bg-[var(--bg-main)] rounded-xl border border-[var(--border-color)] relative">
                                             {i < parcel.basisChain!.length - 1 && (
-                                                <div className="absolute -bottom-3 left-6 w-0.5 h-3 bg-[#32363b] z-0"></div>
+                                                <div className="absolute -bottom-3 left-6 w-0.5 h-3 bg-[var(--bg-hover)] z-0"></div>
                                             )}
                                             <div className="font-bold text-sm text-[var(--text-main)] leading-tight">
                                                 {step.status || 'Оформлюється'}
                                             </div>
                                             <div className="flex items-center justify-between">
-                                                <div className="font-mono text-xs text-yellow-400 font-bold">
+                                                <div className="font-mono text-xs text-yellow-500 font-bold">
                                                     ТТН: {step.ttn}
                                                 </div>
                                                 <button 
@@ -1435,7 +1435,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                 </div>
                                                 <div className="flex justify-between items-center bg-[var(--bg-main)]/40 p-2.5 rounded-xl border border-[var(--border-color)]/60">
                                                     <span>Очікувана дата:</span>
-                                                    <span className="font-bold text-red-400 text-right">
+                                                    <span className="font-bold text-red-500 text-right">
                                                         {latestBasis.estimatedDeliveryDate || latestBasis.rawStatus?.ScheduledDeliveryDate || '-'}
                                                     </span>
                                                 </div>
@@ -1451,14 +1451,14 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
 
                         {/* Route */}
                         <div className="grid grid-cols-1 gap-3 relative">
-                            <div className="absolute left-[31px] top-10 bottom-10 w-[2px] bg-[#32363b] z-0"></div>
+                            <div className="absolute left-[31px] top-10 bottom-10 w-[2px] bg-[var(--bg-hover)] z-0"></div>
                             
                             <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-2xl p-4 landscape:p-3 shadow-sm relative z-10">
                                 <div className="flex items-center gap-2 mb-2 text-[var(--text-muted)]">
                                     <div className="bg-[var(--bg-main)] p-1.5 rounded-lg border border-[var(--border-color)]">
-                                        <User className="w-4 h-4 text-blue-400" />
+                                        <User className="w-4 h-4 text-blue-500" />
                                     </div>
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">Відправник</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-500">Відправник</span>
                                 </div>
                                 <div className="font-medium text-[var(--text-main)] mb-1.5 text-[15px] pl-10">{parcel.sender}</div>
                                 <div className="text-xs text-[var(--text-muted)] flex items-start gap-1.5 pl-10">
@@ -1470,9 +1470,9 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                             <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-2xl p-4 landscape:p-3 shadow-sm relative z-10">
                                 <div className="flex items-center gap-2 mb-2 text-[var(--text-muted)]">
                                     <div className="bg-[var(--bg-main)] p-1.5 rounded-lg border border-[var(--border-color)]">
-                                        <UserCheck className="w-4 h-4 text-green-400" />
+                                        <UserCheck className="w-4 h-4 text-green-500" />
                                     </div>
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-green-400">Одержувач</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-green-500">Одержувач</span>
                                 </div>
                                 <div className="font-medium text-[var(--text-main)] mb-1.5 text-[15px] pl-10">{parcel.recipient}</div>
                                 {(() => {
@@ -1501,7 +1501,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                     {/* Right Column in Landscape: Meta stats & Description */}
                     <div className="flex flex-col gap-6 landscape:gap-4_5">
                         {/* Meta */}
-                        <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-2xl shadow-sm divide-y divide-[#32363b]">
+                        <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-2xl shadow-sm divide-y divide-[var(--border-color)]">
                             <div className="grid grid-cols-2 p-4 landscape:p-3 text-[13px]">
                                 <div className="text-[var(--text-muted)] flex items-center gap-2"><Scale className="w-4 h-4"/> Вага</div>
                                 <div className="font-medium text-right text-[var(--text-main)]">{parcel.weight} кг {parcel.rawStatus?.VolumeWeight ? `(${parcel.rawStatus.VolumeWeight} об'єм)` : ''}</div>
@@ -1524,23 +1524,23 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 <>
                                     <div className="grid grid-cols-2 p-4 landscape:p-3 text-[13px]">
                                         <div className="text-[var(--text-muted)] flex items-center gap-2">
-                                            <CreditCard className="w-4 h-4 text-emerald-400"/> {backwardInfo.label}
+                                            <CreditCard className="w-4 h-4 text-emerald-500"/> {backwardInfo.label}
                                         </div>
-                                        <div className="font-bold text-right text-emerald-400 font-mono text-[15px]">
+                                        <div className="font-bold text-right text-emerald-500 font-mono text-[15px]">
                                             {backwardInfo.amount} ₴
                                         </div>
                                     </div>
                                     {!backwardInfo.isControl && (
                                         <div className="grid grid-cols-2 p-4 landscape:p-3 text-[13px]">
                                             <div className="text-[var(--text-muted)] flex items-center gap-2">Комісія за переказ</div>
-                                            <div className="font-medium text-right text-emerald-400/80 font-mono text-[14px]">
+                                            <div className="font-medium text-right text-emerald-500/80 font-mono text-[14px]">
                                                 {parcel.rawStatus?.RedeliveryPaymentCard ? 'Сплачено онлайн' : `~${(backwardInfo.amount * 0.02 + 20).toFixed(2)} ₴`}
                                             </div>
                                         </div>
                                     )}
                                 </>
                             )}
-                            <div className="grid grid-cols-2 p-4 landscape:p-3 bg-[#32363b]/30 rounded-b-2xl text-[13px]">
+                            <div className="grid grid-cols-2 p-4 landscape:p-3 bg-[var(--bg-hover)] rounded-b-2xl text-[13px]">
                                 <div className="text-[var(--text-muted)] font-medium flex items-center gap-2">Орієнтовно</div>
                                 <div className="font-bold text-[#e33745] text-right flex items-center justify-end gap-1.5"><Calendar className="w-4 h-4" />{parcel.estimatedDeliveryDate || '-'}</div>
                             </div>
@@ -1568,7 +1568,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                             href={`https://my.novaposhta.ua/orders/printMarkings/orders[]/${parcel.ttn}/type/pdf/apiKey/${selectedAccount.apiKey}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex items-center justify-center gap-1.5 bg-[#32363b] hover:bg-[#43484e] text-[var(--text-main)] border border-[#4a4f56] font-semibold py-2.5 px-3 rounded-xl text-xs transition-colors cursor-pointer text-center"
+                                            className="flex items-center justify-center gap-1.5 bg-[var(--bg-hover)] hover:bg-[var(--progress-track)] text-[var(--text-main)] border border-[var(--progress-track)] font-semibold py-2.5 px-3 rounded-xl text-xs transition-colors cursor-pointer text-center"
                                         >
                                             <Printer className="w-3.5 h-3.5 shrink-0 text-amber-500" />
                                             <span>Маркування</span>
@@ -1604,7 +1604,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                     setNote('');
                                                     setActiveTab('return');
                                                 }}
-                                                className="bg-[#32363b] hover:bg-[#43484e] text-[var(--text-main)] border border-[#4a4f56] font-bold py-3 px-3 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 text-center"
+                                                className="bg-[var(--bg-hover)] hover:bg-[var(--progress-track)] text-[var(--text-main)] border border-[var(--progress-track)] font-bold py-3 px-3 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 text-center"
                                             >
                                                 <span>Повернути</span>
                                             </button>
@@ -1627,11 +1627,11 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                         <div className="w-full space-y-2 mt-1">
                                             {isDeleteConfirmOpen ? (
                                                 <div className="bg-[#e33745]/10 border border-[#e33745]/30 p-4 rounded-xl text-center space-y-3">
-                                                    <p className="text-red-400 text-xs font-bold leading-relaxed">
+                                                    <p className="text-red-500 text-xs font-bold leading-relaxed">
                                                         Ви впевнені, що хочете видалити ТТН з Нової Пошти? Цю дію неможливо скасувати.
                                                     </p>
                                                     {deleteError && (
-                                                        <div className="bg-red-950/40 border border-red-900/40 p-2 rounded-lg text-red-400 text-[10px] text-left leading-normal font-medium">
+                                                        <div className="bg-red-500/20 border border-red-500/30 p-2 rounded-lg text-red-500 text-[10px] text-left leading-normal font-medium">
                                                             {deleteError}
                                                         </div>
                                                     )}
@@ -1651,7 +1651,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                                 setDeleteError(null);
                                                             }}
                                                             disabled={submitting}
-                                                            className="flex-1 bg-[#32363b] hover:bg-[#43484e] text-[var(--text-muted)] border border-[#4a4f56] font-bold py-2.5 px-3 rounded-lg text-[10.5px] uppercase tracking-wider transition-all select-none cursor-pointer"
+                                                            className="flex-1 bg-[var(--bg-hover)] hover:bg-[var(--progress-track)] text-[var(--text-muted)] border border-[var(--progress-track)] font-bold py-2.5 px-3 rounded-lg text-[10.5px] uppercase tracking-wider transition-all select-none cursor-pointer"
                                                         >
                                                             Скасувати
                                                         </button>
@@ -1661,7 +1661,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                 <button 
                                                     type="button"
                                                     onClick={() => setIsDeleteConfirmOpen(true)}
-                                                    className="w-full bg-red-950/20 hover:bg-red-900/30 text-red-400 border border-red-500/30 font-bold py-3 px-3 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 text-center"
+                                                    className="w-full bg-red-500/20 hover:bg-red-500/20 text-red-500 border border-red-500/30 font-bold py-3 px-3 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 text-center"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5 shrink-0" />
                                                     <span>Видалити ТТН з Нової Пошти</span>
@@ -1676,7 +1676,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                         {onDeleteManualTtn && (
                             <button
                                 onClick={onDeleteManualTtn}
-                                className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider font-bold transition-all flex items-center justify-center gap-2 w-full mt-2 select-none"
+                                className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider font-bold transition-all flex items-center justify-center gap-2 w-full mt-2 select-none"
                             >
                                 <Trash2 className="w-4 h-4" />
                                 <span>Видалити з відстеження</span>
@@ -1686,399 +1686,6 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                 </div>
             )}
         </div>
-
-        {/* Desktop View */}
-            <div className="hidden lg:flex flex-col bg-white w-full max-w-4xl max-h-[85vh] h-[650px] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-               {/* Desktop header */}
-               <div className="px-8 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 shrink-0">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-red-100 p-2.5 rounded-xl shadow-sm">
-                           <Box className="w-6 h-6 text-red-600" />
-                        </div>
-                        <div>
-                            <div className="font-mono font-bold text-2xl text-gray-900 tracking-tight">{parcel.ttn}</div>
-                            <div className="text-[11px] uppercase text-gray-500 font-bold tracking-wider">{parcel.accountName}</div>
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="p-2.5 text-[var(--text-muted)] hover:text-gray-900 hover:bg-gray-200 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-200">
-                        <X className="w-6 h-6" />
-                    </button>
-               </div>
-               
-               {activeTab !== 'details' ? (
-                   <div className="flex-1 flex min-h-0 overflow-hidden bg-white">
-                       {renderActiveForm()}
-                   </div>
-               ) : (
-                   <div className="flex-1 flex min-h-0">
-                   {/* Left Col - Route & Main Info */}
-                   <div className="flex-1 overflow-y-auto p-8 border-r border-gray-100 bg-white">
-                        {/* Error & Success Messages */}
-                        {(errorMsg || successMsg) && (
-                            <div className="mb-6">
-                                {errorMsg && (
-                                    <div className="bg-red-50 border border-red-200 p-4 rounded-xl text-red-600 text-sm font-semibold leading-relaxed">
-                                        Помилка: {errorMsg}
-                                    </div>
-                                )}
-                                {successMsg && (
-                                    <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-emerald-600 text-sm font-semibold leading-relaxed">
-                                        {successMsg}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        <div className="inline-flex px-4 py-1.5 bg-gray-100 text-gray-900 rounded-full text-sm font-bold mb-8 shadow-sm">
-                            {parcel.status}
-                        </div>
-
-                        {/* Desktop Compact Route Box */}
-                        <div className="mb-0 mb-8 p-6 bg-gray-50 border border-gray-100 rounded-2xl shadow-sm">
-                            <div className="flex justify-between items-center mb-4">
-                                <span className="font-bold text-base text-gray-950">Маршрут посилки</span>
-                                <button 
-                                    type="button"
-                                    onClick={() => setShowFullRoute(true)}
-                                    className="text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] flex items-center gap-1 transition-colors uppercase tracking-wider bg-[var(--bg-main)] hover:bg-[var(--bg-hover)] px-3 py-1.5 rounded-lg border border-[var(--border-color)] cursor-pointer"
-                                >
-                                    Повністю <span className="text-[#1bc285] font-bold">&gt;</span>
-                                </button>
-                            </div>
-                            {routePoints.checkpoints.length > 0 ? (
-                                <div className="flex items-start gap-4">
-                                    <div className="flex flex-col items-center shrink-0 pt-1">
-                                        <div className="w-5 h-5 bg-[#1bc285] rounded-full flex items-center justify-center border-4 border-gray-50">
-                                            <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-                                        </div>
-                                        <div className="w-[2px] h-6 bg-gray-200"></div>
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="font-semibold text-gray-950 leading-tight text-[15px] mb-1">
-                                            {routePoints.checkpoints[0].status}
-                                        </div>
-                                        <div className="text-xs text-gray-500">
-                                            {routePoints.checkpoints[0].location} · {routePoints.checkpoints[0].timestamp}
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="text-xs text-gray-500 italic">Інформація про маршрут оновлюється</div>
-                            )}
-                        </div>
-
-                        {parcel.basisChain && parcel.basisChain.length > 0 && (
-                            <div className="mb-8 p-6 bg-yellow-50 border border-yellow-200 rounded-2xl shadow-sm">
-                                <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-600 mb-4 flex items-center gap-1.5">
-                                    <span>Послідовність переадресацій / повернень</span>
-                                </div>
-                                
-                                <div className="flex flex-col gap-4 mb-5">
-                                    {parcel.basisChain.map((step: any, i: number) => (
-                                        <div key={step.ttn} className="flex flex-col gap-1.5 p-4 bg-white rounded-xl border border-yellow-200 shadow-sm relative">
-                                            {i < parcel.basisChain!.length - 1 && (
-                                                <div className="absolute -bottom-4 left-6 w-0.5 h-4 bg-yellow-200 z-0"></div>
-                                            )}
-                                            <div className="font-bold text-[15px] text-gray-900 leading-tight">
-                                                {step.status || 'Оформлюється'}
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                <div className="font-mono text-sm text-yellow-700 font-bold">
-                                                    ТТН: {step.ttn}
-                                                </div>
-                                                <button 
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        navigator.clipboard.writeText(step.ttn || '');
-                                                        setCopied(true);
-                                                        setTimeout(() => setCopied(false), 2000);
-                                                    }}
-                                                    className="px-2 py-0.5 text-[10px] bg-white border border-gray-200 text-gray-600 rounded hover:text-gray-900 hover:bg-gray-100 transition-colors font-sans"
-                                                >
-                                                    {copied ? 'Скопійовано!' : 'Копіювати'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                
-                                {(() => {
-                                    const latestBasis = parcel.basisChain[parcel.basisChain.length - 1];
-                                    return (
-                                        <div className="grid grid-cols-2 gap-4 text-xs pt-4 border-t border-yellow-200/60">
-                                            <div>
-                                                 <span className="text-gray-500 block mb-0.5">Поточне місце:</span>
-                                                 <span className="font-bold text-gray-900 text-sm break-words">
-                                                     {latestBasis.cityName || 'В дорозі'}
-                                                 </span>
-                                            </div>
-                                            <div>
-                                                 <span className="text-gray-500 block mb-0.5">Очікувана дата:</span>
-                                                 <span className="font-bold text-red-650 text-sm">
-                                                     {latestBasis.estimatedDeliveryDate || latestBasis.rawStatus?.ScheduledDeliveryDate || '-'}
-                                                 </span>
-                                            </div>
-                                        </div>
-                                    );
-                                })()}
-                            </div>
-                        )}
-                        
-                        <div className="relative pl-7 space-y-10 before:absolute before:inset-y-0 before:left-3 before:w-0.5 before:bg-gray-100">
-                            
-                            {/* Sender */}
-                            <div className="relative">
-                                <div className="absolute top-1 -left-[30px] w-5 h-5 bg-white border-[3px] border-blue-400 rounded-full shadow-sm"></div>
-                                <div className="text-[11px] font-bold uppercase tracking-widest text-blue-500 mb-1.5">Відправник</div>
-                                <div className="font-medium text-gray-900 text-xl tracking-tight mb-2">{parcel.sender}</div>
-                                <div className="flex items-start gap-2 text-gray-500 text-sm">
-                                    <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
-                                    <span>{parcel.rawStatus?.CitySender || parcel.rawDoc?.CitySenderDescription || 'Місто невідоме'}</span>
-                                </div>
-                            </div>
-
-                            {/* Recipient */}
-                            <div className="relative">
-                                <div className="absolute top-1 -left-[30px] w-5 h-5 bg-white border-[3px] border-green-400 rounded-full shadow-sm"></div>
-                                <div className="text-[11px] font-bold uppercase tracking-widest text-green-500 mb-1.5">Одержувач</div>
-                                <div className="font-medium text-gray-900 text-xl tracking-tight mb-2">{parcel.recipient}</div>
-                                {(() => {
-                                    const phoneNum = parcel.rawStatus?.PhoneRecipient || parcel.rawDoc?.PhoneRecipient;
-                                    if (!phoneNum) return null;
-                                    const displayPhone = phoneNum.startsWith('+') ? phoneNum : `+${phoneNum}`;
-                                    return (
-                                        <a 
-                                            href={`tel:${displayPhone}`}
-                                            className="flex items-center gap-2 text-gray-500 hover:text-blue-600 text-sm mb-1.5 transition-colors"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <Phone className="w-4 h-4 shrink-0" />
-                                            <span>{displayPhone}</span>
-                                        </a>
-                                    );
-                                })()}
-                                <div className="flex items-start gap-2 text-gray-500 text-sm">
-                                    <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
-                                    <span>{parcel.cityName}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {parcel.rawDoc?.Description && (
-                            <div className="mt-10 pt-8 border-t border-gray-100">
-                                <div className="font-medium text-gray-900 block mb-3 text-sm">Опис відправлення:</div>
-                                <div className="text-[15px] text-gray-700 bg-gray-50 p-4 rounded-xl border border-gray-100 leading-relaxed">
-                                    {parcel.rawDoc.Description}
-                                </div>
-                            </div>
-                        )}
-                   </div>
-                   
-                   {/* Right Col - Details */}
-                   <div className="w-[320px] shrink-0 bg-[#FAFAFA] p-8 overflow-y-auto hidden lg:block">
-                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-8">Деталі</h3>
-                        
-                        <div className="space-y-8">
-                            <div className="flex flex-col gap-1.5">
-                                <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
-                                    <Calendar className="w-4 h-4 text-orange-500" />Орієнтовна дата
-                                </div>
-                                <div className="font-semibold text-gray-900 text-[15px] pl-6">
-                                    {parcel.estimatedDeliveryDate || '-'}
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col gap-1.5">
-                                <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
-                                    <Scale className="w-4 h-4 text-blue-500" />Вага
-                                </div>
-                                <div className="font-semibold text-gray-900 text-[15px] pl-6">
-                                    {parcel.weight} кг {parcel.rawStatus?.VolumeWeight ? `(${parcel.rawStatus.VolumeWeight} об'єм)` : ''}
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col gap-1.5">
-                                <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
-                                    <CreditCard className="w-4 h-4 text-purple-500" />Тип оплати
-                                </div>
-                                <div className="font-semibold text-gray-900 text-[15px] pl-6">
-                                    {parsePayer()}
-                                </div>
-                            </div>
-
-                            {parcel.announcedPrice && parseFloat(parcel.announcedPrice) > 0 && (
-                                <div className="flex flex-col gap-1.5">
-                                    <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
-                                        Оголошена вартість
-                                    </div>
-                                    <div className="font-semibold text-gray-900 text-[15px] pl-6">
-                                        {parcel.announcedPrice} ₴
-                                    </div>
-                                </div>
-                            )}
-
-                            {backwardInfo && (
-                                <>
-                                    <div className="flex flex-col gap-1.5 align-right">
-                                        <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
-                                            <CreditCard className="w-4 h-4 text-emerald-500" />{backwardInfo.label}
-                                        </div>
-                                        <div className="font-semibold text-emerald-600 text-[15px] pl-6 font-mono">
-                                            {backwardInfo.amount} ₴
-                                        </div>
-                                    </div>
-                                    {!backwardInfo.isControl && (
-                                        <div className="flex flex-col gap-1.5 align-right">
-                                            <div className="flex items-center gap-2 text-gray-500 text-sm font-medium pl-6">
-                                                Комісія за переказ
-                                            </div>
-                                            <div className="font-semibold text-emerald-600/80 text-[14px] pl-6 font-mono">
-                                                {parcel.rawStatus?.RedeliveryPaymentCard ? 'Сплачено онлайн' : `~${(backwardInfo.amount * 0.02 + 20).toFixed(2)} ₴`}
-                                            </div>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-
-                            <div className="pt-8 border-t border-gray-200 mt-8">
-                                <div className="text-gray-500 text-sm mb-2 text-right font-medium">Вартість доставки</div>
-                                <div className="font-mono text-[32px] tracking-tighter font-bold text-gray-900 text-right">
-                                    {parcel.cost} ₴
-                                </div>
-                            </div>
-
-                            {/* Redirection / Return management buttons block */}
-                            <div className="pt-6 mt-6 border-t border-gray-200 flex flex-col gap-2.5">
-                                <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">Керування відправленням</div>
-                                {isCreatedStatus && selectedAccount?.apiKey && (
-                                    <div className="flex flex-col gap-2 border-b border-gray-100 pb-4 mb-2">
-                                        <div className="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1.5 self-start mb-1">
-                                            <Printer className="w-4 h-4" />
-                                            <span>Друк документів</span>
-                                        </div>
-                                        <div className="grid grid-cols-1">
-                                            <a
-                                                href={`https://my.novaposhta.ua/orders/printMarkings/orders[]/${parcel.ttn}/type/pdf/apiKey/${selectedAccount.apiKey}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-200 font-bold py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
-                                            >
-                                                <Printer className="w-4 h-4 shrink-0 text-amber-500" />
-                                                <span>Маркування (PDF)</span>
-                                            </a>
-                                        </div>
-                                    </div>
-                                )}
-                                {accounts.length === 0 && parcel.accountId !== 'manual' ? (
-                                    <div className="text-[var(--text-muted)] text-xs italic">
-                                        Додайте хоча б один аккаунт Нової Пошти, щоб здійснювати переадресацію та повернення онлайн.
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col gap-2.5">
-                                        {parcel.accountId !== 'manual' && (
-                                            <>
-                                                <button 
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setSuccessMsg(null);
-                                                        setErrorMsg(null);
-                                                        setNote('');
-                                                        setActiveTab('redirect');
-                                                    }}
-                                                    className="w-full bg-red-600 hover:bg-red-700 text-[#ffffff] font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-sm"
-                                                >
-                                                    <span>Переадресувати</span>
-                                                </button>
-                                                <button 
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setSuccessMsg(null);
-                                                        setErrorMsg(null);
-                                                        setNote('');
-                                                        setActiveTab('return');
-                                                    }}
-                                                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-200 font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-sm"
-                                                >
-                                                    <span>Повернути відправлення</span>
-                                                </button>
-                                            </>
-                                        )}
-                                        <button 
-                                            type="button"
-                                            onClick={() => {
-                                                setSuccessMsg(null);
-                                                setErrorMsg(null);
-                                                setActiveTab('change_data');
-                                            }}
-                                            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-200 font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-sm"
-                                        >
-                                            <Edit className="w-4 h-4 shrink-0 text-red-500" />
-                                            <span>Змінити дані ТТН</span>
-                                        </button>
-
-                                        {isCreatedStatus && selectedAccount?.apiKey && parcel.rawDoc?.Ref && (
-                                            <div className="w-full space-y-2 mt-2">
-                                                {isDeleteConfirmOpen ? (
-                                                    <div className="bg-red-50 border border-red-200 p-4 rounded-xl text-center shadow-sm space-y-3">
-                                                        {deleteError && (
-                                                            <div className="bg-red-100 border border-red-200 p-2 rounded-lg text-red-700 text-[10px] text-left leading-normal font-medium mb-1">
-                                                                {deleteError}
-                                                            </div>
-                                                        )}
-                                                        <p className="text-red-700 text-xs font-bold leading-relaxed">
-                                                            Ви впевнені, що хочете видалити ТТН з Нової Пошти? Цю дію неможливо скасувати.
-                                                        </p>
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                type="button"
-                                                                onClick={handleDeleteTtn}
-                                                                disabled={submitting}
-                                                                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-[#ffffff] font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-all shadow-sm select-none cursor-pointer"
-                                                            >
-                                                                {submitting ? 'Видалення...' : 'Так, видалити'}
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => { setIsDeleteConfirmOpen(false); setDeleteError(null); }}
-                                                                disabled={submitting}
-                                                                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-all border border-gray-200 select-none cursor-pointer"
-                                                            >
-                                                                Скасувати
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <button 
-                                                        type="button"
-                                                        onClick={() => setIsDeleteConfirmOpen(true)}
-                                                        className="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-sm"
-                                                    >
-                                                        <Trash2 className="w-4 h-4 shrink-0 text-red-600" />
-                                                        <span>Видалити ТТН з Нової Пошти</span>
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-
-                            {onDeleteManualTtn && (
-                                <div className="pt-6 mt-6 border-t border-gray-200">
-                                    <button
-                                        onClick={onDeleteManualTtn}
-                                        className="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-sm select-none"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                        <span>Видалити з відстеження</span>
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                   </div>
-                </div>
-               )}
-            </div>
 
          {/* Full Route Modal Overlay */}
          {showFullRoute && (
@@ -2134,7 +1741,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                               )}
                                               
                                               {/* Info text */}
-                                              <div className={`font-semibold text-[15px] leading-tight ${isNewest ? 'text-emerald-400 lg:text-emerald-600' : 'text-[var(--text-main)]'}`}>
+                                              <div className={`font-semibold text-[15px] leading-tight ${isNewest ? 'text-emerald-500' : 'text-[var(--text-main)]'}`}>
                                                   {cp.status}
                                               </div>
                                               <div className="text-xs text-[var(--text-muted)] flex items-center gap-1">

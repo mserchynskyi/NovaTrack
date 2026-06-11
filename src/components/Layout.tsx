@@ -1,5 +1,5 @@
 import React, { ReactNode, useState, useEffect, useRef } from 'react';
-import { Home, MapPin, User, Package as Box, LogOut, Plus, FileText, X, Search, Globe, Copy, Check, Barcode, RefreshCw, Key, CreditCard } from 'lucide-react';
+import { Home, MapPin, User, Package as Box, LogOut, Plus, FileText, X, Search, Globe, Copy, Check, Barcode, RefreshCw, Key, CreditCard, Scale } from 'lucide-react';
 import { useAuth } from '../lib/AuthContext';
 import { searchCities, getWarehouses } from '../lib/np-api';
 import { useSubscription } from '../lib/useSubscription';
@@ -70,6 +70,7 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSu
 
   // Map Locator features state
   const [isMapOpen, setIsMapOpen] = useState(false);
+  const [isLegalInfoOpen, setIsLegalInfoOpen] = useState(false);
   const [mapCityQuery, setMapCityQuery] = useState('Київ');
   const [mapCities, setMapCities] = useState<any[]>([]);
   const [selectedMapCity, setSelectedMapCity] = useState<any | null>(null);
@@ -254,6 +255,10 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSu
                 <Key className="w-4 h-4" />
                 Профілі (ключі API)
              </div>
+             <div onClick={() => setIsLegalInfoOpen(true)} className="flex items-center gap-3 px-3 py-2.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover-alpha)] hover:text-[var(--text-main)] rounded-lg cursor-pointer font-medium text-sm transition-colors">
+                <Scale className="w-4 h-4" />
+                Юридична інформація
+             </div>
          </nav>
 
          {user && (
@@ -324,7 +329,7 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSu
               className="flex flex-col items-center justify-center w-[72px] h-[64px] cursor-pointer pb-1"
               onClick={onCreateTtn}
             >
-              <div className="w-10 h-10 rounded-full bg-[#e33745] hover:bg-[#c92f3a] text-[#ffffff] flex items-center justify-center shadow-lg shadow-red-950/40 border border-red-700/30 transition-all transform active:scale-95">
+              <div className="w-10 h-10 rounded-full bg-[#e33745] hover:bg-[#c92f3a] text-[#ffffff] flex items-center justify-center border border-red-700/30 transition-all transform active:scale-95">
                 <Plus className="w-5.5 h-5.5 stroke-[2.5]" />
               </div>
               <span className="text-[10px] mt-1 font-bold tracking-wide text-[#e33745]">Відправити</span>
@@ -506,6 +511,87 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSu
                 className="w-full bg-[#e33745] hover:bg-[#c92f3a] text-[#ffffff] font-bold py-3.5 rounded-2xl text-xs uppercase tracking-wider transition-colors shadow-lg cursor-pointer text-center"
               >
                 Зрозуміло
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Legal Info modal */}
+      {isLegalInfoOpen && (
+        <div 
+          className="fixed inset-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-0 sm:p-4"
+          onClick={() => setIsLegalInfoOpen(false)}
+        >
+          <div 
+            className="bg-[var(--bg-nav)] text-[var(--text-main)] w-full max-w-[540px] h-[100dvh] sm:h-[70vh] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-5 py-4 flex items-center justify-between border-b border-[var(--border-color)]/40 bg-[var(--bg-main)] shrink-0 z-20">
+              <div className="p-2 rounded-full border border-gray-500/20 bg-[var(--bg-card)]">
+                 <Scale className="w-5 h-5 text-gray-400" />
+              </div>
+              <span className="font-bold text-lg text-[var(--text-main)] font-sans tracking-tight">Юридична інформація</span>
+              <button 
+                type="button"
+                onClick={() => setIsLegalInfoOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors border border-[var(--border-color)]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content Area */}
+            <div className="flex-1 overflow-y-auto p-6 bg-[var(--bg-main)] text-sm leading-relaxed text-[var(--text-main)] space-y-4">
+                <h3 className="text-base font-semibold text-[var(--text-main)] mt-2">Загальні положення</h3>
+                <p className="text-[var(--text-muted)]">Оформлюючи підписку на сервіс, користувач погоджується з умовами цієї Політики підписок та автоматичного продовження.</p>
+                <p className="text-[var(--text-muted)]">Підписка надає доступ до функціоналу програмного забезпечення відповідно до обраного тарифного плану протягом оплаченого періоду.</p>
+
+                <h3 className="text-base font-semibold text-[var(--text-main)] mt-6">Безкоштовний пробний період</h3>
+                <p className="text-[var(--text-muted)]">Новим користувачам може надаватися безкоштовний пробний період тривалістю 14 календарних днів.</p>
+                <p className="text-[var(--text-muted)]">Для активації пробного періоду користувач повинен додати дійсний платіжний засіб (банківську картку).</p>
+                <p className="text-[var(--text-muted)]">Під час активації пробного періоду кошти з картки не списуються або може бути виконана тимчасова перевірка платіжного засобу на незначну суму, яка повертається відповідно до правил банку-емітента.</p>
+
+                <h3 className="text-base font-semibold text-[var(--text-main)] mt-6">Автоматичне продовження підписки</h3>
+                <p className="text-[var(--text-muted)]">Після завершення безкоштовного пробного періоду підписка автоматично переходить на платний тариф.</p>
+                <p className="text-[var(--text-muted)]">Користувач надає згоду на автоматичне списання вартості підписки з прив'язаного платіжного засобу після закінчення пробного періоду та надалі на початку кожного нового платіжного періоду.</p>
+                <p className="text-[var(--text-muted)]">Періодичність списань та вартість підписки зазначаються на сторінці оформлення замовлення перед підтвердженням підписки.</p>
+                <p className="text-[var(--text-muted)]">Якщо списання не може бути виконано через недостатність коштів або з інших причин, доступ до сервісу може бути призупинено до успішного здійснення платежу.</p>
+
+                <h3 className="text-base font-semibold text-[var(--text-main)] mt-6">Скасування підписки</h3>
+                <p className="text-[var(--text-muted)]">Користувач має право скасувати підписку в будь-який момент через особистий кабінет або шляхом звернення до служби підтримки.</p>
+                <p className="text-[var(--text-muted)]">Скасування підписки припиняє майбутні автоматичні списання, але не повертає кошти за вже оплачений поточний період доступу, якщо інше не передбачено законодавством або окремими умовами сервісу.</p>
+                <p className="text-[var(--text-muted)]">Для уникнення списання за наступний період підписку необхідно скасувати до моменту чергового автоматичного платежу.</p>
+
+                <h3 className="text-base font-semibold text-[var(--text-main)] mt-6">Повернення коштів</h3>
+                <p className="text-[var(--text-muted)]">Після надання доступу до цифрового сервісу кошти за вже розпочатий або використаний період підписки, як правило, не повертаються.</p>
+                <p className="text-[var(--text-muted)] mb-2">Винятками можуть бути:</p>
+                <ul className="list-disc pl-5 space-y-1 text-[var(--text-muted)]">
+                    <li>технічна неможливість надання сервісу з вини виконавця;</li>
+                    <li>помилкове або дубльоване списання коштів;</li>
+                    <li>інші випадки, передбачені законодавством України.</li>
+                </ul>
+                <p className="text-[var(--text-muted)] mt-2">Кожен запит на повернення коштів розглядається індивідуально.</p>
+
+                <h3 className="text-base font-semibold text-[var(--text-main)] mt-6">Контактна інформація</h3>
+                <p className="text-[var(--text-muted)]">
+                  ФОП Серчинський Тарас Володимирович<br/>
+                  ЄДРПОУ: 2367114254<br/>
+                  Юридична адреса: Львівська область, Стрийський район, м. Сколе, вул. Калнишевського 49
+                </p>
+                <p className="text-[var(--text-muted)] mt-2">З питань, пов'язаних із підпискою, автоматичними списаннями або поверненням коштів, звертайтеся до служби підтримки:</p>
+                <p className="text-[var(--text-muted)] font-medium mt-1 mb-6">Телефон: +380 67 263 7930</p>
+            </div>
+
+            {/* Footer Action */}
+            <div className="p-5 border-t border-[var(--border-color)] shrink-0 bg-[var(--bg-nav)]">
+              <button
+                type="button"
+                onClick={() => setIsLegalInfoOpen(false)}
+                className="w-full bg-[var(--bg-card-alt)] hover:bg-[var(--bg-hover)] text-[var(--text-main)] border border-[var(--border-color)] font-bold py-3.5 rounded-2xl text-xs uppercase tracking-wider transition-colors shadow-sm cursor-pointer text-center"
+              >
+                Закрити
               </button>
             </div>
           </div>

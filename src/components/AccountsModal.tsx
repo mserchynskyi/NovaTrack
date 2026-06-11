@@ -154,8 +154,8 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 lg:bg-black/60 lg:backdrop-blur-sm z-[60] flex items-center justify-center p-0 sm:p-4">
-      <div className="bg-[var(--bg-main)] h-[100dvh] sm:h-[600px] rounded-none sm:rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border-none sm:border border-[var(--border-color)] lg:border-none flex flex-col">
+    <div className="fixed inset-0 bg-black/40/60 lg:backdrop-blur-sm z-[60] flex items-center justify-center p-0 sm:p-4">
+      <div className="bg-[var(--bg-main)] h-[100dvh] sm:h-[600px] rounded-none sm:rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border-none sm:border border-[var(--border-color)] flex flex-col">
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-main)] shrink-0">
             {activeTab === 'api' ? (
                 <button onClick={() => setActiveTab('profile')} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors shrink-0">
@@ -178,10 +178,10 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
           {activeTab === 'profile' ? (
             <>
               {/* Auth/Profile Box */}
-              <div className="bg-[var(--bg-card)] lg:bg-blue-50 border border-[var(--border-color)] lg:border-blue-100 p-4 rounded-xl flex flex-col gap-3">
+              <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-4 rounded-xl flex flex-col gap-3">
                 {!loading && !user ? (
                 <>
-                  <p className="text-xs text-[var(--text-muted)] lg:text-blue-800">
+                  <p className="text-xs text-[var(--text-muted)]">
                     Авторизуйтеся для збереження акаунтів та синхронізації між пристроями:
                   </p>
                   
@@ -269,16 +269,16 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
                 </>
               ) : !loading && user ? (
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs text-[var(--text-main)] lg:text-blue-900 min-w-0">
-                    <CheckCircle2 className="w-4 h-4 text-[#25c468] lg:text-green-500 shrink-0" />
+                  <div className="flex items-center gap-2 text-xs text-[var(--text-main)] min-w-0">
+                    <CheckCircle2 className="w-4 h-4 text-[#25c468] shrink-0" />
                     <div className="min-w-0">
-                      <div className="text-[10px] text-[var(--text-muted)] lg:text-blue-700/80 font-bold uppercase tracking-wider">Синхронізація активна</div>
+                      <div className="text-[10px] text-[var(--text-muted)]/80 font-bold uppercase tracking-wider">Синхронізація активна</div>
                       <div className="font-semibold truncate max-w-[170px] mt-0.5">{user.email}</div>
                     </div>
                   </div>
                   <button 
                     onClick={logout}
-                    className="text-xs flex items-center gap-1.5 text-[#e33745] hover:text-[var(--text-main)] lg:text-gray-500 lg:hover:text-gray-700 shrink-0"
+                    className="text-xs flex items-center gap-1.5 text-[#e33745] hover:text-[var(--text-main)] shrink-0"
                   >
                    <LogOut className="w-3.5 h-3.5"/> Вийти
                   </button>
@@ -429,10 +429,10 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
                   {accounts.map(acc => (
                     <div key={acc.id} className="flex justify-between items-center p-3.5 bg-[var(--bg-card-alt)] border border-[var(--border-color)] border-[var(--border-color)] rounded-xl">
                       <div>
-                        <div className="font-medium text-[var(--text-main)] lg:text-gray-800 text-sm tracking-wide">{acc.name}</div>
+                        <div className="font-medium text-[var(--text-main)] text-sm tracking-wide">{acc.name}</div>
                         <div className="text-[11px] text-[var(--text-muted)] font-mono mt-0.5 break-all" title={acc.apiKey}>{acc.apiKey}</div>
                       </div>
-                      <button onClick={() => handleRemove(acc.id)} className="p-2 text-[var(--text-muted)] hover:text-[#e33745] lg:text-red-500 lg:hover:bg-red-50 hover:bg-[#e33745]/10 rounded-lg transition-colors" title="Видалити">
+                      <button onClick={() => handleRemove(acc.id)} className="p-2 text-[var(--text-muted)] hover:text-[#e33745] hover:bg-[#e33745]/10 rounded-lg transition-colors" title="Видалити">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -445,14 +445,14 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
               )}
 
               <div className="border-t border-[var(--border-color)] border-[var(--border-color)] pt-5 mt-5 space-y-4">
-                <h3 className="text-xs font-bold text-[var(--text-muted)] lg:text-gray-700 uppercase tracking-widest">Додати новий акаунт</h3>
+                <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">Додати новий акаунт</h3>
                 <div>
                   <input 
                     type="text" 
                     placeholder="Назва (напр. ФОП Іванов)" 
                     value={name}
                     onChange={e => setName(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl text-[var(--text-main)] text-sm focus:outline-none focus:border-[#e33745] lg:focus:border-red-500 focus:ring-1 focus:ring-[#e33745] lg:focus:ring-red-500 placeholder:text-gray-500 lg:placeholder:text-[var(--text-muted)]"
+                    className="w-full px-4 py-2.5 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl text-[var(--text-main)] text-sm focus:outline-none focus:border-[#e33745] focus:ring-1 focus:ring-[#e33745] placeholder:text-gray-500"
                   />
                 </div>
                 <div>
@@ -461,7 +461,7 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
                     placeholder="API Ключ (отримайте в кабінеті НП)" 
                     value={apiKey}
                     onChange={e => setApiKey(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl text-[var(--text-main)] text-sm focus:outline-none focus:border-[#e33745] lg:focus:border-red-500 focus:ring-1 focus:ring-[#e33745] lg:focus:ring-red-500 placeholder:text-gray-500 lg:placeholder:text-[var(--text-muted)] font-mono"
+                    className="w-full px-4 py-2.5 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl text-[var(--text-main)] text-sm focus:outline-none focus:border-[#e33745] focus:ring-1 focus:ring-[#e33745] placeholder:text-gray-500 font-mono"
                   />
                 </div>
                 <button 
