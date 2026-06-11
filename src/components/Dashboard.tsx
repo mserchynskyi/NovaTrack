@@ -249,7 +249,7 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
       )}
 
       {/* Controls & Filters */}
-      <div className="sticky top-0 z-30 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3 shrink-0 bg-[var(--bg-main)] p-4 pb-3 lg:p-3 rounded-none lg:rounded border-b border-[#25323d]/60 lg:border  shadow-md lg:shadow-sm">
+      <div className="sticky top-0 z-30 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3 shrink-0 bg-[var(--bg-nav)] p-4 pb-3 lg:p-3 rounded-none lg:rounded border-b border-[#25323d]/60 lg:border  shadow-md lg:shadow-sm">
         
         {/* Left Side: Search + Filters group */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
