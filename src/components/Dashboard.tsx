@@ -260,6 +260,10 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
              </span>
              <input
                type="text"
+               autoComplete="off"
+               autoCorrect="off"
+               autoCapitalize="off"
+               spellCheck="false"
                placeholder="Пошук за ТТН, телефоном, прізвищем, містом..."
                className="w-full pl-9 pr-8 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg py-2.5 lg:py-1.5 focus:outline-none focus:border-red-500 text-[var(--text-main)] font-medium text-xs placeholder:text-[var(--text-muted)]"
                value={searchQuery}

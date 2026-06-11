@@ -14,9 +14,16 @@ import { AuthScreen } from './components/AuthScreen';
 import { useTheme } from './lib/useTheme';
 import { useSubscription } from './lib/useSubscription';
 import { SubscriptionPaywall } from './components/SubscriptionPaywall';
+import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 
 export default function App() {
     useTheme(); // Initialize theme logic globally
+
+    // Check if we are on the privacy policy page
+    if (window.location.pathname === '/privacy' || window.location.pathname === '/privacy/') {
+        return <PrivacyPolicyPage />;
+    }
+
     const { user } = useAuth();
     const { subscription, loading: subLoading, activateSubscription, isAccessAllowed } = useSubscription();
     const { accounts, saveAccounts, manualTtns, saveManualTtns, isLoaded } = useAccounts();

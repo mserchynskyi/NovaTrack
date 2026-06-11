@@ -94,9 +94,7 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, 
                                     <Ticket className="w-4 h-4" />
                                 </span>
                                 <input
-                                    type="text"
-                                    maxLength={14}
-                                    placeholder="59000000000000"
+                                    type="text" maxLength={14} autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false" placeholder="59000000000000"
                                     disabled={!hasAccounts}
                                     className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-xl text-[var(--text-main)] text-sm focus:outline-none focus:border-red-[#e33745] focus:ring-1 focus:ring-[#e33745] placeholder:text-gray-500 disabled:opacity-50 font-mono tracking-wider"
                                     value={ttn}
@@ -115,8 +113,7 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, 
                                     <Phone className="w-4 h-4" />
                                 </span>
                                 <input
-                                    type="tel"
-                                    placeholder="0951112233"
+                                    type="tel" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false" placeholder="0951112233"
                                     disabled={!hasAccounts}
                                     className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-xl text-[var(--text-main)] text-sm focus:outline-none focus:border-red-[#e33745] focus:ring-1 focus:ring-[#e33745] placeholder:text-gray-500 disabled:opacity-50 font-mono"
                                     value={phone}

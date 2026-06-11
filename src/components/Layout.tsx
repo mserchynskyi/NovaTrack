@@ -259,6 +259,10 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSu
                 <Scale className="w-4 h-4" />
                 Юридична інформація
              </div>
+             <a href="/privacy" className="flex items-center gap-3 px-3 py-2.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover-alpha)] hover:text-[var(--text-main)] rounded-lg cursor-pointer font-medium text-sm transition-colors">
+                <FileText className="w-4 h-4" />
+                Політика конфіденційності
+             </a>
          </nav>
 
          {user && (
