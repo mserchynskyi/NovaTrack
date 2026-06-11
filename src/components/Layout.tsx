@@ -283,7 +283,7 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSu
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
-            className="flex-1 flex flex-col overflow-x-hidden overflow-y-auto no-scrollbar relative w-full h-full pb-[84px] lg:pb-0"
+            className="flex-1 flex flex-col overflow-x-hidden overflow-y-auto no-scrollbar relative w-full h-full pb-[calc(84px+env(safe-area-inset-bottom,0px))] lg:pb-0"
           >
             {/* Pull-to-refresh & Loading indicator */}
             {(pullDistance > 0 || loading) && (
@@ -309,7 +309,7 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSu
           </main>
           
           {/* Mobile Bottom Nav - Styled exactly like the uploaded screenshot */}
-          <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-[var(--bg-nav)] border-t border-[var(--border-color)] pt-2 px-2 flex justify-around items-end text-[11px] text-[#7d8c97] font-semibold z-50 h-[76px] shadow-[0_-8px_24px_rgba(0,0,0,0.3)] select-none">
+          <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-[var(--bg-nav)] border-t border-[var(--border-color)] pt-2 pb-[env(safe-area-inset-bottom,0px)] px-2 flex justify-around items-end text-[11px] text-[#7d8c97] font-semibold z-50 h-[calc(76px+env(safe-area-inset-bottom,0px))] shadow-[0_-8px_24px_rgba(0,0,0,0.3)] select-none">
             
             {/* 1. Посилки */}
             <div className="flex flex-col items-center justify-center w-16 h-[54px] cursor-pointer text-[var(--text-main)] pb-1">

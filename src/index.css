@@ -49,6 +49,13 @@
     --text-red-accent: #f87171;
     --progress-track: #43484e;
   }
+
+  html, body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    margin: 0;
+    padding: 0;
+  }
 }
 
 
