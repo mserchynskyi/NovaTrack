@@ -154,8 +154,14 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40/60 lg:backdrop-blur-sm z-[60] flex items-center justify-center p-0 sm:p-4">
-      <div className="bg-[var(--bg-main)] h-[100dvh] sm:h-[600px] rounded-none sm:rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border-none sm:border border-[var(--border-color)] flex flex-col">
+    <div 
+      className="fixed inset-0 bg-black/85 backdrop-blur-md z-[60] flex items-center justify-center p-0 sm:p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-[var(--bg-main)] h-[100dvh] sm:h-[600px] rounded-none sm:rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border-none sm:border border-[var(--border-color)] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-main)] shrink-0">
             {activeTab === 'api' ? (
                 <button onClick={() => setActiveTab('profile')} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors shrink-0">

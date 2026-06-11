@@ -72,8 +72,14 @@ export function SubscriptionModal({ isOpen, onClose }: SubscriptionModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40/60 lg:backdrop-blur-sm z-[60] flex items-center justify-center p-0 sm:p-4">
-      <div className="bg-[var(--bg-main)] h-[100dvh] sm:h-auto sm:max-h-[600px] rounded-none sm:rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border-none sm:border border-[var(--border-color)] flex flex-col">
+    <div 
+      className="fixed inset-0 bg-black/85 backdrop-blur-md z-[60] flex items-center justify-center p-0 sm:p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-[var(--bg-main)] h-[100dvh] sm:h-auto sm:max-h-[600px] rounded-none sm:rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border-none sm:border border-[var(--border-color)] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-main)] shrink-0">
             <div className="w-5 h-5 shrink-0" />
             
