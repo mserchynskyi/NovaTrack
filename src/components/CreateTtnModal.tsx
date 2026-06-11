@@ -635,10 +635,18 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
     };
 
     return (
-        <div id="create-ttn-modal-overlay" className="fixed inset-0 bg-[#0c0d10]/90 backdrop-blur-md z-[100] flex items-center justify-center p-0 sm:p-2 overflow-hidden sm:overflow-y-auto no-scrollbar">
+        <div 
+            id="create-ttn-modal-overlay" 
+            className="fixed inset-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-0 sm:p-4 overflow-hidden sm:overflow-y-auto no-scrollbar"
+            onClick={onClose}
+        >
             
             {/* Phone simulator boundary wrapper with exact colors shown in the screenshot */}
-            <div id="create-ttn-phone-boundary" className="bg-[var(--bg-main)] text-[var(--text-main)] w-full max-w-lg lg:max-w-4xl sm:rounded-[32px] shadow-2xl flex flex-col h-[100dvh] sm:h-[880px] lg:h-[85vh] overflow-hidden border border-[var(--border-color)] relative font-sans">
+            <div 
+                id="create-ttn-phone-boundary" 
+                className="bg-[var(--bg-main)] text-[var(--text-main)] w-full max-w-lg lg:max-w-4xl sm:rounded-[32px] shadow-2xl flex flex-col h-[100dvh] sm:h-[880px] lg:h-[85vh] overflow-hidden border border-[var(--border-color)] relative font-sans"
+                onClick={(e) => e.stopPropagation()}
+            >
                 
                 {/* Fixed Premium Header */}
                 <div id="ttn-modal-header" className="px-5 py-4 lg:py-5 lg:px-8 border-b border-[var(--border-color)]/40 flex items-center justify-between bg-[var(--bg-main)] shrink-0 z-20">
