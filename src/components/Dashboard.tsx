@@ -365,16 +365,16 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
       </div>
 
       {/* List */}
-      <div className="flex-1 flex flex-col min-h-0 bg-transparent  lg:border  lg:rounded lg:shadow-sm lg:overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 w-full max-w-full min-w-0 bg-transparent lg:border lg:rounded lg:shadow-sm lg:overflow-hidden">
         {filteredAndSortedParcels.length === 0 && !loading && !error && (
-          <div className="text-center py-12  rounded lg:border ">
+          <div className="text-center py-12 rounded lg:border">
             <Package className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-2" />
-            <p className="text-[var(--text-muted)]  text-xs">Не знайдено посилок, що відповідають критеріям</p>
+            <p className="text-[var(--text-muted)] text-xs">Не знайдено посилок, що відповідають критеріям</p>
           </div>
         )}
         
         {loading && parcels.length === 0 && (
-           <div className="flex flex-col items-center justify-center py-24  lg:shadow-sm rounded-2xl lg:border border-[var(--border-color)]">
+           <div className="flex flex-col items-center justify-center py-24 lg:shadow-sm rounded-2xl lg:border border-[var(--border-color)]">
                <div className="w-16 h-16 bg-[#e33745]/5 rounded-2xl flex items-center justify-center mb-5 border border-[#e33745]/10 relative">
                    <Package className="w-8 h-8 text-[#e33745] animate-pulse" />
                    <div className="absolute inset-0 rounded-2xl border-2 border-[#e33745]/20 animate-ping opacity-20" />
@@ -391,17 +391,17 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
         )}
 
         {filteredAndSortedParcels.length > 0 && (
-          <div className="overflow-y-auto overflow-x-hidden lg:overflow-auto flex-1 pb-20 lg:pb-0 no-scrollbar">
+          <div className="overflow-y-auto overflow-x-auto lg:overflow-x-auto flex-1 pb-20 lg:pb-0 no-scrollbar w-full max-w-full">
             {/* Desktop View */}
-            <div className="hidden lg:block min-w-[800px]">
+            <div className="hidden lg:block min-w-[720px] xl:min-w-[800px] w-full">
               {/* Header Row (fake table) */}
               <div className="bg-[var(--bg-card)] sticky top-0 border-b border-[var(--border-color)] z-10 flex text-[10px] uppercase text-[var(--text-muted)] font-bold tracking-wider">
-                <div className="px-4 py-3 w-40 shrink-0">ТТН</div>
-                <div className="px-4 py-3 w-40 shrink-0">Профіль</div>
-                <div className="px-4 py-3 w-56 shrink-0">Статус</div>
-                <div className="px-4 py-3 flex-1 min-w-[200px]">Одержувач / Маршрут</div>
-                <div className="px-4 py-3 w-28 shrink-0">Вартість</div>
-                <div className="px-4 py-3 w-28 shrink-0 text-right">Очікується</div>
+                <div className="px-4 py-3 lg:w-32 xl:w-40 shrink-0">ТТН</div>
+                <div className="px-4 py-3 lg:w-24 xl:w-40 shrink-0">Профіль</div>
+                <div className="px-4 py-3 lg:w-40 xl:w-56 shrink-0">Статус</div>
+                <div className="px-4 py-3 flex-1 lg:min-w-[150px] xl:min-w-[200px]">Одержувач / Маршрут</div>
+                <div className="px-4 py-3 lg:w-20 xl:w-28 shrink-0">Вартість</div>
+                <div className="px-4 py-3 lg:w-24 xl:w-28 shrink-0 text-right">Очікується</div>
               </div>
               
               {/* Rows */}
@@ -416,12 +416,12 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                       className="flex hover:bg-[var(--bg-card)] group cursor-pointer text-xs transition-colors items-center"
                   >
                       {/* Tracking */}
-                      <div className="px-4 py-2.5 w-40 shrink-0 font-mono text-red-600 font-medium group-hover:underline">
+                      <div className="px-4 py-2.5 lg:w-32 xl:w-40 shrink-0 font-mono text-red-600 font-medium group-hover:underline">
                         {parcel.ttn}
                       </div>
 
                       {/* Account */}
-                      <div className="px-4 py-2.5 w-40 shrink-0 flex items-center gap-1.5 truncate">
+                      <div className="px-4 py-2.5 lg:w-24 xl:w-40 shrink-0 flex items-center gap-1.5 truncate">
                         <span className="w-4 h-4 rounded bg-[var(--bg-active-alpha)] text-[8px] flex items-center justify-center text-[var(--text-muted)] font-bold shrink-0">
                           {parcel.accountName.charAt(0).toUpperCase()}
                         </span>
@@ -429,14 +429,14 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                       </div>
 
                       {/* Status */}
-                      <div className="px-4 py-2.5 w-56 shrink-0 flex items-center">
+                      <div className="px-4 py-2.5 lg:w-40 xl:w-56 shrink-0 flex items-center">
                         <span className={`px-2 py-1.5 rounded-md text-[10px] font-bold uppercase leading-snug break-words ${getStatusColorTheme(parcel.statusCode)}`} title={parcel.status}>
                             {parcel.status}
                         </span>
                       </div>
 
                       {/* Route/Details */}
-                      <div className="px-4 py-2.5 flex-1 min-w-[200px] flex flex-col gap-0.5 justify-center">
+                      <div className="px-4 py-2.5 flex-1 lg:min-w-[150px] xl:min-w-[200px] flex flex-col gap-0.5 justify-center">
                         <div className="font-medium text-[var(--text-main)] truncate" title={parcel.recipient}>
                           {parcel.recipient}
                         </div>
@@ -475,12 +475,12 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                       </div>
 
                       {/* Cost */}
-                      <div className="px-4 py-2.5 w-28 shrink-0 text-[var(--text-muted)]">
+                      <div className="px-4 py-2.5 lg:w-20 xl:w-28 shrink-0 text-[var(--text-muted)]">
                         {parcel.cost} ₴
                       </div>
 
                       {/* Date */}
-                      <div className="px-4 py-2.5 w-28 shrink-0 text-right text-[var(--text-muted)]">
+                      <div className="px-4 py-2.5 lg:w-24 xl:w-28 shrink-0 text-right text-[var(--text-muted)] font-mono">
                         {parcel.actualDeliveryDate || parcel.estimatedDeliveryDate || '-'}
                       </div>
                   </motion.div>

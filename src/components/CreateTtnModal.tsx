@@ -1,4 +1,5 @@
 import { useState, useEffect, FormEvent, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { 
     X, 
     CheckCircle, 
@@ -634,10 +635,10 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
         }
     };
 
-    return (
+    return createPortal(
         <div 
             id="create-ttn-modal-overlay" 
-            className="fixed inset-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-0 sm:p-4 overflow-hidden sm:overflow-y-auto no-scrollbar"
+            className="fixed -top-12 -bottom-24 inset-x-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-0 sm:p-4 overflow-hidden sm:overflow-y-auto no-scrollbar"
             onClick={onClose}
         >
             
@@ -1821,6 +1822,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                     )}
                 </AnimatePresence>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

@@ -1,4 +1,5 @@
 import { useState, FormEvent, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, Trash2, Ticket, Phone, AlertCircle, Info, Truck } from 'lucide-react';
 import { ManualTtn } from '../lib/useAccounts';
 import { NpAccount } from '../types';
@@ -76,9 +77,9 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, 
         onSave(updated);
     };
 
-    return (
+    return createPortal(
         <div 
-            className="fixed inset-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-0 sm:p-4"
+            className="fixed -top-12 -bottom-24 inset-x-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-0 sm:p-4"
             onClick={onClose}
         >
             <div 
@@ -219,6 +220,7 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, 
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

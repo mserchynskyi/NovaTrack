@@ -1,62 +1,107 @@
 @import "tailwindcss";
 
-@layer utilities {
-    .no-scrollbar::-webkit-scrollbar {
-        display: none;
-    }
-    .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
-    .pb-safe {
-        padding-bottom: env(safe-area-inset-bottom, 20px);
-    }
+/* Main Utilities */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 20px);
 }
 
-@layer base {
-  :root {
-    --bg-main: #f3f4f6;
-    --bg-card: #ffffff;
-    --bg-card-alt: #f9fafb;
-    --bg-input-alt: #f3f4f6;
-    --bg-nav: #ffffff;
-    --bg-hover: rgba(0,0,0,0.05);
-    --bg-hover-alpha: rgba(0,0,0,0.05);
-    --bg-active-alpha: rgba(0,0,0,0.1);
-    --border-color: #e5e7eb;
-    --text-main: #111827;
-    --text-muted: #6b7280;
-    --text-blue-accent: #2563eb;
-    --text-yellow-accent: #d97706;
-    --text-red-accent: #dc2626;
-    --progress-track: #e5e7eb;
-  }
-  
-  .dark {
-    --bg-main: #1b2b35;
-    --bg-card: #262c33;
-    --bg-card-alt: #292D32;
-    --bg-input-alt: #16252f;
-    --bg-nav: #111d24;
-    --bg-hover: #32363b;
-    --bg-hover-alpha: rgba(255,255,255,0.05);
-    --bg-active-alpha: rgba(255,255,255,0.1);
-    --border-color: #32363b;
-    --text-main: #ffffff;
-    --text-muted: #a5acb5;
-    --text-blue-accent: #60a5fa;
-    --text-yellow-accent: #febb14;
-    --text-red-accent: #f87171;
-    --progress-track: #43484e;
-  }
-
-  html, body {
-    background-color: var(--bg-main);
-    color: var(--text-main);
-    margin: 0;
-    padding: 0;
-  }
+/* Light Theme Variables */
+:root {
+  --bg-main: #f3f4f6;
+  --bg-card: #ffffff;
+  --bg-card-alt: #f9fafb;
+  --bg-input-alt: #f3f4f6;
+  --bg-nav: #ffffff;
+  --bg-hover: rgba(0,0,0,0.05);
+  --bg-hover-alpha: rgba(0,0,0,0.05);
+  --bg-active-alpha: rgba(0,0,0,0.1);
+  --border-color: #e5e7eb;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --text-blue-accent: #2563eb;
+  --text-yellow-accent: #d97706;
+  --text-red-accent: #dc2626;
+  --progress-track: #e5e7eb;
 }
+
+/* Dark Theme Variables */
+.dark {
+  --bg-main: #1b2b35;
+  --bg-card: #262c33;
+  --bg-card-alt: #292D32;
+  --bg-input-alt: #16252f;
+  --bg-nav: #111d24;
+  --bg-hover: #32363b;
+  --bg-hover-alpha: rgba(255,255,255,0.05);
+  --bg-active-alpha: rgba(255,255,255,0.1);
+  --border-color: #32363b;
+  --text-main: #ffffff;
+  --text-muted: #a5acb5;
+  --text-blue-accent: #60a5fa;
+  --text-yellow-accent: #febb14;
+  --text-red-accent: #f87171;
+  --progress-track: #43484e;
+}
+
+/* Force Viewport Lock to Prevent Elastic Scrolling & White Gaps */
+html, body {
+  background-color: var(--bg-main) !important;
+  color: var(--text-main) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+#root {
+  background-color: var(--bg-main) !important;
+  color: var(--text-main) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+html {
+  background-color: #f3f4f6 !important;
+}
+
+html.dark {
+  background-color: #1b2b35 !important;
+}
+
+body {
+  background-color: #f3f4f6 !important;
+}
+
+body.dark {
+  background-color: #1b2b35 !important;
+}
+
 
 
 

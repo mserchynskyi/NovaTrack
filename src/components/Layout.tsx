@@ -202,9 +202,9 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSu
   });
 
   return (
-    <div className="flex bg-[var(--bg-main)] min-h-[100dvh] font-sans selection:bg-red-200">
+    <div className="flex bg-[var(--bg-main)] h-full w-full overflow-hidden font-sans selection:bg-red-200">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-56 bg-[var(--bg-main)] text-[var(--text-main)] flex-col h-screen sticky top-0 shadow-lg shrink-0">
+      <aside className="hidden lg:flex w-56 bg-[var(--bg-main)] text-[var(--text-main)] flex-col h-full shadow-lg shrink-0">
          <div className="p-6 flex items-center gap-3">
              <div className="bg-[#e33745] p-2 rounded-xl shadow-md shadow-red-900/20">
                  <Box className="w-5 h-5 text-[var(--text-main)] stroke-[2]" />
@@ -228,7 +228,7 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSu
              </div>
           )}
          
-         <nav className="flex-1 px-4 space-y-1.5 mt-2">
+         <nav className="flex-1 overflow-y-auto no-scrollbar px-4 space-y-1.5 mt-2 pb-4">
              <div className="flex items-center gap-3 px-3 py-2.5 bg-[var(--bg-active-alpha)] rounded-lg text-[var(--text-main)] cursor-pointer font-medium text-sm">
                 <Home className="w-4 h-4" />
                 Посилки
@@ -285,14 +285,14 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSu
       </aside>
 
       {/* Main Container */}
-      <div className="flex-1 flex flex-col w-full h-[100dvh] lg:h-auto overflow-hidden lg:overflow-visible">
+      <div className="flex-1 flex flex-col w-full h-full relative overflow-hidden">
           {/* Main Content Area */}
           <main 
             ref={mainRef}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
-            className="flex-1 flex flex-col overflow-x-hidden overflow-y-auto no-scrollbar relative w-full h-full pb-[calc(84px+env(safe-area-inset-bottom,0px))] lg:pb-0"
+            className="flex-1 min-h-0 flex flex-col overflow-x-hidden overflow-y-auto no-scrollbar relative w-full h-full pb-[90px] lg:pb-0"
           >
             {/* Pull-to-refresh & Loading indicator */}
             {(pullDistance > 0 || loading) && (
@@ -312,13 +312,15 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSu
               </div>
             )}
             
-            <div className="p-0 lg:p-8 flex-1 flex flex-col max-w-7xl mx-auto w-full">
+            <div className="p-0 lg:p-6 xl:p-8 flex-1 flex flex-col max-w-7xl mx-auto w-full">
               {children}
             </div>
           </main>
           
           {/* Mobile Bottom Nav - Styled exactly like the uploaded screenshot */}
-          <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-[var(--bg-nav)] border-t border-[var(--border-color)] pt-2 pb-[env(safe-area-inset-bottom,0px)] px-2 flex justify-around items-end text-[11px] text-[#7d8c97] font-semibold z-50 h-[calc(76px+env(safe-area-inset-bottom,0px))] shadow-[0_-8px_24px_rgba(0,0,0,0.3)] select-none">
+          <nav 
+            className="lg:hidden absolute bottom-0 left-0 right-0 w-full bg-[var(--bg-nav)] border-t border-[var(--border-color)] px-2 flex justify-around items-end text-[11px] text-[#7d8c97] font-semibold z-[99999] shadow-[0_-8px_30px_rgba(0,0,0,0.15)] select-none pb-safe pt-2 min-h-[76px]"
+          >
             
             {/* 1. Посилки */}
             <div className="flex flex-col items-center justify-center w-16 h-[54px] cursor-pointer text-[var(--text-main)] pb-1">

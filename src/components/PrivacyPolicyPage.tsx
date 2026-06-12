@@ -3,7 +3,7 @@ import { FileText, ArrowLeft } from 'lucide-react';
 
 export function PrivacyPolicyPage() {
     return (
-        <div className="flex flex-col min-h-[100dvh] bg-[var(--bg-main)] text-[var(--text-main)] font-sans">
+        <div className="flex flex-col h-full bg-[var(--bg-main)] text-[var(--text-main)] font-sans overflow-hidden">
             {/* Header */}
             <div className="px-5 py-4 flex items-center gap-4 border-b border-[var(--border-color)]/40 bg-[var(--bg-card)] shrink-0 sticky top-0 z-20 shadow-sm">
                 <a 
@@ -21,7 +21,7 @@ export function PrivacyPolicyPage() {
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 max-w-2xl mx-auto w-full p-6 text-sm flex flex-col gap-5">
+            <div className="flex-1 max-w-2xl mx-auto w-full p-6 text-sm flex flex-col gap-5 overflow-y-auto no-scrollbar">
                 <p className="text-[var(--text-muted)] leading-relaxed">Ця Політика конфіденційності визначає порядок збору, використання та захисту вашої особистої інформації та даних під час використання додатку «МультиПошта».</p>
 
                 <div className="space-y-2">

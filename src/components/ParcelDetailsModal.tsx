@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { X, MapPin, Calendar, Box, User, UserCheck, Scale, CreditCard, Phone, Trash2, ArrowLeftRight, CornerDownLeft, Loader2, Search, CheckCircle, Edit, Printer, FileText } from 'lucide-react';
 import { Parcel, NpAccount } from '../types';
 import { searchCities, getWarehouses, submitRedirection, submitReturn, submitChangeData, deleteInternetDocument, NpCity, NpWarehouse } from '../lib/np-api';
@@ -1293,9 +1294,9 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
 
     const backwardInfo = getBackwardDeliveryInfo(parcel);
 
-    return (
+    return createPortal(
         <div 
-           className="fixed inset-0 bg-[#0c0d10]/95 backdrop-blur-md z-50 flex items-center justify-center p-0 sm:p-2 overflow-hidden sm:overflow-y-auto no-scrollbar"
+           className="fixed -top-12 -bottom-24 inset-x-0 bg-[#0c0d10]/95 backdrop-blur-md z-50 flex items-center justify-center p-0 sm:p-2 overflow-hidden sm:overflow-y-auto no-scrollbar"
            onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             {/* Unified View */}
@@ -1769,6 +1770,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
              </div>
          )}
 
-        </div>
+        </div>,
+        document.body
     );
 }

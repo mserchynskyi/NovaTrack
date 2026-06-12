@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, CreditCard } from 'lucide-react';
 import { useAuth } from '../lib/AuthContext';
 import { useSubscription } from '../lib/useSubscription';
@@ -71,9 +72,9 @@ export function SubscriptionModal({ isOpen, onClose }: SubscriptionModalProps) {
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div 
-      className="fixed inset-0 bg-black/85 backdrop-blur-md z-[60] flex items-center justify-center p-0 sm:p-4"
+      className="fixed -top-12 -bottom-24 inset-x-0 bg-black/85 backdrop-blur-md z-[60] flex items-center justify-center p-0 sm:p-4"
       onClick={onClose}
     >
       <div 
@@ -183,6 +184,7 @@ export function SubscriptionModal({ isOpen, onClose }: SubscriptionModalProps) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

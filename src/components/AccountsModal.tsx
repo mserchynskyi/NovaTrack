@@ -1,4 +1,5 @@
 import { useState, FormEvent, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Trash2, Plus, Key, LogOut, CheckCircle2, Mail, ChevronRight, ArrowLeft, Sun, Moon, Monitor, CreditCard, Settings, MessageCircle } from 'lucide-react';
 import { NpAccount } from '../types';
 import { useAuth } from '../lib/AuthContext';
@@ -153,9 +154,9 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
     onSave(accounts.filter(a => a.id !== id));
   };
 
-  return (
+  return createPortal(
     <div 
-      className="fixed inset-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-0 sm:p-4"
+      className="fixed -top-12 -bottom-24 inset-x-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-0 sm:p-4"
       onClick={onClose}
     >
       <div 
@@ -505,6 +506,7 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

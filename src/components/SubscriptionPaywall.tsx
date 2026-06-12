@@ -55,7 +55,7 @@ export function SubscriptionPaywall() {
   };
 
   return (
-    <div className="flex bg-[var(--bg-main)] min-h-[100dvh] items-center justify-center p-4 antialiased selection:bg-red-200">
+    <div className="flex bg-[var(--bg-main)] h-full w-full overflow-hidden items-center justify-center p-4 antialiased selection:bg-red-200">
       <div className="w-full max-w-md bg-[var(--bg-card)] border border-[var(--border-color)] rounded-3xl p-6 sm:p-8 shadow-xl shadow-black/20 flex flex-col text-center">
         
         {/* Visual Badge Header */}

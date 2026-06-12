@@ -61,7 +61,7 @@ export function AuthScreen() {
     };
 
     return (
-        <div className="flex bg-[var(--bg-main)] min-h-[100dvh] items-center justify-center p-4 antialiased">
+        <div className="flex bg-[var(--bg-main)] h-full w-full overflow-hidden items-center justify-center p-4 antialiased">
             <div className="w-full max-w-md bg-[var(--bg-card-alt)]/80 backdrop-blur-md rounded-3xl border border-[var(--border-color)] p-8 shadow-2xl relative overflow-hidden transition-all duration-300">
                 {/* Visual Accent */}
                 <div className="absolute top-0 left-0 w-full h-[4px] bg-[#e33745]" />

@@ -61,7 +61,7 @@ export default function App() {
 
     if (!isLoaded || subLoading) {
         return (
-            <div className="flex bg-[var(--bg-main)] min-h-[100dvh] items-center justify-center p-4 antialiased">
+            <div className="flex bg-[var(--bg-main)] h-full w-full overflow-hidden items-center justify-center p-4 antialiased">
                 <div className="flex flex-col items-center">
                     <div className="w-20 h-20 bg-[#e33745]/10 rounded-3xl flex items-center justify-center mb-6 border border-[#e33745]/20 shadow-[0_0_30px_rgba(227,55,69,0.15)] relative">
                         <Box className="w-10 h-10 text-[#e33745] animate-pulse" />
