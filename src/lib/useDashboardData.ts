@@ -68,7 +68,7 @@ export function useDashboardData(
 
             if (parsedManual.length > 0) {
                 try {
-                    const manualParcels = await fetchManualParcels(parsedAccounts[0].apiKey, parsedManual, force);
+                    const manualParcels = await fetchManualParcels(parsedAccounts, parsedManual, force);
                     flatParcels.push(...manualParcels);
                 } catch (e: any) {
                     console.error("Error fetching manual parcels:", e);

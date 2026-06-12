@@ -111,10 +111,10 @@ export default function App() {
                          const updated = manualTtns.filter(item => item.ttn !== ttn);
                          saveManualTtns(updated);
                      }}
-                     onUpdateManualTtn={(ttn, phone) => {
+                     onUpdateManualTtn={(ttn, phone, accountId) => {
                          const updated = manualTtns.map(item => {
                              if (item.ttn === ttn) {
-                                 return { ...item, phone };
+                                 return { ...item, phone, accountId };
                              }
                              return item;
                          });
@@ -166,6 +166,7 @@ export default function App() {
                     }
                 }}
                 hasAccounts={accounts.length > 0}
+                 accounts={accounts}
                 onCreateNewTtn={() => {
                     setIsAddTtnModalOpen(false);
                     setIsCreateTtnModalOpen(true);

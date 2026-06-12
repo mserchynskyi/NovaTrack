@@ -1,6 +1,7 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { X, Plus, Trash2, Ticket, Phone, AlertCircle, Info, Truck } from 'lucide-react';
 import { ManualTtn } from '../lib/useAccounts';
+import { NpAccount } from '../types';
 
 interface AddTtnModalProps {
   isOpen: boolean;
@@ -9,12 +10,20 @@ interface AddTtnModalProps {
   onSave: (newTtns: ManualTtn[], addedTtn?: string) => void;
   hasAccounts: boolean;
   onCreateNewTtn?: () => void;
+  accounts: NpAccount[];
 }
 
-export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, onCreateNewTtn }: AddTtnModalProps) {
+export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, onCreateNewTtn, accounts }: AddTtnModalProps) {
     const [ttn, setTtn] = useState('');
     const [phone, setPhone] = useState('');
+    const [selectedAccountId, setSelectedAccountId] = useState('');
     const [validationError, setValidationError] = useState('');
+
+    useEffect(() => {
+        if (accounts.length > 0 && !selectedAccountId) {
+            setSelectedAccountId(accounts[0].id);
+        }
+    }, [accounts, selectedAccountId]);
 
     if (!isOpen) return null;
 
@@ -52,7 +61,11 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, 
             }
         }
 
-        const updated = [...manualTtns, { ttn: cleanTtn, phone: formattedPhone || undefined }];
+        const updated = [...manualTtns, { 
+            ttn: cleanTtn, 
+            phone: formattedPhone || undefined, 
+            accountId: selectedAccountId || (accounts[0]?.id || undefined)
+        }];
         onSave(updated, cleanTtn);
         setTtn('');
         setPhone('');
@@ -109,6 +122,24 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, 
                             </div>
                         </div>
 
+                        {accounts.length > 0 && (
+                            <div>
+                                <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1.5Packed">Оберіть кабінет (API ключ)</label>
+                                <select
+                                    disabled={!hasAccounts}
+                                    className="w-full px-3.5 py-2.5 bg-[var(--bg-card-alt)] text-[var(--text-main)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:border-red-[#e33745] focus:ring-1 focus:ring-[#e33745] disabled:opacity-50"
+                                    value={selectedAccountId}
+                                    onChange={e => setSelectedAccountId(e.target.value)}
+                                >
+                                    {accounts.map(acc => (
+                                        <option key={acc.id} value={acc.id}>
+                                            {acc.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
                         <div>
                             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1.5 flex items-center justify-between">
                                 <span>Номер телефону (Отримувача або Відправника)</span>
@@ -158,22 +189,31 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, 
                             <p className="text-xs text-[var(--text-muted)] italic py-2">Немає доданих вручну номерів.</p>
                         ) : (
                             <div className="max-h-[400px] sm:max-h-[450px] overflow-y-auto space-y-2 pr-1 no-scrollbar">
-                                {manualTtns.map(item => (
-                                    <div key={item.ttn} className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-xl p-3 flex items-center justify-between text-[var(--text-main)]">
-                                        <div className="flex flex-col">
-                                            <span className="font-mono text-sm font-bold tracking-wider">{item.ttn}</span>
-                                            {item.phone && (
-                                                <span className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5">📞 {item.phone}</span>
-                                            )}
+                                {manualTtns.map(item => {
+                                    const matchedAcc = item.accountId ? accounts.find(a => a.id === item.accountId) : undefined;
+                                    const accountName = matchedAcc ? matchedAcc.name : (accounts[0]?.name || "Усі");
+                                    return (
+                                        <div key={item.ttn} className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-xl p-3 flex items-center justify-between text-[var(--text-main)]">
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="font-mono text-sm font-bold tracking-wider">{item.ttn}</span>
+                                                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                                    {item.phone && (
+                                                        <span className="text-[10px] text-[var(--text-muted)] font-mono">📞 {item.phone}</span>
+                                                    )}
+                                                    <span className="text-[9px] font-semibold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded uppercase leading-none tracking-wider">
+                                                        👤 {accountName}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => handleDelete(item.ttn)}
+                                                className="p-1.5 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => handleDelete(item.ttn)}
-                                            className="p-1.5 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

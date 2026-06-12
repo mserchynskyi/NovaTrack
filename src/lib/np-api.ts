@@ -322,159 +322,187 @@ export async function fetchAccountParcels(account: NpAccount, bypassCache = fals
   });
 }
 
-export async function fetchManualParcels(apiKey: string, manualTtns: { ttn: string; phone?: string }[], bypassCache = false): Promise<Parcel[]> {
-  if (manualTtns.length === 0) return [];
+export async function fetchManualParcels(
+  accounts: NpAccount[],
+  manualTtns: { ttn: string; phone?: string; accountId?: string }[],
+  bypassCache = false
+): Promise<Parcel[]> {
+  if (manualTtns.length === 0 || accounts.length === 0) return [];
   const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
-  const documentsQuery = manualTtns.map(item => ({
-    DocumentNumber: item.ttn.trim(),
-    Phone: item.phone ? item.phone.trim() : "",
-  }));
-
-  const allStatuses: any[] = [];
-  const chunkSize = 100;
-  
-  for (let i = 0; i < documentsQuery.length; i += chunkSize) {
-    if (i > 0) await delay(500);
-    const chunk = documentsQuery.slice(i, i + chunkSize);
-    const statusData = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        ...(bypassCache ? { "x-bypass-cache": "true" } : {})
-      },
-      body: JSON.stringify({
-        apiKey,
-        modelName: "TrackingDocument",
-        calledMethod: "getStatusDocuments",
-        methodProperties: {
-          Documents: chunk,
-        },
-      }),
-    });
-
-    if (statusData.success && statusData.data) {
-      allStatuses.push(...statusData.data);
+  // Group manualTtns by accountId. Fallback to accounts[0] if no accountId or not found.
+  const groupsAndKeys = new Map<string, { account: NpAccount; items: typeof manualTtns }>();
+  for (const item of manualTtns) {
+    let matchedAcc = item.accountId ? accounts.find(a => a.id === item.accountId) : undefined;
+    if (!matchedAcc) {
+      matchedAcc = accounts[0];
     }
+    const accId = matchedAcc.id;
+    if (!groupsAndKeys.has(accId)) {
+      groupsAndKeys.set(accId, { account: matchedAcc, items: [] });
+    }
+    groupsAndKeys.get(accId)!.items.push(item);
   }
 
-  const statusMap = new Map<string, any>(allStatuses.map((s) => [s.Number, s]));
+  const allParcels: Parcel[] = [];
 
-  let depth = 0;
-  while (depth < 5) {
-    const basisTtnList = Array.from(statusMap.values())
-      .map(s => s.LastCreatedOnTheBasisNumber)
-      .filter((num): num is string => typeof num === "string" && num.trim() !== "" && !statusMap.has(num.trim()));
-
-    if (basisTtnList.length === 0) break;
-
-    const basisQuery = basisTtnList.map(num => ({
-      DocumentNumber: num.trim(),
-      Phone: "",
+  for (const [accId, group] of groupsAndKeys) {
+    const apiKey = group.account.apiKey;
+    const documentsQuery = group.items.map(item => ({
+      DocumentNumber: item.ttn.trim(),
+      Phone: item.phone ? item.phone.trim() : "",
     }));
 
-    const basisStatusData = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        ...(bypassCache ? { "x-bypass-cache": "true" } : {})
-      },
-      body: JSON.stringify({
-        apiKey,
-        modelName: "TrackingDocument",
-        calledMethod: "getStatusDocuments",
-        methodProperties: {
-          Documents: basisQuery,
+    const allStatuses: any[] = [];
+    const chunkSize = 100;
+    
+    for (let i = 0; i < documentsQuery.length; i += chunkSize) {
+      if (i > 0) await delay(500);
+      const chunk = documentsQuery.slice(i, i + chunkSize);
+      const statusData = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          ...(bypassCache ? { "x-bypass-cache": "true" } : {})
         },
-      }),
-    });
-
-    if (basisStatusData.success && basisStatusData.data) {
-      let addedAny = false;
-      basisStatusData.data.forEach((s: any) => {
-        if (!statusMap.has(s.Number)) {
-          statusMap.set(s.Number, s);
-          addedAny = true;
-        }
+        body: JSON.stringify({
+          apiKey,
+          modelName: "TrackingDocument",
+          calledMethod: "getStatusDocuments",
+          methodProperties: {
+            Documents: chunk,
+          },
+        }),
       });
-      if (!addedAny) break;
-    } else {
-      break;
-    }
-    depth++;
-  }
 
-  return manualTtns.map(item => {
-    const statusInfo = statusMap.get(item.ttn.trim()) || {};
-
-    const chain: any[] = [];
-    let current = statusInfo;
-    const visited = new Set<string>([item.ttn.trim()]);
-
-    while (current && current.LastCreatedOnTheBasisNumber) {
-      const nextTtn = String(current.LastCreatedOnTheBasisNumber).trim();
-      if (!nextTtn || visited.has(nextTtn)) break;
-      visited.add(nextTtn);
-
-      const nextStatus = statusMap.get(nextTtn);
-      if (nextStatus) {
-        current = nextStatus;
-      } else {
-        break;
+      if (statusData.success && statusData.data) {
+        allStatuses.push(...statusData.data);
       }
     }
 
-    const sortedChain = Array.from(visited)
-      .filter((ttn) => ttn !== item.ttn.trim())
-      .map((ttn) => statusMap.get(ttn))
-      .filter(Boolean)
-      .sort((a, b) => {
-        const parseDate = (dstr: string) => {
-          if (!dstr) return 0;
-          const [d, t] = dstr.split(' ');
-          if (!d || !t) return 0;
-          const [D, M, Y] = d.split('-');
-          return new Date(`${Y}-${M}-${D}T${t}`).getTime();
-        };
-        return parseDate(a.DateCreated) - parseDate(b.DateCreated);
-      })
-      .map((nextStatus) => ({
-        ttn: nextStatus.Number,
-        status: nextStatus.Status || "Невідомо",
-        statusCode: nextStatus.StatusCode || "0",
-        actualDeliveryDate: nextStatus.ActualDeliveryDate || "",
-        estimatedDeliveryDate: nextStatus.ScheduledDeliveryDate || "",
-        cityName: nextStatus.CityRecipient || "",
-        rawStatus: nextStatus
+    const statusMap = new Map<string, any>(allStatuses.map((s) => [s.Number, s]));
+
+    let depth = 0;
+    while (depth < 5) {
+      const basisTtnList = Array.from(statusMap.values())
+        .map(s => s.LastCreatedOnTheBasisNumber)
+        .filter((num): num is string => typeof num === "string" && num.trim() !== "" && !statusMap.has(num.trim()));
+
+      if (basisTtnList.length === 0) break;
+
+      const basisQuery = basisTtnList.map(num => ({
+        DocumentNumber: num.trim(),
+        Phone: "",
       }));
 
-    let basisTtn = sortedChain.length > 0 ? sortedChain[sortedChain.length - 1].ttn : "";
-    let basisStatus = sortedChain.length > 0 ? sortedChain[sortedChain.length - 1].status : "";
-    let basisStatusCode = sortedChain.length > 0 ? sortedChain[sortedChain.length - 1].statusCode : "";
+      const basisStatusData = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          ...(bypassCache ? { "x-bypass-cache": "true" } : {})
+        },
+        body: JSON.stringify({
+          apiKey,
+          modelName: "TrackingDocument",
+          calledMethod: "getStatusDocuments",
+          methodProperties: {
+            Documents: basisQuery,
+          },
+        }),
+      });
 
-    return {
-      ttn: item.ttn.trim(),
-      accountName: "Додано вручну",
-      accountId: "manual",
-      status: getFriendlyStatus(statusInfo.Status || "У процесі оформлення", statusInfo.StatusCode || "0"),
-      statusCode: statusInfo.StatusCode || "0",
-      sender: statusInfo.SenderFullNameEW || statusInfo.SenderContactPerson || "Невідомий відправник",
-      recipient: statusInfo.RecipientFullNameEW || statusInfo.RecipientContactPerson || "Невідомий отримувач",
-      cost: statusInfo.DocumentCost || "0",
-      announcedPrice: statusInfo.AnnouncedPrice || "0",
-      cityName: statusInfo.CityRecipient || statusInfo.CitySender || "",
-      weight: statusInfo.DocumentWeight || "0",
-      estimatedDeliveryDate: statusInfo.ScheduledDeliveryDate || "",
-      actualDeliveryDate: statusInfo.ActualDeliveryDate || "",
-      dateCreated: statusInfo.DateCreated || statusInfo.DateScan || "",
-      rawDoc: statusInfo,
-      rawStatus: statusInfo,
-      basisTtn,
-      basisStatus,
-      basisStatusCode,
-      basisChain: sortedChain
-    };
-  });
+      if (basisStatusData.success && basisStatusData.data) {
+        let addedAny = false;
+        basisStatusData.data.forEach((s: any) => {
+          if (!statusMap.has(s.Number)) {
+            statusMap.set(s.Number, s);
+            addedAny = true;
+          }
+        });
+        if (!addedAny) break;
+      } else {
+        break;
+      }
+      depth++;
+    }
+
+    const groupParcels = group.items.map(item => {
+      const statusInfo = statusMap.get(item.ttn.trim()) || {};
+
+      const chain: any[] = [];
+      let current = statusInfo;
+      const visited = new Set<string>([item.ttn.trim()]);
+
+      while (current && current.LastCreatedOnTheBasisNumber) {
+        const nextTtn = String(current.LastCreatedOnTheBasisNumber).trim();
+        if (!nextTtn || visited.has(nextTtn)) break;
+        visited.add(nextTtn);
+
+        const nextStatus = statusMap.get(nextTtn);
+        if (nextStatus) {
+          current = nextStatus;
+        } else {
+          break;
+        }
+      }
+
+      const sortedChain = Array.from(visited)
+        .filter((ttn) => ttn !== item.ttn.trim())
+        .map((ttn) => statusMap.get(ttn))
+        .filter(Boolean)
+        .sort((a, b) => {
+          const parseDate = (dstr: string) => {
+            if (!dstr) return 0;
+            const [d, t] = dstr.split(' ');
+            if (!d || !t) return 0;
+            const [D, M, Y] = d.split('-');
+            return new Date(`${Y}-${M}-${D}T${t}`).getTime();
+          };
+          return parseDate(a.DateCreated) - parseDate(b.DateCreated);
+        })
+        .map((nextStatus) => ({
+          ttn: nextStatus.Number,
+          status: nextStatus.Status || "Невідомо",
+          statusCode: nextStatus.StatusCode || "0",
+          actualDeliveryDate: nextStatus.ActualDeliveryDate || "",
+          estimatedDeliveryDate: nextStatus.ScheduledDeliveryDate || "",
+          cityName: nextStatus.CityRecipient || "",
+          rawStatus: nextStatus
+        }));
+
+      let basisTtn = sortedChain.length > 0 ? sortedChain[sortedChain.length - 1].ttn : "";
+      let basisStatus = sortedChain.length > 0 ? sortedChain[sortedChain.length - 1].status : "";
+      let basisStatusCode = sortedChain.length > 0 ? sortedChain[sortedChain.length - 1].statusCode : "";
+
+      return {
+        ttn: item.ttn.trim(),
+        accountName: `${group.account.name} (ручна)`,
+        accountId: group.account.id,
+        isManual: true,
+        status: getFriendlyStatus(statusInfo.Status || "У процесі оформлення", statusInfo.StatusCode || "0"),
+        statusCode: statusInfo.StatusCode || "0",
+        sender: statusInfo.SenderFullNameEW || statusInfo.SenderContactPerson || "Невідомий відправник",
+        recipient: statusInfo.RecipientFullNameEW || statusInfo.RecipientContactPerson || "Невідомий отримувач",
+        cost: statusInfo.DocumentCost || "0",
+        announcedPrice: statusInfo.AnnouncedPrice || "0",
+        cityName: statusInfo.CityRecipient || statusInfo.CitySender || "",
+        weight: statusInfo.DocumentWeight || "0",
+        estimatedDeliveryDate: statusInfo.ScheduledDeliveryDate || "",
+        actualDeliveryDate: statusInfo.ActualDeliveryDate || "",
+        dateCreated: statusInfo.DateCreated || statusInfo.DateScan || "",
+        rawDoc: statusInfo,
+        rawStatus: statusInfo,
+        basisTtn,
+        basisStatus,
+        basisStatusCode,
+        basisChain: sortedChain
+      };
+    });
+
+    allParcels.push(...groupParcels);
+  }
+
+  return allParcels;
 }
 
 export interface NpCity {

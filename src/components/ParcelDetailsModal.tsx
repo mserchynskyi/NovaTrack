@@ -9,7 +9,7 @@ interface ParcelDetailsProps {
     onRefresh?: (force?: boolean) => void;
     onClose: () => void;
     onDeleteManualTtn?: () => void;
-    onUpdateManualTtn?: (phone?: string) => void;
+    onUpdateManualTtn?: (phone?: string, accountId?: string) => void;
 }
 
 const getBackwardDeliveryInfo = (parcel: any) => {
@@ -325,6 +325,17 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
         return matching || accounts[0] || null;
     });
 
+    const [selectedAccountIdForEdit, setSelectedAccountIdForEdit] = useState<string>(() => {
+        return parcel.accountId || accounts[0]?.id || '';
+    });
+
+    useEffect(() => {
+        const matching = accounts.find(a => a.id === selectedAccountIdForEdit);
+        if (matching) {
+            setSelectedAccount(matching);
+        }
+    }, [selectedAccountIdForEdit, accounts]);
+
     const [citySearchQuery, setCitySearchQuery] = useState('');
     const [cities, setCities] = useState<NpCity[]>([]);
     const [selectedCity, setSelectedCity] = useState<NpCity | null>(null);
@@ -361,7 +372,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
     }, [parcel]);
 
     const handleDeleteTtn = async () => {
-        if (parcel.accountId === 'manual') {
+        if (parcel.isManual) {
             if (onDeleteManualTtn) {
                 onDeleteManualTtn();
             }
@@ -523,13 +534,13 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
     };
 
     const handleChangeDataSubmit = async () => {
-        if (parcel.accountId === 'manual') {
+        if (parcel.isManual) {
             if (onUpdateManualTtn) {
                 setSubmitting(true);
                 setErrorMsg(null);
                 try {
-                    onUpdateManualTtn(editRecipientPhone || undefined);
-                    setSuccessMsg('Дані ТТН успішно оновлено локально! Телефон отримувача змінено.');
+                    onUpdateManualTtn(editRecipientPhone || undefined, selectedAccountIdForEdit || undefined);
+                    setSuccessMsg('Дані ТТН успішно оновлено локально! Кабінет та телефон змінено.');
                     if (onRefresh) onRefresh(true);
                 } catch (err: any) {
                     setErrorMsg(err.message || 'Помилка при оновленні локальних даних ТТН');
@@ -1042,15 +1053,15 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                         <div className="flex flex-col gap-4">
                             <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)]/50/30 p-4.5 rounded-2xl text-[13px] leading-relaxed text-[var(--text-muted)]">
                                 <span className="font-bold text-[var(--text-main)] block mb-1.5">✓ Заява про зміну даних ЕН</span>
-                                {parcel.accountId === 'manual' ? (
-                                    <span>Ви редагуєте дані вручну доданої ТТН локально. Ви можете змінити номер телефону отримувача, щоб система змогла завантажувати статус посилки в кабінеті.</span>
+                                {parcel.isManual ? (
+                                    <span>Ви редагуєте дані вручну доданої ТТН локально. Ви можете змінити пов'язаний кабінет (API ключ) та номер телефону отримувача, щоб система завантажувала статус цієї посилки.</span>
                                 ) : (
                                     <span>Ви заповнюєте заяву про зміну даних отримувача, платника або типу оплати. Запит буде надіслано через API Нової Пошти від імені вашого кабінету.</span>
                                 )}
                             </div>
 
                             {/* Recipient Contact Name Field */}
-                            {parcel.accountId !== 'manual' && (
+                            {!parcel.isManual && (
                                 <div className="flex flex-col gap-1.5">
                                     <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">ПІБ Отримувача</label>
                                     <input 
@@ -1060,6 +1071,24 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                         onChange={(e) => setEditRecipientName(e.target.value)}
                                         className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500"
                                     />
+                                </div>
+                            )}
+
+                            {/* Profile (API Key) Selection for manual parcel */}
+                            {parcel.isManual && accounts.length > 0 && (
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Кабінет для відстеження</label>
+                                    <select
+                                        className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500"
+                                        value={selectedAccountIdForEdit}
+                                        onChange={(e) => setSelectedAccountIdForEdit(e.target.value)}
+                                    >
+                                        {accounts.map(acc => (
+                                            <option key={acc.id} value={acc.id}>
+                                                {acc.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                             )}
 
@@ -1076,7 +1105,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                             </div>
 
                             {/* Payer and Payment Method Selection */}
-                            {parcel.accountId !== 'manual' && (
+                            {!parcel.isManual && (
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="flex flex-col gap-1.5">
                                         <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Хто оплачує доставку</label>
@@ -1137,7 +1166,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                             )}
 
                             {/* Backward Delivery (Afterpayment / Payment Control) */}
-                            {parcel.accountId !== 'manual' && (
+                            {!parcel.isManual && (
                                 <div className="border border-[var(--border-color)]/80 rounded-2xl p-4 flex flex-col gap-4 bg-[var(--bg-card-alt)]/40/60 shadow-inner">
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-2">
@@ -1576,13 +1605,13 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                     </div>
                                 </div>
                             )}
-                            {accounts.length === 0 && parcel.accountId !== 'manual' ? (
+                            {accounts.length === 0 ? (
                                 <div className="text-[var(--text-muted)] text-xs text-left leading-relaxed">
                                     Додайте аккаунт Нової Пошти в налаштуваннях, щоб здійснювати переадресацію та повернення онлайн.
                                 </div>
                             ) : (
                                 <div className="flex flex-col gap-2.5">
-                                    {parcel.accountId !== 'manual' && (
+                                    {selectedAccount && (
                                         <div className="grid grid-cols-2 gap-3">
                                             <button 
                                                 type="button"

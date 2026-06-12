@@ -11,7 +11,7 @@ interface DashboardProps {
   onRefresh: (force?: boolean) => void;
   lastRefresh: Date | null;
   onDeleteManualTtn: (ttn: string) => void;
-  onUpdateManualTtn?: (ttn: string, phone?: string) => void;
+  onUpdateManualTtn?: (ttn: string, phone?: string, accountId?: string) => void;
   autoSelectTtn?: string | null;
   onAutoSelectClear?: () => void;
   onAddManualTtn?: (ttn: string) => void;
@@ -619,12 +619,12 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
               accounts={accounts}
               onRefresh={onRefresh}
               onClose={() => setSelectedParcel(null)} 
-              onDeleteManualTtn={selectedParcel.accountId === 'manual' ? () => {
+              onDeleteManualTtn={selectedParcel.isManual ? () => {
                    onDeleteManualTtn(selectedParcel.ttn);
                    setSelectedParcel(null);
               } : undefined}
-              onUpdateManualTtn={selectedParcel.accountId === 'manual' ? (phone?: string) => {
-                   if (onUpdateManualTtn) onUpdateManualTtn(selectedParcel.ttn, phone);
+              onUpdateManualTtn={selectedParcel.isManual ? (phone?: string, accountId?: string) => {
+                   if (onUpdateManualTtn) onUpdateManualTtn(selectedParcel.ttn, phone, accountId);
               } : undefined}
           />
       )}

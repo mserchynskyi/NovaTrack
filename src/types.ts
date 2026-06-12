@@ -25,4 +25,5 @@ export interface Parcel {
   basisStatus?: string;
   basisStatusCode?: string;
   basisChain?: any[];
+  isManual?: boolean;
 }

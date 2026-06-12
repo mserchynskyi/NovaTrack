@@ -102,6 +102,9 @@ export function AuthScreen() {
                                 </div>
                                 <input
                                     type="email"
+                                    name="email"
+                                    id="email"
+                                    autocomplete="email"
                                     placeholder="name@company.com"
                                     value={authEmail}
                                     onChange={(e) => setAuthEmail(e.target.value)}
@@ -123,6 +126,9 @@ export function AuthScreen() {
                                 </div>
                                 <input
                                     type={showPassword ? "text" : "password"}
+                                    name="password"
+                                    id="password"
+                                    autocomplete={isRegisterMode ? "new-password" : "current-password"}
                                     placeholder={isRegisterMode ? "Створіть надійний пароль" : "Введіть ваш пароль"}
                                     value={authPassword}
                                     onChange={(e) => setAuthPassword(e.target.value)}
@@ -152,6 +158,9 @@ export function AuthScreen() {
                                     </div>
                                     <input
                                         type={showPassword ? "text" : "password"}
+                                        name="confirm-password"
+                                        id="confirm-password"
+                                        autocomplete="new-password"
                                         placeholder="Введіть пароль ще раз"
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}

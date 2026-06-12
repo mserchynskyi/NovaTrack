@@ -7,6 +7,7 @@ import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 export interface ManualTtn {
   ttn: string;
   phone?: string;
+  accountId?: string;
 }
 
 function mergeAccounts(local: NpAccount[], remote: NpAccount[]): NpAccount[] {
