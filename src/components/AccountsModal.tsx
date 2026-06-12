@@ -1,5 +1,5 @@
 import { useState, FormEvent, useEffect } from 'react';
-import { X, Trash2, Plus, Key, LogOut, CheckCircle2, Mail, ChevronRight, ArrowLeft, Sun, Moon, Monitor, CreditCard, Settings } from 'lucide-react';
+import { X, Trash2, Plus, Key, LogOut, CheckCircle2, Mail, ChevronRight, ArrowLeft, Sun, Moon, Monitor, CreditCard, Settings, MessageCircle } from 'lucide-react';
 import { NpAccount } from '../types';
 import { useAuth } from '../lib/AuthContext';
 import { useTheme } from '../lib/useTheme';
@@ -159,7 +159,7 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
       onClick={onClose}
     >
       <div 
-        className="bg-[var(--bg-main)] h-[100dvh] sm:h-[600px] rounded-none sm:rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border-none sm:border border-[var(--border-color)] flex flex-col"
+        className="bg-[var(--bg-main)] h-[100dvh] sm:h-[85vh] sm:max-h-[600px] rounded-none sm:rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border-none sm:border border-[var(--border-color)] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-main)] shrink-0">
@@ -427,6 +427,25 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
                 </div>
                 <ChevronRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors" />
               </div>
+
+              {/* Telegram Support Menu Item */}
+              <a 
+                href="https://t.me/multipost_app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[var(--bg-card)] border border-[var(--border-color)] p-4 rounded-xl flex items-center justify-between cursor-pointer hover:bg-[var(--bg-hover)] transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-[var(--bg-main)] rounded-lg text-sky-400">
+                    <MessageCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-[var(--text-main)] text-sm">Технічна підтримка</div>
+                    <div className="text-xs text-[var(--text-muted)] mt-0.5">t.me/multipost_app</div>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors" />
+              </a>
             </>
           ) : (
             <>

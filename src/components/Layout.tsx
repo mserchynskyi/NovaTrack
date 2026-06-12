@@ -1,5 +1,5 @@
 import React, { ReactNode, useState, useEffect, useRef } from 'react';
-import { Home, MapPin, User, Package as Box, LogOut, Plus, FileText, X, Search, Globe, Copy, Check, Barcode, RefreshCw, Key, CreditCard, Scale } from 'lucide-react';
+import { Home, MapPin, User, Package as Box, LogOut, Plus, FileText, X, Search, Globe, Copy, Check, Barcode, RefreshCw, Key, CreditCard, Scale, MessageCircle } from 'lucide-react';
 import { useAuth } from '../lib/AuthContext';
 import { searchCities, getWarehouses } from '../lib/np-api';
 import { useSubscription } from '../lib/useSubscription';
@@ -255,6 +255,15 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSu
                 <Key className="w-4 h-4" />
                 Профілі (ключі API)
              </div>
+             <a 
+                href="https://t.me/multipost_app" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-3 px-3 py-2.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover-alpha)] hover:text-[var(--text-main)] rounded-lg cursor-pointer font-medium text-sm transition-colors"
+              >
+                <MessageCircle className="w-4 h-4 text-sky-400" />
+                Підтримка (Telegram)
+             </a>
              <div onClick={() => setIsLegalInfoOpen(true)} className="flex items-center gap-3 px-3 py-2.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover-alpha)] hover:text-[var(--text-main)] rounded-lg cursor-pointer font-medium text-sm transition-colors">
                 <Scale className="w-4 h-4" />
                 Юридична інформація
@@ -367,7 +376,7 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSu
           onClick={() => setIsMapOpen(false)}
         >
           <div 
-            className="bg-[var(--bg-nav)] text-[var(--text-main)] w-full max-w-[480px] h-[100dvh] sm:h-[650px] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            className="bg-[var(--bg-nav)] text-[var(--text-main)] w-full max-w-[480px] h-[100dvh] sm:h-[85vh] sm:max-h-[650px] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
