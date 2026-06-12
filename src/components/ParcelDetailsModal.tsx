@@ -346,7 +346,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
     const [warehouseLoading, setWarehouseLoading] = useState(false);
     const [warehouseSearch, setWarehouseSearch] = useState('');
 
-    const [payerType, setPayerType] = useState<string>('Recipient'); // Recipient, Sender
+    const [payerType, setPayerType] = useState<string>('Recipient'); // Recipient, Sender, ThirdPerson
     const [paymentMethod, setPaymentMethod] = useState<string>('Cash'); // Cash, NonCash
     const [note, setNote] = useState<string>('');
 
@@ -355,6 +355,16 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
         setEditRecipientName(parcel.recipient || '');
         const phoneNum = parcel.rawStatus?.PhoneRecipient || parcel.rawDoc?.PhoneRecipient || '';
         setEditRecipientPhone(phoneNum);
+
+        const pm = parcel.rawStatus?.PaymentMethod || parcel.rawDoc?.PaymentMethod || 'Cash';
+        setPaymentMethod(pm);
+
+        let pt = parcel.rawStatus?.PayerType || parcel.rawDoc?.PayerType || 'Recipient';
+        if (pt === 'ThirdPerson' && pm === 'Cash') {
+            // "Третя особа не може сплачувати готівкою!"
+            // If it defaults to ThirdPerson and Cash, let's keep it but ideally they change it.
+        }
+        setPayerType(pt);
 
         const bd = getBackwardDeliveryInfo(parcel);
         setHasAfterpayment(!!bd);
@@ -516,11 +526,15 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
         setSubmitting(true);
         setErrorMsg(null);
         try {
+            const recipientWarehouse = parcel.rawStatus?.WarehouseSenderInternetAddressRef || parcel.rawDoc?.WarehouseSenderInternetAddressRef || parcel.rawDoc?.SenderAddress || '';
+            const recipientSettlement = parcel.rawStatus?.RefSettlementSender || parcel.rawDoc?.RefSettlementSender || parcel.rawDoc?.CitySender || '';
+
             const res = await submitReturn(selectedAccount.apiKey, {
                 IntDocNumber: parcel.ttn,
                 PaymentMethod: paymentMethod,
                 PayerType: payerType,
-                ReturnAddressRef: parcel.rawDoc?.WarehouseSenderInternetAddressRef,
+                RecipientSettlement: recipientSettlement,
+                RecipientWarehouse: recipientWarehouse,
                 Note: note
             });
             if (res.success) {
@@ -775,11 +789,11 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1.5">
                                     <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Хто оплачує</label>
-                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
+                                    <div className="grid grid-cols-3 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
                                         <button
                                             type="button"
                                             onClick={() => setPayerType('Recipient')}
-                                            className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                                            className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
                                                 payerType === 'Recipient' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
@@ -790,13 +804,24 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                         <button
                                             type="button"
                                             onClick={() => setPayerType('Sender')}
-                                            className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                                            className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
                                                 payerType === 'Sender' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                             }`}
                                         >
                                             Відправник
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setPayerType('ThirdPerson')}
+                                            className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                                                payerType === 'ThirdPerson' 
+                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
+                                            }`}
+                                        >
+                                            Третя особа
                                         </button>
                                     </div>
                                 </div>
@@ -1041,11 +1066,11 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="flex flex-col gap-1.5">
                                         <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Хто оплачує доставку</label>
-                                        <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
+                                        <div className="grid grid-cols-3 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
                                             <button
                                                 type="button"
                                                 onClick={() => setPayerType('Recipient')}
-                                                className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                                                className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
                                                     payerType === 'Recipient' 
                                                     ? 'bg-red-500 text-[#ffffff] shadow-sm' 
                                                     : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
@@ -1056,13 +1081,24 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                             <button
                                                 type="button"
                                                 onClick={() => setPayerType('Sender')}
-                                                className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                                                className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
                                                     payerType === 'Sender' 
                                                     ? 'bg-red-500 text-[#ffffff] shadow-sm' 
                                                     : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
                                                 }`}
                                             >
                                                 Відправник
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setPayerType('ThirdPerson')}
+                                                className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                                                    payerType === 'ThirdPerson' 
+                                                    ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
+                                                }`}
+                                            >
+                                                Третя особа
                                             </button>
                                         </div>
                                     </div>

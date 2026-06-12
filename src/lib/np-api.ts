@@ -668,6 +668,7 @@ export async function submitRedirection(
   };
 }
 
+// method
 export async function submitReturn(
   apiKey: string,
   params: {
@@ -675,6 +676,8 @@ export async function submitReturn(
     PaymentMethod: string;
     PayerType: string;
     ReturnAddressRef?: string;
+    RecipientSettlement?: string;
+    RecipientWarehouse?: string;
     Note?: string;
   }
 ): Promise<{ success: boolean; ttn?: string; error?: string }> {
@@ -689,11 +692,13 @@ export async function submitReturn(
         IntDocNumber: params.IntDocNumber,
         PaymentMethod: params.PaymentMethod,
         PayerType: params.PayerType,
-        OrderType: "orderReturn",
+        OrderType: "orderCargoReturn",
         Reason: "49754eb2-a9e1-11e3-9fa0-0050568002cf",
         SubtypeReason: "49754ec8-a9e1-11e3-9fa0-0050568002cf",
-        ReturnAddressRef: params.ReturnAddressRef,
-        Note: params.Note || "",
+        ...(params.ReturnAddressRef && { ReturnAddressRef: params.ReturnAddressRef }),
+        ...(params.RecipientSettlement && { RecipientSettlement: params.RecipientSettlement }),
+        ...(params.RecipientWarehouse && { RecipientWarehouse: params.RecipientWarehouse }),
+        ...(params.Note && { Note: params.Note })
       },
     }),
   });
