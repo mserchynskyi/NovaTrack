@@ -168,13 +168,21 @@ export function useAccounts() {
     };
 
     const saveManualTtns = async (newManualTtns: ManualTtn[]) => {
-        setManualTtns(newManualTtns);
-        localStorage.setItem('np_manual_ttns', JSON.stringify(newManualTtns));
+        // Sanitize undefined values out to prevent Firestore "Unsupported field value: undefined" errors
+        const sanitizedTtns = newManualTtns.map(t => {
+            const sanitized: ManualTtn = { ttn: t.ttn };
+            if (t.phone !== undefined) sanitized.phone = t.phone;
+            if (t.accountId !== undefined) sanitized.accountId = t.accountId;
+            return sanitized;
+        });
+
+        setManualTtns(sanitizedTtns);
+        localStorage.setItem('np_manual_ttns', JSON.stringify(sanitizedTtns));
         
         if (user) {
             try {
                 const docRef = doc(db, 'userAccounts', user.uid);
-                await setDoc(docRef, { userId: user.uid, manualTtns: newManualTtns }, { merge: true });
+                await setDoc(docRef, { userId: user.uid, manualTtns: sanitizedTtns }, { merge: true });
             } catch (error) {
                 console.error("Failed to save manual TTNs to Firestore:", error);
             }

@@ -520,6 +520,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                 IntDocNumber: parcel.ttn,
                 PaymentMethod: paymentMethod,
                 PayerType: payerType,
+                ReturnAddressRef: parcel.rawDoc?.WarehouseSenderInternetAddressRef,
                 Note: note
             });
             if (res.success) {
@@ -911,76 +912,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 Ви збираєтесь замовити послугу <strong className="text-red-500 font-bold">"Повернення посилки"</strong>. Відправлений вантаж буде направлено назад від отримувача до початкового відправника (<strong className="text-[var(--text-main)] font-bold">{parcel.sender}</strong>) на його первинне відділення відправки.
                             </div>
 
-                            {/* Payer and Payment Method Selection */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Хто оплачує повернення</label>
-                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
-                                        <button
-                                            type="button"
-                                            onClick={() => setPayerType('Recipient')}
-                                            className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
-                                                payerType === 'Recipient' 
-                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
-                                            }`}
-                                        >
-                                            Отримувач
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setPayerType('Sender')}
-                                            className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
-                                                payerType === 'Sender' 
-                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
-                                            }`}
-                                        >
-                                            Відправник
-                                        </button>
-                                    </div>
-                                </div>
 
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Форма оплати</label>
-                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
-                                        <button
-                                            type="button"
-                                            onClick={() => setPaymentMethod('Cash')}
-                                            className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
-                                                paymentMethod === 'Cash' 
-                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
-                                            }`}
-                                        >
-                                            Готівка
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setPaymentMethod('NonCash')}
-                                            className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
-                                                paymentMethod === 'NonCash' 
-                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
-                                            }`}
-                                        >
-                                            Безготівка
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Comment / Note input */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Причина або примітка (Необов'язково)</label>
-                                <textarea 
-                                    rows={2.5}
-                                    placeholder="Вкажіть примітку або причину повернення..."
-                                    value={note}
-                                    onChange={(e) => setNote(e.target.value)}
-                                    className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 resize-none"
-                                />
-                            </div>
 
                             {errorMsg && (
                                 <div className="text-xs font-bold text-red-500 bg-red-500/10 border border-red-500/20 p-3.5 rounded-xl leading-relaxed mt-2">
