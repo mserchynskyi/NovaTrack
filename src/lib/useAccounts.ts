@@ -3,11 +3,45 @@ import { NpAccount } from '../types';
 import { useAuth } from './AuthContext';
 import { db } from './firebase';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
+import CryptoJS from 'crypto-js';
 
 export interface ManualTtn {
   ttn: string;
   phone?: string;
   accountId?: string;
+}
+
+function getEncryptionKey(uid: string): string {
+    return CryptoJS.SHA256(uid + "_np_secure_salt_2026").toString();
+}
+
+export function encryptApiKey(apiKey: string, uid: string): string {
+    if (!apiKey) return '';
+    if (apiKey.startsWith('enc:')) return apiKey;
+    
+    const key = getEncryptionKey(uid);
+    const encrypted = CryptoJS.AES.encrypt(apiKey.trim(), key).toString();
+    return `enc:${encrypted}`;
+}
+
+export function decryptApiKey(encryptedApiKey: string, uid: string): string {
+    if (!encryptedApiKey) return '';
+    if (!encryptedApiKey.startsWith('enc:')) {
+        return encryptedApiKey;
+    }
+    
+    try {
+        const cipherText = encryptedApiKey.slice(4);
+        const key = getEncryptionKey(uid);
+        const bytes = CryptoJS.AES.decrypt(cipherText, key);
+        const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+        if (decrypted) {
+            return decrypted;
+        }
+    } catch (e) {
+        console.error("Decryption failed:", e);
+    }
+    return encryptedApiKey;
 }
 
 function mergeAccounts(local: NpAccount[], remote: NpAccount[]): NpAccount[] {
@@ -67,7 +101,11 @@ export function useAccounts() {
 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    const firestoreAccounts = data.tokens || [];
+                    const rawTokens = data.tokens || [];
+                    const firestoreAccounts = rawTokens.map((acc: NpAccount) => ({
+                        ...acc,
+                        apiKey: decryptApiKey(acc.apiKey, user.uid)
+                    }));
                     const firestoreManual = data.manualTtns || [];
 
                     if (!hasSyncedBefore) {
@@ -87,9 +125,13 @@ export function useAccounts() {
                         localStorage.setItem(syncKey, 'true'); // Prevents further merges that resurrect deleted items
 
                         try {
+                            const encryptedAccounts = mergedAccounts.map((acc: NpAccount) => ({
+                                ...acc,
+                                apiKey: encryptApiKey(acc.apiKey, user.uid)
+                            }));
                             await setDoc(docRef, { 
                                 userId: user.uid, 
-                                tokens: mergedAccounts, 
+                                tokens: encryptedAccounts, 
                                 manualTtns: mergedManual 
                             }, { merge: true });
                         } catch (err) {
@@ -115,9 +157,13 @@ export function useAccounts() {
                         localStorage.setItem(syncKey, 'true');
 
                         try {
+                            const encryptedAccounts = initialLocalAccounts.map((acc: NpAccount) => ({
+                                ...acc,
+                                apiKey: encryptApiKey(acc.apiKey, user.uid)
+                            }));
                             await setDoc(docRef, { 
                                 userId: user.uid, 
-                                tokens: initialLocalAccounts, 
+                                tokens: encryptedAccounts, 
                                 manualTtns: initialLocalManual 
                             });
                         } catch (err) {
@@ -160,7 +206,11 @@ export function useAccounts() {
         if (user) {
             try {
                 const docRef = doc(db, 'userAccounts', user.uid);
-                await setDoc(docRef, { userId: user.uid, tokens: newAccounts }, { merge: true });
+                const encryptedAccounts = newAccounts.map((acc: NpAccount) => ({
+                    ...acc,
+                    apiKey: encryptApiKey(acc.apiKey, user.uid)
+                }));
+                await setDoc(docRef, { userId: user.uid, tokens: encryptedAccounts }, { merge: true });
             } catch (error) {
                 console.error("Failed to save accounts to Firestore:", error);
             }
