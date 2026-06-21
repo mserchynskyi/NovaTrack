@@ -1,8 +1,8 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Plus, Trash2, Ticket, Phone, AlertCircle, Info, Truck } from 'lucide-react';
+import { X, Plus, Trash2, Ticket, Phone, AlertCircle, Info, Truck, Loader2, Check } from 'lucide-react';
 import { ManualTtn } from '../lib/useAccounts';
-import { NpAccount } from '../types';
+import { NpAccount, Parcel } from '../types';
 
 interface AddTtnModalProps {
   isOpen: boolean;
@@ -12,19 +12,59 @@ interface AddTtnModalProps {
   hasAccounts: boolean;
   onCreateNewTtn?: () => void;
   accounts: NpAccount[];
+  parcels: Parcel[];
+  loading: boolean;
 }
 
-export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, onCreateNewTtn, accounts }: AddTtnModalProps) {
+export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, onCreateNewTtn, accounts, parcels, loading }: AddTtnModalProps) {
     const [ttn, setTtn] = useState('');
     const [phone, setPhone] = useState('');
     const [selectedAccountId, setSelectedAccountId] = useState('');
     const [validationError, setValidationError] = useState('');
+    const [syncingTtn, setSyncingTtn] = useState<string | null>(null);
+    const [successTtn, setSuccessTtn] = useState<string | null>(null);
 
     useEffect(() => {
         if (accounts.length > 0 && !selectedAccountId) {
             setSelectedAccountId(accounts[0].id);
         }
     }, [accounts, selectedAccountId]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            setSyncingTtn(null);
+            setSuccessTtn(null);
+            setValidationError('');
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (syncingTtn) {
+            const isTtnFetched = parcels.some(p => p.ttn === syncingTtn);
+            if (isTtnFetched) {
+                setSuccessTtn(syncingTtn);
+                setSyncingTtn(null);
+                setTtn('');
+                setPhone('');
+                const timer = setTimeout(() => {
+                    setSuccessTtn(null);
+                    onClose();
+                }, 1500);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [parcels, syncingTtn, onClose]);
+
+    useEffect(() => {
+        if (syncingTtn && !loading) {
+            const timer = setTimeout(() => {
+                if (syncingTtn && !parcels.some(p => p.ttn === syncingTtn)) {
+                    setSyncingTtn(null);
+                }
+            }, 6000);
+            return () => clearTimeout(timer);
+        }
+    }, [syncingTtn, loading, parcels]);
 
     if (!isOpen) return null;
 
@@ -67,9 +107,8 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, 
             phone: formattedPhone || undefined, 
             accountId: selectedAccountId || (accounts[0]?.id || undefined)
         }];
+        setSyncingTtn(cleanTtn);
         onSave(updated, cleanTtn);
-        setTtn('');
-        setPhone('');
     };
 
     const handleDelete = (ttnToDelete: string) => {
@@ -173,10 +212,22 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, 
 
                         <button
                             type="submit"
-                            disabled={!hasAccounts || !ttn}
-                            className="w-full bg-[#e33745] hover:bg-red-700 text-[#ffffff] font-bold py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition-colors shadow-lg shadow-red-900/10 disabled:opacity-50"
+                            disabled={!hasAccounts || !ttn || !!syncingTtn || !!successTtn}
+                            className="w-full bg-[#e33745] hover:bg-red-700 disabled:bg-[#e33745]/50 text-[#ffffff] font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-red-900/10 flex items-center justify-center gap-2"
                         >
-                            Почати відстеження
+                            {successTtn ? (
+                                <>
+                                    <Check className="w-4 h-4 text-green-300 animate-bounce" />
+                                    <span>Знайдено та додано!</span>
+                                </>
+                            ) : syncingTtn ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                                    <span>Завантаження даних по ТТН...</span>
+                                </>
+                            ) : (
+                                <span>Почати відстеження</span>
+                            )}
                         </button>
                     </form>
 
@@ -193,11 +244,42 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, 
                                 {manualTtns.map(item => {
                                     const matchedAcc = item.accountId ? accounts.find(a => a.id === item.accountId) : undefined;
                                     const accountName = matchedAcc ? matchedAcc.name : (accounts[0]?.name || "Усі");
+                                    const matchedParcel = parcels.find(p => p.ttn === item.ttn);
+                                    const isItemSyncing = syncingTtn === item.ttn || (!matchedParcel && (loading || syncingTtn));
+
                                     return (
-                                        <div key={item.ttn} className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-xl p-3 flex items-center justify-between text-[var(--text-main)]">
-                                            <div className="flex flex-col gap-0.5">
-                                                <span className="font-mono text-sm font-bold tracking-wider">{item.ttn}</span>
-                                                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                        <div key={item.ttn} className="bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-xl p-3 flex items-center justify-between text-[var(--text-main)] transition-all">
+                                            <div className="flex flex-col gap-0.5 flex-1 min-w-0 mr-3">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="font-mono text-sm font-bold tracking-wider">{item.ttn}</span>
+                                                    {isItemSyncing && (
+                                                        <Loader2 className="w-3.5 h-3.5 animate-spin text-[#e33745] shrink-0" />
+                                                    )}
+                                                </div>
+
+                                                {/* Syncing or Parcel Details */}
+                                                {isItemSyncing ? (
+                                                    <span className="text-[10px] text-[#e33745] animate-pulse font-medium flex items-center gap-1 mt-0.5">
+                                                        Отримання статусу з Нової Пошти...
+                                                    </span>
+                                                ) : matchedParcel ? (
+                                                    <div className="flex flex-col mt-0.5">
+                                                        <span className="text-xs font-semibold text-[#e33745]">
+                                                            {matchedParcel.status}
+                                                        </span>
+                                                        {(matchedParcel.cityName || matchedParcel.recipient) && (
+                                                            <span className="text-[10px] text-[var(--text-muted)] truncate max-w-[280px] block mt-0.5">
+                                                                {matchedParcel.cityName ? `${matchedParcel.cityName} · ` : ''}{matchedParcel.recipient || ''}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-[10px] text-[var(--text-muted)] italic mt-0.5 block">
+                                                        Дані не завантажено
+                                                    </span>
+                                                )}
+
+                                                <div className="flex items-center gap-2 mt-2 flex-wrap">
                                                     {item.phone && (
                                                         <span className="text-[10px] text-[var(--text-muted)] font-mono">📞 {item.phone}</span>
                                                     )}
@@ -208,7 +290,7 @@ export function AddTtnModal({ isOpen, onClose, manualTtns, onSave, hasAccounts, 
                                             </div>
                                             <button
                                                 onClick={() => handleDelete(item.ttn)}
-                                                className="p-1.5 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                className="p-1.5 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors shrink-0 self-center"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>

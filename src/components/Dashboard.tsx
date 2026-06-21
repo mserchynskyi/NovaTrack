@@ -11,7 +11,7 @@ interface DashboardProps {
   onRefresh: (force?: boolean) => void;
   lastRefresh: Date | null;
   onDeleteManualTtn: (ttn: string) => void;
-  onUpdateManualTtn?: (ttn: string, phone?: string, accountId?: string) => void;
+  onUpdateManualTtn?: (ttn: string, phone?: string, accountId?: string, afterpaymentSum?: number, afterpaymentType?: 'Money' | 'PaymentControl' | 'None', prolongDate?: string, prolongDays?: number) => void;
   autoSelectTtn?: string | null;
   onAutoSelectClear?: () => void;
   onAddManualTtn?: (ttn: string) => void;
@@ -39,6 +39,15 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null);
   const prevLoading = useRef(loading);
+
+  useEffect(() => {
+    if (selectedParcel) {
+      const updated = parcels.find(p => p.ttn === selectedParcel.ttn);
+      if (updated) {
+        setSelectedParcel(updated);
+      }
+    }
+  }, [parcels, selectedParcel?.ttn]);
 
   useEffect(() => {
     if (autoSelectTtn) {
@@ -623,8 +632,8 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
                    onDeleteManualTtn(selectedParcel.ttn);
                    setSelectedParcel(null);
               } : undefined}
-              onUpdateManualTtn={selectedParcel.isManual ? (phone?: string, accountId?: string) => {
-                   if (onUpdateManualTtn) onUpdateManualTtn(selectedParcel.ttn, phone, accountId);
+              onUpdateManualTtn={selectedParcel.isManual ? (phone?: string, accountId?: string, afterpaymentSum?: number, afterpaymentType?: 'Money' | 'PaymentControl' | 'None', prolongDate?: string, prolongDays?: number) => {
+                   if (onUpdateManualTtn) onUpdateManualTtn(selectedParcel.ttn, phone, accountId, afterpaymentSum, afterpaymentType, prolongDate, prolongDays);
               } : undefined}
           />
       )}

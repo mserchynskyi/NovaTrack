@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, MapPin, Calendar, Box, User, UserCheck, Scale, CreditCard, Phone, Trash2, ArrowLeftRight, CornerDownLeft, Loader2, Search, CheckCircle, Edit, Printer, FileText } from 'lucide-react';
 import { Parcel, NpAccount } from '../types';
-import { searchCities, getWarehouses, submitRedirection, submitReturn, submitChangeData, deleteInternetDocument, NpCity, NpWarehouse } from '../lib/np-api';
+import { searchCities, getWarehouses, submitRedirection, submitReturn, submitChangeData, submitProlongStorage, deleteInternetDocument, NpCity, NpWarehouse } from '../lib/np-api';
 
 interface ParcelDetailsProps {
     parcel: Parcel;
@@ -10,7 +10,7 @@ interface ParcelDetailsProps {
     onRefresh?: (force?: boolean) => void;
     onClose: () => void;
     onDeleteManualTtn?: () => void;
-    onUpdateManualTtn?: (phone?: string, accountId?: string) => void;
+    onUpdateManualTtn?: (phone?: string, accountId?: string, afterpaymentSum?: number, afterpaymentType?: 'Money' | 'PaymentControl' | 'None', prolongDate?: string, prolongDays?: number) => void;
 }
 
 const getBackwardDeliveryInfo = (parcel: any) => {
@@ -277,12 +277,17 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
     }, [parcel]);
 
     // UI state for redirection/return actions
-    const [activeTab, setActiveTab] = useState<'details' | 'redirect' | 'return' | 'change_data'>('details');
+    const [activeTab, setActiveTab] = useState<'details' | 'redirect' | 'return' | 'change_data' | 'prolong_storage'>('details');
     const [submitting, setSubmitting] = useState(false);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
+
+    // States for storage prolongation
+    const [prolongDays, setProlongDays] = useState<number>(5);
+    const [prolongCustomDays, setProlongCustomDays] = useState<string>('');
+    const [isCustomDaysActive, setIsCustomDaysActive] = useState<boolean>(false);
 
     useEffect(() => {
         setIsDeleteConfirmOpen(false);
@@ -550,23 +555,6 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
     };
 
     const handleChangeDataSubmit = async () => {
-        if (parcel.isManual) {
-            if (onUpdateManualTtn) {
-                setSubmitting(true);
-                setErrorMsg(null);
-                try {
-                    onUpdateManualTtn(editRecipientPhone || undefined, selectedAccountIdForEdit || undefined);
-                    setSuccessMsg('Дані ТТН успішно оновлено локально! Кабінет та телефон змінено.');
-                    if (onRefresh) onRefresh(true);
-                } catch (err: any) {
-                    setErrorMsg(err.message || 'Помилка при оновленні локальних даних ТТН');
-                } finally {
-                    setSubmitting(false);
-                }
-            }
-            return;
-        }
-
         if (!selectedAccount) {
             setErrorMsg('Будь ласка, оберіть кабінет');
             return;
@@ -584,11 +572,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
 
             if (afterpaymentType === 'PaymentControl') {
                 afterpaymentOnGoodsCost = sumVal;
-                backwardDeliveryData = [{
-                    PayerType: afterpaymentPayer,
-                    CargoType: 'Money',
-                    RedeliveryString: sumVal
-                }];
+                backwardDeliveryData = undefined;
             } else {
                 backwardDeliveryData = [{
                     PayerType: afterpaymentPayer,
@@ -604,6 +588,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
         setSubmitting(true);
         setErrorMsg(null);
         try {
+            // Send the statement to Nova Poshta's servers via API
             await submitChangeData(selectedAccount.apiKey, {
                 IntDocNumber: parcel.ttn,
                 PaymentMethod: paymentMethod,
@@ -613,10 +598,113 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                 BackwardDeliveryData: backwardDeliveryData,
                 AfterpaymentOnGoodsCost: afterpaymentOnGoodsCost
             });
-            setSuccessMsg('Заяву про зміну даних ЕН (включаючи зворотну доставку) успішно надіслано!');
+
+            // For manual parcels, also update localized tracking params
+            if (parcel.isManual && onUpdateManualTtn) {
+                const rawSum = parseFloat(afterpaymentSum);
+                const sumToSave = hasAfterpayment && !isNaN(rawSum) ? rawSum : undefined;
+                const typeToSave = hasAfterpayment ? afterpaymentType : 'None';
+
+                onUpdateManualTtn(
+                    editRecipientPhone || undefined, 
+                    selectedAccountIdForEdit || undefined,
+                    sumToSave,
+                    typeToSave
+                );
+            }
+
+            setSuccessMsg(
+                parcel.isManual 
+                    ? 'Заяву про зміну даних ЕН (включаючи зворотну доставку) успішно надіслано на сервери Нової Пошти та оновлено локально!' 
+                    : 'Заяву про зміну даних ЕН (включаючи зворотну доставку) успішно надіслано!'
+            );
             if (onRefresh) onRefresh(true);
         } catch (err: any) {
             setErrorMsg(err.message || 'Помилка при зміні даних ТТН');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const parseNPDate = (dstr: string): Date => {
+        if (!dstr) return new Date();
+        // try YYYY-MM-DD
+        if (dstr.includes('-')) {
+            const parts = dstr.split(' ')[0].split('-');
+            if (parts.length === 3) {
+                if (parts[0].length === 4) {
+                    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                } else {
+                    return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                }
+            }
+        }
+        // try DD.MM.YYYY
+        if (dstr.includes('.')) {
+            const parts = dstr.split(' ')[0].split('.');
+            if (parts.length === 3) {
+                return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            }
+        }
+        return new Date();
+    };
+
+    const formatDateForNP = (date: Date): string => {
+        const d = String(date.getDate()).padStart(2, '0');
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const y = date.getFullYear();
+        return `${d}.${m}.${y}`;
+    };
+
+    const handleProlongStorageSubmit = async () => {
+        if (!selectedAccount) {
+            setErrorMsg('Будь ласка, оберіть кабінет');
+            return;
+        }
+
+        const days = isCustomDaysActive ? (parseInt(prolongCustomDays) || 5) : prolongDays;
+        
+        setSubmitting(true);
+        setErrorMsg(null);
+        try {
+            // 1. Calculate new storage date based on either existing DatePayedKeeping or estimatedDeliveryDate
+            let baseDateStr = parcel.rawStatus?.DatePayedKeeping || parcel.estimatedDeliveryDate || '';
+            let baseDate = parseNPDate(baseDateStr);
+            if (!baseDateStr) {
+                baseDate = new Date();
+            }
+            
+            const newDate = new Date(baseDate.getTime());
+            newDate.setDate(newDate.getDate() + days);
+            const formattedNewDate = formatDateForNP(newDate);
+
+            // 2. Submit to Nova Poshta API (if real)
+            await submitProlongStorage(selectedAccount.apiKey, {
+                IntDocNumber: parcel.ttn,
+                prolongDate: formattedNewDate,
+                prolongDays: days
+            });
+
+            // 3. For manual parcels, also update localized tracking params
+            if (parcel.isManual && onUpdateManualTtn) {
+                onUpdateManualTtn(
+                    editRecipientPhone || undefined,
+                    selectedAccountIdForEdit || undefined,
+                    hasAfterpayment ? parseFloat(afterpaymentSum) : undefined,
+                    hasAfterpayment ? afterpaymentType : 'None',
+                    formattedNewDate,
+                    days
+                );
+            }
+
+            setSuccessMsg(
+                parcel.isManual 
+                    ? `Термін зберігання посилки успішно продовжено на +${days} днів (нова дата безкоштовного зберігання: ${formattedNewDate}) та оновлено локально!` 
+                    : `Заяву на продовження терміну зберігання посилки на +${days} днів успішно надіслано (нова дата безкоштовного зберігання: ${formattedNewDate})!`
+            );
+            if (onRefresh) onRefresh(true);
+        } catch (err: any) {
+            setErrorMsg(err.message || 'Помилка при продовженні терміну зберігання');
         } finally {
             setSubmitting(false);
         }
@@ -1009,14 +1097,12 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                         </div>
                     ) : (
                         <div className="flex flex-col gap-4">
-                            <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)]/50/30 p-4.5 rounded-2xl text-[13px] leading-relaxed text-[var(--text-muted)]">
-                                <span className="font-bold text-[var(--text-main)] block mb-1.5">✓ Заява про зміну даних ЕН</span>
-                                {parcel.isManual ? (
-                                    <span>Ви редагуєте дані вручну доданої ТТН локально. Ви можете змінити пов'язаний кабінет (API ключ) та номер телефону отримувача, щоб система завантажувала статус цієї посилки.</span>
-                                ) : (
+                            {!parcel.isManual && (
+                                <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)]/50/30 p-4.5 rounded-2xl text-[13px] leading-relaxed text-[var(--text-muted)]">
+                                    <span className="font-bold text-[var(--text-main)] block mb-1.5">✓ Заява про зміну даних ЕН</span>
                                     <span>Ви заповнюєте заяву про зміну даних отримувача, платника або типу оплати. Запит буде надіслано через API Нової Пошти від імені вашого кабінету.</span>
-                                )}
-                            </div>
+                                </div>
+                            )}
 
                             {/* Recipient Contact Name Field */}
                             {!parcel.isManual && (
@@ -1032,10 +1118,10 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                 </div>
                             )}
 
-                            {/* Profile (API Key) Selection for manual parcel */}
-                            {parcel.isManual && accounts.length > 0 && (
+                            {/* Profile (API Key) Selection */}
+                            {accounts.length > 0 && !parcel.isManual && (
                                 <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Кабінет для відстеження</label>
+                                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Кабінет для відправки заяви</label>
                                     <select
                                         className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500"
                                         value={selectedAccountIdForEdit}
@@ -1063,79 +1149,77 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                             </div>
 
                             {/* Payer and Payment Method Selection */}
-                            {!parcel.isManual && (
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Хто оплачує доставку</label>
-                                        <div className="grid grid-cols-3 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
-                                            <button
-                                                type="button"
-                                                onClick={() => setPayerType('Recipient')}
-                                                className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
-                                                    payerType === 'Recipient' 
-                                                    ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
-                                                }`}
-                                            >
-                                                Отримувач
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setPayerType('Sender')}
-                                                className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
-                                                    payerType === 'Sender' 
-                                                    ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
-                                                }`}
-                                            >
-                                                Відправник
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setPayerType('ThirdPerson')}
-                                                className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
-                                                    payerType === 'ThirdPerson' 
-                                                    ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
-                                                }`}
-                                            >
-                                                Третя особа
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Форма оплати</label>
-                                        <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
-                                            <button
-                                                type="button"
-                                                onClick={() => setPaymentMethod('Cash')}
-                                                className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
-                                                    paymentMethod === 'Cash' 
-                                                    ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
-                                                }`}
-                                            >
-                                                Готівка
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setPaymentMethod('NonCash')}
-                                                className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
-                                                    paymentMethod === 'NonCash' 
-                                                    ? 'bg-red-500 text-[#ffffff] shadow-sm' 
-                                                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
-                                                }`}
-                                            >
-                                                Безготівка
-                                            </button>
-                                        </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Хто оплачує доставку</label>
+                                    <div className="grid grid-cols-3 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
+                                        <button
+                                            type="button"
+                                            onClick={() => setPayerType('Recipient')}
+                                            className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                                                payerType === 'Recipient' 
+                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
+                                            }`}
+                                        >
+                                            Отримувач
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setPayerType('Sender')}
+                                            className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                                                payerType === 'Sender' 
+                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
+                                            }`}
+                                        >
+                                            Відправник
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setPayerType('ThirdPerson')}
+                                            className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                                                payerType === 'ThirdPerson' 
+                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
+                                            }`}
+                                        >
+                                            Третя особа
+                                        </button>
                                     </div>
                                 </div>
-                            )}
+
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Форма оплати</label>
+                                    <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
+                                        <button
+                                            type="button"
+                                            onClick={() => setPaymentMethod('Cash')}
+                                            className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                                                paymentMethod === 'Cash' 
+                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
+                                            }`}
+                                        >
+                                            Готівка
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setPaymentMethod('NonCash')}
+                                            className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                                                paymentMethod === 'NonCash' 
+                                                ? 'bg-red-500 text-[#ffffff] shadow-sm' 
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
+                                            }`}
+                                        >
+                                            Безготівка
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
 
                             {/* Backward Delivery (Afterpayment / Payment Control) */}
-                            {!parcel.isManual && (
+                            {(
                                 <div className="border border-[var(--border-color)]/80 rounded-2xl p-4 flex flex-col gap-4 bg-[var(--bg-card-alt)]/40/60 shadow-inner">
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-2">
@@ -1202,7 +1286,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                                     />
                                                 </div>
 
-                                                <div className="flex flex-col gap-1.5">
+                                                <div className={`flex flex-col gap-1.5 font-sans ${afterpaymentType === 'PaymentControl' ? 'opacity-50 pointer-events-none' : ''}`}>
                                                     <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Платник комісії післяплати</label>
                                                     <div className="grid grid-cols-2 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
                                                         <button
@@ -1266,6 +1350,176 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
             );
         }
 
+        if (activeTab === 'prolong_storage') {
+            const currentKeepDate = parcel.rawStatus?.DatePayedKeeping || '';
+            const rawEstDate = parcel.estimatedDeliveryDate || '';
+            let dateBase = parseNPDate(currentKeepDate || rawEstDate);
+            const daysToExtend = isCustomDaysActive ? (parseInt(prolongCustomDays) || 5) : prolongDays;
+            const previewNewDateObj = new Date(dateBase.getTime());
+            previewNewDateObj.setDate(previewNewDateObj.getDate() + daysToExtend);
+            const previewNewKeepDate = formatDateForNP(previewNewDateObj);
+
+            return (
+                <div className="flex flex-col gap-5 p-6 bg-[var(--bg-main)] text-[var(--text-main)] rounded-2xl h-full overflow-y-auto no-scrollbar">
+                    <div className="flex items-center justify-between border-b pb-4 border-[var(--border-color)]">
+                        <h4 className="text-base font-bold flex items-center gap-2">
+                            <Calendar className="w-5 h-5 text-red-500" />
+                            <span>Продовження зберігання</span>
+                        </h4>
+                        <button 
+                            type="button"
+                            onClick={() => {
+                                setSuccessMsg(null);
+                                setErrorMsg(null);
+                                setActiveTab('details');
+                            }}
+                            className="text-xs uppercase bg-[var(--bg-hover)] hover:bg-[var(--progress-track)] px-3 py-1.5 rounded-lg transition-colors font-bold text-[var(--text-main)]"
+                        >
+                            Назад
+                        </button>
+                    </div>
+
+                    {successMsg ? (
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 p-5 rounded-2xl text-sm flex flex-col items-center gap-3 text-center my-4 animate-in fade-in duration-200">
+                            <CheckCircle className="w-10 h-10 text-emerald-500 shrink-0" />
+                            <div className="font-semibold">{successMsg}</div>
+                            <button 
+                                type="button"
+                                onClick={() => {
+                                    setActiveTab('details');
+                                    setSuccessMsg(null);
+                                }}
+                                className="mt-2 bg-emerald-600 hover:bg-emerald-700 text-[#ffffff] font-bold py-2.5 px-5 rounded-xl text-xs uppercase tracking-wider"
+                            >
+                                Повернутись до деталей
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-5">
+                            <div className="bg-[var(--bg-card-alt)] border border-[var(--border-color)]/30 p-4 rounded-xl text-[13px] leading-relaxed text-[var(--text-muted)] flex flex-col gap-2">
+                                <span className="font-bold text-[var(--text-main)] block">✓ Безкоштовне або платне продовження</span>
+                                <span>Ви можете продовжити термін зберігання вашого відправлення на відділенні Нової Пошти. Заяву буде надіслано через API від імені вашого кабінету.</span>
+                                {currentKeepDate ? (
+                                    <div className="mt-1.5 p-2.5 bg-[var(--bg-main)] rounded-lg text-xs flex justify-between border border-[var(--border-color)]">
+                                        <span>Поточна дата платного зберігання:</span>
+                                        <span className="font-bold text-[var(--text-main)] font-mono">{currentKeepDate}</span>
+                                    </div>
+                                ) : (
+                                    <div className="mt-1.5 p-2.5 bg-[var(--bg-main)] rounded-lg text-xs text-[var(--text-muted)] italic text-center border border-[var(--border-color)]">
+                                        Дата початку платного зберігання не вказана. Розрахунок буде здійснено від орієнтовної дати доставки ({rawEstDate || 'сьогодні'}).
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Selection buttons */}
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Оберіть кількість днів продовження</label>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {[5, 10, 15, 20].map((days) => (
+                                        <button
+                                            key={days}
+                                            type="button"
+                                            onClick={() => {
+                                                setIsCustomDaysActive(false);
+                                                setProlongDays(days);
+                                            }}
+                                            className={`py-3 rounded-xl text-sm font-bold transition-all border ${
+                                                !isCustomDaysActive && prolongDays === days
+                                                    ? 'bg-red-500 text-white border-red-500 shadow-md animate-none'
+                                                    : 'bg-[var(--bg-card-alt)] hover:bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-main)]'
+                                            }`}
+                                        >
+                                            +{days} дн.
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Toggle or input for Custom Days */}
+                            <div className="flex flex-col gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCustomDaysActive(!isCustomDaysActive)}
+                                    className={`text-xs font-bold flex items-center gap-2 self-start select-none px-3 py-1.5 rounded-lg border ${
+                                        isCustomDaysActive 
+                                            ? 'bg-red-500/10 border-red-500/30 text-red-500' 
+                                            : 'bg-transparent border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                                    }`}
+                                >
+                                    <span>{isCustomDaysActive ? '✓ Вказати власну кількість' : 'Вказати власну кількість днів'}</span>
+                                </button>
+                                
+                                {isCustomDaysActive && (
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="30"
+                                        placeholder="Введіть кількість днів (наприклад, 7)..."
+                                        value={prolongCustomDays}
+                                        onChange={(e) => setProlongCustomDays(e.target.value)}
+                                        className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 animate-in slide-in-from-top-1 duration-150"
+                                    />
+                                )}
+                            </div>
+
+                            {/* Preview box */}
+                            <div className="bg-red-500/5 border border-red-500/10 rounded-xl p-4 flex justify-between items-center text-sm">
+                                <span className="font-medium text-[var(--text-muted)]">Новий термін зберігання:</span>
+                                <div className="text-right">
+                                    <span className="font-extrabold text-red-500 font-mono text-[16px]">{previewNewKeepDate}</span>
+                                    <span className="block text-[10px] text-red-400 font-medium">на +{daysToExtend} днів довше</span>
+                                </div>
+                            </div>
+
+                            {/* Profile Selector if not Manual */}
+                            {accounts.length > 0 && !parcel.isManual && (
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Кабінет для відправки заяви</label>
+                                    <select
+                                        className="w-full bg-[var(--bg-card-alt)] border border-[var(--border-color)] text-[var(--text-main)] rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500"
+                                        value={selectedAccountIdForEdit}
+                                        onChange={(e) => setSelectedAccountIdForEdit(e.target.value)}
+                                    >
+                                        {accounts.map(acc => (
+                                            <option key={acc.id} value={acc.id}>
+                                                {acc.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            {errorMsg && (
+                                <div className="text-xs font-bold text-red-500 bg-red-500/10 border border-red-500/20 p-3.5 rounded-xl leading-relaxed mt-2">
+                                    Помилка: {errorMsg}
+                                </div>
+                            )}
+
+                            {/* Submit storage prolongation button */}
+                            <button
+                                type="button"
+                                onClick={handleProlongStorageSubmit}
+                                disabled={submitting}
+                                className="mt-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-700/50 disabled:text-[var(--text-muted)] text-white font-bold py-4 px-6 rounded-xl text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 select-none"
+                            >
+                                {submitting ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span>Надсилання заяви...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Calendar className="w-4 h-4" />
+                                        <span>Продовжити зберігання на +{daysToExtend} дн.</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
         return null;
     };
     if (!parcel) return null;
@@ -1296,7 +1550,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
 
     return createPortal(
         <div 
-           className="fixed -top-12 -bottom-24 inset-x-0 bg-[#0c0d10]/95 backdrop-blur-md z-50 flex items-center justify-center p-0 sm:p-2 overflow-hidden sm:overflow-y-auto no-scrollbar"
+           className="fixed -top-12 -bottom-24 inset-x-0 bg-[#0c0d10]/95 backdrop-blur-md z-[100000] flex items-center justify-center p-0 sm:p-2 overflow-hidden sm:overflow-y-auto no-scrollbar"
            onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             {/* Unified View */}
@@ -1621,6 +1875,19 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                         <span>Змінити дані ТТН</span>
                                     </button>
 
+                                    <button 
+                                        type="button"
+                                        onClick={() => {
+                                            setSuccessMsg(null);
+                                            setErrorMsg(null);
+                                            setActiveTab('prolong_storage');
+                                        }}
+                                        className="w-full bg-[var(--bg-main)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-color)] hover:bg-[var(--bg-card-alt)] font-bold py-3 px-3 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 text-center"
+                                    >
+                                        <Calendar className="w-3.5 h-3.5 shrink-0" />
+                                        <span>Продовжити зберігання</span>
+                                    </button>
+
                                     {isCreatedStatus && selectedAccount?.apiKey && parcel.rawDoc?.Ref && (
                                         <div className="w-full space-y-2 mt-1">
                                             {isDeleteConfirmOpen ? (
@@ -1688,7 +1955,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
          {/* Full Route Modal Overlay */}
          {showFullRoute && (
              <div 
-                 className="fixed inset-0 bg-black/80 backdrop-blur-md z-[60] flex items-center justify-center p-0 sm:p-4"
+                 className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100010] flex items-center justify-center p-0 sm:p-4"
                  onClick={() => setShowFullRoute(false)}
              >
                  <div 

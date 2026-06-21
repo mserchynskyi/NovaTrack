@@ -93,8 +93,14 @@ export default function App() {
             onManageAccounts={() => { setAccountsModalTab('profile'); setIsAccountsModalOpen(true); }}
             onManageApiKeys={() => { setAccountsModalTab('api'); setIsAccountsModalOpen(true); }}
             onManageSubscription={() => setIsSubscriptionModalOpen(true)}
-            onAddTtn={() => setIsAddTtnModalOpen(true)}
-            onCreateTtn={() => setIsCreateTtnModalOpen(true)}
+            onAddTtn={() => {
+                setIsCreateTtnModalOpen(false);
+                setIsAddTtnModalOpen(true);
+            }}
+            onCreateTtn={() => {
+                setIsAddTtnModalOpen(false);
+                setIsCreateTtnModalOpen(true);
+            }}
             onRefresh={() => refresh(true)}
             loading={loading}
         >
@@ -111,10 +117,10 @@ export default function App() {
                          const updated = manualTtns.filter(item => item.ttn !== ttn);
                          saveManualTtns(updated);
                      }}
-                     onUpdateManualTtn={(ttn, phone, accountId) => {
+                     onUpdateManualTtn={(ttn, phone, accountId, afterpaymentSum, afterpaymentType, prolongDate, prolongDays) => {
                          const updated = manualTtns.map(item => {
                              if (item.ttn === ttn) {
-                                 return { ...item, phone, accountId };
+                                 return { ...item, phone, accountId, afterpaymentSum, afterpaymentType, prolongDate, prolongDays };
                              }
                              return item;
                          });
@@ -137,7 +143,10 @@ export default function App() {
                          setAutoSelectTtn(ttn);
                      }}
                      accounts={accounts}
-                     onCreateTtn={() => setIsCreateTtnModalOpen(true)}
+                     onCreateTtn={() => {
+                          setIsAddTtnModalOpen(false);
+                          setIsCreateTtnModalOpen(true);
+                      }}
                 />
            )}
            
@@ -162,10 +171,12 @@ export default function App() {
                     saveManualTtns(newTtns);
                     if (addedTtn) {
                         setAutoSelectTtn(addedTtn);
-                        setIsAddTtnModalOpen(false); // also good to close it
+
                     }
                 }}
                 hasAccounts={accounts.length > 0}
+                parcels={parcels}
+                loading={loading}
                  accounts={accounts}
                 onCreateNewTtn={() => {
                     setIsAddTtnModalOpen(false);

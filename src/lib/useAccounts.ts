@@ -9,6 +9,10 @@ export interface ManualTtn {
   ttn: string;
   phone?: string;
   accountId?: string;
+  afterpaymentSum?: number;
+  afterpaymentType?: 'Money' | 'PaymentControl' | 'None';
+  prolongDate?: string;
+  prolongDays?: number;
 }
 
 function getEncryptionKey(uid: string): string {
@@ -223,6 +227,10 @@ export function useAccounts() {
             const sanitized: ManualTtn = { ttn: t.ttn };
             if (t.phone !== undefined) sanitized.phone = t.phone;
             if (t.accountId !== undefined) sanitized.accountId = t.accountId;
+            if (t.afterpaymentSum !== undefined) sanitized.afterpaymentSum = t.afterpaymentSum;
+            if (t.afterpaymentType !== undefined) sanitized.afterpaymentType = t.afterpaymentType;
+            if (t.prolongDate !== undefined) sanitized.prolongDate = t.prolongDate;
+            if (t.prolongDays !== undefined) sanitized.prolongDays = t.prolongDays;
             return sanitized;
         });
 

@@ -324,7 +324,15 @@ export async function fetchAccountParcels(account: NpAccount, bypassCache = fals
 
 export async function fetchManualParcels(
   accounts: NpAccount[],
-  manualTtns: { ttn: string; phone?: string; accountId?: string }[],
+  manualTtns: { 
+    ttn: string; 
+    phone?: string; 
+    accountId?: string; 
+    afterpaymentSum?: number; 
+    afterpaymentType?: 'Money' | 'PaymentControl' | 'None';
+    prolongDate?: string;
+    prolongDays?: number;
+  }[],
   bypassCache = false
 ): Promise<Parcel[]> {
   if (manualTtns.length === 0 || accounts.length === 0) return [];
@@ -427,7 +435,39 @@ export async function fetchManualParcels(
     }
 
     const groupParcels = group.items.map(item => {
-      const statusInfo = statusMap.get(item.ttn.trim()) || {};
+      const baseStatusInfo = statusMap.get(item.ttn.trim()) || {};
+      const statusInfo = { ...baseStatusInfo };
+
+      // Apply manual overrides if present
+      if (item.prolongDate) {
+        statusInfo.DatePayedKeeping = item.prolongDate;
+      }
+
+      if (item.afterpaymentType) {
+        if (item.afterpaymentType === 'None') {
+          statusInfo.BackwardDeliveryMoney = "0";
+          statusInfo.BackwardDeliverySum = "0";
+          statusInfo.RedeliverySum = "0";
+          statusInfo.AfterpaymentOnGoodsCost = "0";
+          statusInfo.BackwardDeliveryData = [];
+        } else {
+          const sumStr = String(item.afterpaymentSum || 0);
+          statusInfo.BackwardDeliveryData = [{
+            PayerType: "Recipient",
+            CargoType: "Money",
+            RedeliveryString: sumStr
+          }];
+          if (item.afterpaymentType === 'PaymentControl') {
+            statusInfo.AfterpaymentOnGoodsCost = sumStr;
+            statusInfo.ServiceType = 'PaymentControl';
+          } else {
+            statusInfo.BackwardDeliveryMoney = sumStr;
+            statusInfo.BackwardDeliverySum = sumStr;
+            statusInfo.RedeliverySum = sumStr;
+            statusInfo.ServiceType = 'Money';
+          }
+        }
+      }
 
       const chain: any[] = [];
       let current = statusInfo;
@@ -734,7 +774,7 @@ export async function submitChangeData(
       calledMethod: "save",
       methodProperties: {
         IntDocNumber: params.IntDocNumber,
-        OrderType: "ChangeSenderRecipientData",
+        OrderType: "orderChangeEW",
         RecipientContactPerson: params.RecipientContactPerson,
         RecipientPhone: params.RecipientPhone,
         PaymentMethod: params.PaymentMethod,
@@ -752,6 +792,41 @@ export async function submitChangeData(
   return {
     success: true,
     ttn: data.data?.[0]?.Number || data.data?.[0]?.Ref || "",
+  };
+}
+
+export async function submitProlongStorage(
+  apiKey: string,
+  params: {
+    IntDocNumber: string;
+    prolongDate?: string;
+    prolongDays?: number;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  if (!apiKey || apiKey.startsWith("mock_") || apiKey === "sandbox_key") {
+    return { success: true };
+  }
+
+  const data = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      apiKey,
+      modelName: "AdditionalService",
+      calledMethod: "save",
+      methodProperties: {
+        IntDocNumber: params.IntDocNumber,
+        OrderType: "orderCargoStorage",
+      },
+    }),
+  });
+
+  if (!data?.success) {
+    throw new Error(data?.errors?.join(", ") || "Помилка при оформленні заяви на продовження зберігання");
+  }
+
+  return {
+    success: true,
   };
 }
 
