@@ -13,9 +13,24 @@ interface LayoutProps {
   onCreateTtn?: () => void;
   onRefresh?: () => void;
   loading?: boolean;
+  isMapOpen?: boolean;
+  onMapOpenChange?: (open: boolean) => void;
+  onGoToDashboard?: () => void;
 }
 
-export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSubscription, onAddTtn, onCreateTtn, onRefresh, loading }: LayoutProps) {
+export function Layout({ 
+  children, 
+  onManageAccounts, 
+  onManageApiKeys, 
+  onManageSubscription, 
+  onAddTtn, 
+  onCreateTtn, 
+  onRefresh, 
+  loading,
+  isMapOpen: propIsMapOpen,
+  onMapOpenChange,
+  onGoToDashboard,
+}: LayoutProps) {
   const { user, logout } = useAuth();
   const { subscription, daysLeft } = useSubscription();
 
@@ -69,7 +84,15 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSu
   };
 
   // Map Locator features state
-  const [isMapOpen, setIsMapOpen] = useState(false);
+  const [localMapOpen, setLocalMapOpen] = useState(false);
+  const isMapOpen = propIsMapOpen !== undefined ? propIsMapOpen : localMapOpen;
+  const setIsMapOpen = (val: boolean) => {
+    if (onMapOpenChange) {
+      onMapOpenChange(val);
+    } else {
+      setLocalMapOpen(val);
+    }
+  };
   const [isLegalInfoOpen, setIsLegalInfoOpen] = useState(false);
   const [mapCityQuery, setMapCityQuery] = useState('Київ');
   const [mapCities, setMapCities] = useState<any[]>([]);
@@ -229,7 +252,7 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSu
           )}
          
          <nav className="flex-1 overflow-y-auto no-scrollbar px-4 space-y-1.5 mt-2 pb-4">
-             <div className="flex items-center gap-3 px-3 py-2.5 bg-[var(--bg-active-alpha)] rounded-lg text-[var(--text-main)] cursor-pointer font-medium text-sm">
+             <div onClick={onGoToDashboard} className="flex items-center gap-3 px-3 py-2.5 bg-[var(--bg-active-alpha)] rounded-lg text-[var(--text-main)] cursor-pointer font-medium text-sm">
                 <Home className="w-4 h-4" />
                 Посилки
              </div>
@@ -323,7 +346,7 @@ export function Layout({ children, onManageAccounts, onManageApiKeys, onManageSu
           >
             
             {/* 1. Посилки */}
-            <div className="flex flex-col items-center justify-center w-16 h-[54px] cursor-pointer text-[var(--text-main)] pb-1">
+            <div onClick={onGoToDashboard} className="flex flex-col items-center justify-center w-16 h-[54px] cursor-pointer text-[var(--text-main)] pb-1">
               <Box className="w-6 h-6 stroke-[1.8]" />
               <span className="text-[10px] mt-1 font-semibold tracking-wide">Посилки</span>
             </div>

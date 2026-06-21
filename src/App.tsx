@@ -57,7 +57,42 @@ export default function App() {
     const [accountsModalTab, setAccountsModalTab] = useState<'profile' | 'api'>('api');
     const [isAddTtnModalOpen, setIsAddTtnModalOpen] = useState(false);
     const [isCreateTtnModalOpen, setIsCreateTtnModalOpen] = useState(false);
+    const [isMapOpen, setIsMapOpen] = useState(false);
     const [autoSelectTtn, setAutoSelectTtn] = useState<string | null>(null);
+
+    const closeAllModals = () => {
+        setIsAccountsModalOpen(false);
+        setIsSubscriptionModalOpen(false);
+        setIsAddTtnModalOpen(false);
+        setIsCreateTtnModalOpen(false);
+        setIsMapOpen(false);
+    };
+
+    const openAccountsModal = (tab: 'profile' | 'api') => {
+        closeAllModals();
+        setAccountsModalTab(tab);
+        setIsAccountsModalOpen(true);
+    };
+
+    const openSubscriptionModal = () => {
+        closeAllModals();
+        setIsSubscriptionModalOpen(true);
+    };
+
+    const openAddTtnModal = () => {
+        closeAllModals();
+        setIsAddTtnModalOpen(true);
+    };
+
+    const openCreateTtnModal = () => {
+        closeAllModals();
+        setIsCreateTtnModalOpen(true);
+    };
+
+    const openMapModal = () => {
+        closeAllModals();
+        setIsMapOpen(true);
+    };
 
     if (!isLoaded || subLoading) {
         return (
@@ -90,22 +125,25 @@ export default function App() {
 
     return (
         <Layout 
-            onManageAccounts={() => { setAccountsModalTab('profile'); setIsAccountsModalOpen(true); }}
-            onManageApiKeys={() => { setAccountsModalTab('api'); setIsAccountsModalOpen(true); }}
-            onManageSubscription={() => setIsSubscriptionModalOpen(true)}
-            onAddTtn={() => {
-                setIsCreateTtnModalOpen(false);
-                setIsAddTtnModalOpen(true);
-            }}
-            onCreateTtn={() => {
-                setIsAddTtnModalOpen(false);
-                setIsCreateTtnModalOpen(true);
-            }}
+            onManageAccounts={() => openAccountsModal('profile')}
+            onManageApiKeys={() => openAccountsModal('api')}
+            onManageSubscription={openSubscriptionModal}
+            onAddTtn={openAddTtnModal}
+            onCreateTtn={openCreateTtnModal}
             onRefresh={() => refresh(true)}
             loading={loading}
+            isMapOpen={isMapOpen}
+            onMapOpenChange={(open) => {
+                if (open) {
+                    openMapModal();
+                } else {
+                    setIsMapOpen(false);
+                }
+            }}
+            onGoToDashboard={closeAllModals}
         >
            {accounts.length === 0 ? (
-               <Onboarding onAddAccount={() => { setAccountsModalTab('api'); setIsAccountsModalOpen(true); }} />
+               <Onboarding onAddAccount={() => openAccountsModal('api')} />
            ) : (
                 <Dashboard 
                      parcels={parcels} 
@@ -143,10 +181,7 @@ export default function App() {
                          setAutoSelectTtn(ttn);
                      }}
                      accounts={accounts}
-                     onCreateTtn={() => {
-                          setIsAddTtnModalOpen(false);
-                          setIsCreateTtnModalOpen(true);
-                      }}
+                     onCreateTtn={openCreateTtnModal}
                 />
            )}
            
@@ -178,10 +213,7 @@ export default function App() {
                 parcels={parcels}
                 loading={loading}
                  accounts={accounts}
-                onCreateNewTtn={() => {
-                    setIsAddTtnModalOpen(false);
-                    setIsCreateTtnModalOpen(true);
-                }}
+                onCreateNewTtn={openCreateTtnModal}
            />
 
            <CreateTtnModal
