@@ -582,7 +582,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
             }
         } else {
             backwardDeliveryData = [];
-            afterpaymentOnGoodsCost = "";
+            afterpaymentOnGoodsCost = undefined;
         }
 
         setSubmitting(true);

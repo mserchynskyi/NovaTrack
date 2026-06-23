@@ -765,6 +765,22 @@ export async function submitChangeData(
     AfterpaymentOnGoodsCost?: string;
   }
 ): Promise<{ success: boolean; ttn?: string; error?: string }> {
+  const methodProperties: any = {
+    IntDocNumber: params.IntDocNumber,
+    OrderType: "orderChangeEW",
+    RecipientContactPerson: params.RecipientContactPerson,
+    RecipientPhone: params.RecipientPhone,
+    PaymentMethod: params.PaymentMethod,
+    PayerType: params.PayerType,
+  };
+
+  if (params.BackwardDeliveryData !== undefined) {
+    methodProperties.BackwardDeliveryData = params.BackwardDeliveryData;
+  }
+  if (params.AfterpaymentOnGoodsCost) {
+    methodProperties.AfterpaymentOnGoodsCost = params.AfterpaymentOnGoodsCost;
+  }
+
   const data = await safeFetch("https://api.novaposhta.ua/v2.0/json/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -772,16 +788,7 @@ export async function submitChangeData(
       apiKey,
       modelName: "AdditionalService",
       calledMethod: "save",
-      methodProperties: {
-        IntDocNumber: params.IntDocNumber,
-        OrderType: "orderChangeEW",
-        RecipientContactPerson: params.RecipientContactPerson,
-        RecipientPhone: params.RecipientPhone,
-        PaymentMethod: params.PaymentMethod,
-        PayerType: params.PayerType,
-        BackwardDeliveryData: params.BackwardDeliveryData,
-        AfterpaymentOnGoodsCost: params.AfterpaymentOnGoodsCost,
-      },
+      methodProperties,
     }),
   });
 
