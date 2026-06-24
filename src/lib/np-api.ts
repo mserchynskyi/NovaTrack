@@ -762,7 +762,7 @@ export async function submitChangeData(
     RecipientContactPerson: string;
     RecipientPhone: string;
     BackwardDeliveryData?: any[];
-    AfterpaymentOnGoodsCost?: string;
+    AfterpaymentOnGoodsCost?: string | null;
   }
 ): Promise<{ success: boolean; ttn?: string; error?: string }> {
   const methodProperties: any = {
@@ -777,7 +777,7 @@ export async function submitChangeData(
   if (params.BackwardDeliveryData !== undefined) {
     methodProperties.BackwardDeliveryData = params.BackwardDeliveryData;
   }
-  if (params.AfterpaymentOnGoodsCost) {
+  if (params.AfterpaymentOnGoodsCost !== undefined) {
     methodProperties.AfterpaymentOnGoodsCost = params.AfterpaymentOnGoodsCost;
   }
 

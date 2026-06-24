@@ -582,7 +582,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
             }
         } else {
             backwardDeliveryData = [];
-            afterpaymentOnGoodsCost = undefined;
+            afterpaymentOnGoodsCost = "0";
         }
 
         setSubmitting(true);
@@ -620,7 +620,36 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
             );
             if (onRefresh) onRefresh(true);
         } catch (err: any) {
-            setErrorMsg(err.message || 'Помилка при зміні даних ТТН');
+            const errorMsgStr = err.message || '';
+            const isNoChangesError = errorMsgStr.includes('No data changes') || 
+                                     errorMsgStr.includes('Document not saved') ||
+                                     errorMsgStr.includes('Немає змінених даних') ||
+                                     errorMsgStr.includes('Документ не збережено');
+
+            if (isNoChangesError) {
+                // For manual parcels, make sure to update local tracking even if server has no changes
+                if (parcel.isManual && onUpdateManualTtn) {
+                    const rawSum = parseFloat(afterpaymentSum);
+                    const sumToSave = hasAfterpayment && !isNaN(rawSum) ? rawSum : undefined;
+                    const typeToSave = hasAfterpayment ? afterpaymentType : 'None';
+
+                    onUpdateManualTtn(
+                        editRecipientPhone || undefined, 
+                        selectedAccountIdForEdit || undefined,
+                        sumToSave,
+                        typeToSave
+                    );
+                }
+
+                setSuccessMsg(
+                    parcel.isManual 
+                        ? 'Дані ТТН вже відповідають вказаним (контроль оплати скасовано або вже застосовано) та оновлено локально!' 
+                        : 'Дані ТТН вже відповідають вказаним (контроль оплати скасовано або зміни вже були застосовані)!'
+                );
+                if (onRefresh) onRefresh(true);
+            } else {
+                setErrorMsg(err.message || 'Помилка при зміні даних ТТН');
+            }
         } finally {
             setSubmitting(false);
         }
@@ -875,14 +904,14 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                             )}
 
                             {/* Payer and Payment Method Selection */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1.5">
                                     <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Хто оплачує</label>
                                     <div className="grid grid-cols-3 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
                                         <button
                                             type="button"
                                             onClick={() => setPayerType('Recipient')}
-                                            className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                                            className={`py-1.5 px-1 rounded-lg text-[10px] sm:text-xs font-bold uppercase transition-all flex items-center justify-center text-center leading-tight min-h-[32px] ${
                                                 payerType === 'Recipient' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
@@ -893,7 +922,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                         <button
                                             type="button"
                                             onClick={() => setPayerType('Sender')}
-                                            className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                                            className={`py-1.5 px-1 rounded-lg text-[10px] sm:text-xs font-bold uppercase transition-all flex items-center justify-center text-center leading-tight min-h-[32px] ${
                                                 payerType === 'Sender' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
@@ -904,7 +933,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                         <button
                                             type="button"
                                             onClick={() => setPayerType('ThirdPerson')}
-                                            className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                                            className={`py-1.5 px-1 rounded-lg text-[10px] sm:text-xs font-bold uppercase transition-all flex items-center justify-center text-center leading-tight min-h-[32px] ${
                                                 payerType === 'ThirdPerson' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
@@ -921,7 +950,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                         <button
                                             type="button"
                                             onClick={() => setPaymentMethod('Cash')}
-                                            className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                                            className={`py-1.5 px-1 rounded-lg text-xs font-bold uppercase transition-all flex items-center justify-center text-center leading-tight min-h-[32px] ${
                                                 paymentMethod === 'Cash' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
@@ -932,7 +961,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                         <button
                                             type="button"
                                             onClick={() => setPaymentMethod('NonCash')}
-                                            className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                                            className={`py-1.5 px-1 rounded-lg text-xs font-bold uppercase transition-all flex items-center justify-center text-center leading-tight min-h-[32px] ${
                                                 paymentMethod === 'NonCash' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
@@ -1149,14 +1178,14 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                             </div>
 
                             {/* Payer and Payment Method Selection */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1.5">
                                     <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Хто оплачує доставку</label>
                                     <div className="grid grid-cols-3 bg-[var(--bg-card-alt)] p-1 rounded-xl border border-[var(--border-color)]">
                                         <button
                                             type="button"
                                             onClick={() => setPayerType('Recipient')}
-                                            className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                                            className={`py-1.5 px-1 rounded-lg text-[10px] sm:text-xs font-bold uppercase transition-all flex items-center justify-center text-center leading-tight min-h-[32px] ${
                                                 payerType === 'Recipient' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
@@ -1167,7 +1196,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                         <button
                                             type="button"
                                             onClick={() => setPayerType('Sender')}
-                                            className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                                            className={`py-1.5 px-1 rounded-lg text-[10px] sm:text-xs font-bold uppercase transition-all flex items-center justify-center text-center leading-tight min-h-[32px] ${
                                                 payerType === 'Sender' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
@@ -1178,7 +1207,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                         <button
                                             type="button"
                                             onClick={() => setPayerType('ThirdPerson')}
-                                            className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                                            className={`py-1.5 px-1 rounded-lg text-[10px] sm:text-xs font-bold uppercase transition-all flex items-center justify-center text-center leading-tight min-h-[32px] ${
                                                 payerType === 'ThirdPerson' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
@@ -1195,7 +1224,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                         <button
                                             type="button"
                                             onClick={() => setPaymentMethod('Cash')}
-                                            className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                                            className={`py-1.5 px-1 rounded-lg text-xs font-bold uppercase transition-all flex items-center justify-center text-center leading-tight min-h-[32px] ${
                                                 paymentMethod === 'Cash' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'
@@ -1206,7 +1235,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                                         <button
                                             type="button"
                                             onClick={() => setPaymentMethod('NonCash')}
-                                            className={`py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                                            className={`py-1.5 px-1 rounded-lg text-xs font-bold uppercase transition-all flex items-center justify-center text-center leading-tight min-h-[32px] ${
                                                 paymentMethod === 'NonCash' 
                                                 ? 'bg-red-500 text-[#ffffff] shadow-sm' 
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)] bg-transparent'

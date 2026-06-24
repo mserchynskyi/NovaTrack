@@ -17,9 +17,26 @@ interface DashboardProps {
   onAddManualTtn?: (ttn: string) => void;
   accounts: NpAccount[];
   onCreateTtn?: () => void;
+  selectedParcel?: Parcel | null;
+  onSelectParcel?: (parcel: Parcel | null) => void;
 }
 
-export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onDeleteManualTtn, onUpdateManualTtn, autoSelectTtn, onAutoSelectClear, onAddManualTtn, accounts, onCreateTtn }: DashboardProps) {
+export function Dashboard({ 
+  parcels, 
+  loading, 
+  error, 
+  onRefresh, 
+  lastRefresh, 
+  onDeleteManualTtn, 
+  onUpdateManualTtn, 
+  autoSelectTtn, 
+  onAutoSelectClear, 
+  onAddManualTtn, 
+  accounts, 
+  onCreateTtn,
+  selectedParcel: propSelectedParcel,
+  onSelectParcel
+}: DashboardProps) {
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [filterDate, setFilterDate] = useState<string>('AllTime');
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
@@ -37,7 +54,17 @@ export function Dashboard({ parcels, loading, error, onRefresh, lastRefresh, onD
 
   const [sortBy, setSortBy] = useState<string>('DateCreated (Newest)');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null);
+  
+  const [localSelectedParcel, setLocalSelectedParcel] = useState<Parcel | null>(null);
+  const selectedParcel = propSelectedParcel !== undefined ? propSelectedParcel : localSelectedParcel;
+  const setSelectedParcel = (val: Parcel | null) => {
+    if (onSelectParcel) {
+      onSelectParcel(val);
+    } else {
+      setLocalSelectedParcel(val);
+    }
+  };
+
   const prevLoading = useRef(loading);
 
   useEffect(() => {

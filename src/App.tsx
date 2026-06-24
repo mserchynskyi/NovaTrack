@@ -15,6 +15,7 @@ import { useTheme } from './lib/useTheme';
 import { useSubscription } from './lib/useSubscription';
 import { SubscriptionPaywall } from './components/SubscriptionPaywall';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
+import { Parcel } from './types';
 
 export default function App() {
     useTheme(); // Initialize theme logic globally
@@ -59,6 +60,7 @@ export default function App() {
     const [isCreateTtnModalOpen, setIsCreateTtnModalOpen] = useState(false);
     const [isMapOpen, setIsMapOpen] = useState(false);
     const [autoSelectTtn, setAutoSelectTtn] = useState<string | null>(null);
+    const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null);
 
     const closeAllModals = () => {
         setIsAccountsModalOpen(false);
@@ -66,6 +68,7 @@ export default function App() {
         setIsAddTtnModalOpen(false);
         setIsCreateTtnModalOpen(false);
         setIsMapOpen(false);
+        setSelectedParcel(null);
     };
 
     const openAccountsModal = (tab: 'profile' | 'api') => {
@@ -166,6 +169,8 @@ export default function App() {
                      }}
                      autoSelectTtn={autoSelectTtn}
                      onAutoSelectClear={() => setAutoSelectTtn(null)}
+                     selectedParcel={selectedParcel}
+                     onSelectParcel={setSelectedParcel}
                      onAddManualTtn={(rawTtn) => {
                          const ttn = rawTtn.trim();
                          // Avoid adding duplicates
