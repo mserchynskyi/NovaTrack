@@ -1583,7 +1583,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
            onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             {/* Unified View */}
-            <div className="bg-[var(--bg-main)] w-full max-w-lg lg:max-w-4xl h-[100dvh] sm:h-[85vh] sm:max-h-[880px] lg:h-[85vh] rounded-none sm:rounded-[32px] shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-300 border border-[var(--border-color)] relative font-sans overflow-hidden">
+            <div className="bg-[var(--bg-main)] w-full max-w-lg lg:max-w-4xl h-[100dvh] sm:h-[85vh] sm:max-h-[880px] lg:h-[85vh] rounded-none sm:rounded-[32px] shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-300 border border-[var(--border-color)] relative font-sans overflow-hidden pt-safe sm:pt-0">
                 <div className="px-6 py-4 lg:py-5 lg:px-8 border-b border-[var(--border-color)] flex items-center justify-between shrink-0 bg-[var(--bg-main)]">
                     <div className="flex items-center gap-3">
                         <div className="bg-[#e33745] p-2 rounded-xl shadow-md shadow-red-900/20">
@@ -1988,7 +1988,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                  onClick={() => setShowFullRoute(false)}
              >
                  <div 
-                     className="bg-[var(--bg-nav)] sm:bg-[var(--bg-main)] text-[var(--text-main)] w-full max-w-[400px] h-[100dvh] sm:h-[85vh] sm:max-h-[650px] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+                     className="bg-[var(--bg-nav)] sm:bg-[var(--bg-main)] text-[var(--text-main)] w-full max-w-[400px] h-[100dvh] sm:h-[85vh] sm:max-h-[650px] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 pt-safe sm:pt-0"
                      onClick={(e) => e.stopPropagation()}
                   >
                      {/* Upper Handle */}

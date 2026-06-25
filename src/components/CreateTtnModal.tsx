@@ -645,7 +645,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
             {/* Phone simulator boundary wrapper with exact colors shown in the screenshot */}
             <div 
                 id="create-ttn-phone-boundary" 
-                className="bg-[var(--bg-main)] text-[var(--text-main)] w-full max-w-lg lg:max-w-4xl sm:rounded-[32px] shadow-2xl flex flex-col h-[100dvh] sm:h-[85vh] sm:max-h-[880px] lg:h-[85vh] overflow-hidden border border-[var(--border-color)] relative font-sans"
+                className="bg-[var(--bg-main)] text-[var(--text-main)] w-full max-w-lg lg:max-w-4xl sm:rounded-[32px] shadow-2xl flex flex-col h-[100dvh] sm:h-[85vh] sm:max-h-[880px] lg:h-[85vh] overflow-hidden border border-[var(--border-color)] relative font-sans pt-safe sm:pt-0"
                 onClick={(e) => e.stopPropagation()}
             >
                 

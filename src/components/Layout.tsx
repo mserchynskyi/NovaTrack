@@ -225,7 +225,7 @@ export function Layout({
   });
 
   return (
-    <div className="flex bg-[var(--bg-main)] h-full w-full overflow-hidden font-sans selection:bg-red-200">
+    <div className="flex bg-[var(--bg-main)] h-full w-full overflow-hidden font-sans selection:bg-red-200 pt-safe lg:pt-0">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-56 bg-[var(--bg-main)] text-[var(--text-main)] flex-col h-full shadow-lg shrink-0">
          <div className="p-6 flex items-center gap-3">
@@ -401,7 +401,7 @@ export function Layout({
           onClick={() => setIsMapOpen(false)}
         >
           <div 
-            className="bg-[var(--bg-nav)] text-[var(--text-main)] w-full max-w-[480px] h-[100dvh] sm:h-[85vh] sm:max-h-[650px] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            className="bg-[var(--bg-nav)] text-[var(--text-main)] w-full max-w-[480px] h-[100dvh] sm:h-[85vh] sm:max-h-[650px] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 pt-safe sm:pt-0"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -562,7 +562,7 @@ export function Layout({
           onClick={() => setIsLegalInfoOpen(false)}
         >
           <div 
-            className="bg-[var(--bg-nav)] text-[var(--text-main)] w-full max-w-[540px] h-[100dvh] sm:h-[70vh] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            className="bg-[var(--bg-nav)] text-[var(--text-main)] w-full max-w-[540px] h-[100dvh] sm:h-[70vh] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 pt-safe sm:pt-0"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
