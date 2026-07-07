@@ -38,7 +38,6 @@ export function Dashboard({
   onSelectParcel
 }: DashboardProps) {
   const [filterStatus, setFilterStatus] = useState<string>('All');
-  const [filterDate, setFilterDate] = useState<string>('AllTime');
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const filterMenuRef = useRef<HTMLDivElement>(null);
 
@@ -223,30 +222,6 @@ export function Dashboard({
          });
      }
 
-     // Apply Date Filter
-     if (filterDate !== 'AllTime') {
-         result = result.filter(p => {
-             const ts = parseDateString(p.dateCreated);
-             if (ts === 0) return false;
-             
-             const now = new Date();
-             const msInDay = 1000 * 60 * 60 * 24;
-             
-             if (filterDate === 'Today') {
-                 return (now.getTime() - ts) < msInDay;
-             } else if (filterDate === 'Yesterday') {
-                 const diff = now.getTime() - ts;
-                 return diff >= msInDay && diff < msInDay * 2;
-             } else if (filterDate === 'Last7Days') {
-                 return (now.getTime() - ts) < msInDay * 7;
-             } else if (filterDate === 'ThisMonth') {
-                 const date = new Date(ts);
-                 return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-             }
-             return true;
-         });
-     }
-
      // Apply Sort
      result = [...result].sort((a, b) => {
           if (sortBy === 'DateCreated (Newest)') return parseDateString(b.dateCreated) - parseDateString(a.dateCreated);
@@ -326,7 +301,7 @@ export function Dashboard({
                    title="Фільтри"
                  >
                     <SlidersHorizontal className="w-4 h-4 text-[var(--text-main)] group-hover:text-red-500 transition-colors" />
-                    {(filterStatus !== 'All' || filterDate !== 'AllTime') && (
+                    {filterStatus !== 'All' && (
                         <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full shadow-sm shadow-red-900/50"></div>
                     )}
                  </div>
@@ -338,7 +313,10 @@ export function Dashboard({
                        <select 
                            className="w-full bg-[var(--bg-main)] border border-[var(--border-color)] rounded-lg px-2.5 py-2 focus:outline-none focus:border-red-500 text-[var(--text-main)] text-sm"
                            value={filterStatus}
-                           onChange={e => setFilterStatus(e.target.value)}
+                           onChange={e => {
+                               setFilterStatus(e.target.value);
+                               setIsFilterMenuOpen(false);
+                           }}
                        >
                            <option value="All">Всі статуси</option>
                            <option value="Created">Створені</option>
@@ -348,20 +326,6 @@ export function Dashboard({
                            <option value="Stored 5+ Days">Зберігається 5+ днів</option>
                            <option value="Delivered">Отримані</option>
                            <option value="Issues">Проблемні</option>
-                       </select>
-                     </div>
-                     <div className="flex flex-col gap-1.5">
-                       <label className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-wider px-1">За датою відправки</label>
-                       <select 
-                           className="w-full bg-[var(--bg-main)] border border-[var(--border-color)] rounded-lg px-2.5 py-2 focus:outline-none focus:border-red-500 text-[var(--text-main)] text-sm"
-                           value={filterDate}
-                           onChange={e => setFilterDate(e.target.value)}
-                       >
-                           <option value="AllTime">За весь час</option>
-                           <option value="Today">Сьогодні</option>
-                           <option value="Yesterday">Вчора</option>
-                           <option value="Last7Days">За тиждень</option>
-                           <option value="ThisMonth">Цього місяця</option>
                        </select>
                      </div>
                    </div>
@@ -375,10 +339,10 @@ export function Dashboard({
                      value={sortBy}
                      onChange={e => setSortBy(e.target.value)}
                  >
-                     <option value="DateCreated (Newest)">Дата відпр. (новіші)</option>
-                     <option value="DateCreated (Oldest)">Дата відпр. (старіші)</option>
-                     <option value="DeliveryDate (Newest)">Дата дост. (новіші)</option>
-                     <option value="DeliveryDate (Oldest)">Дата дост. (старіші)</option>
+                     <option value="DateCreated (Newest)">Дата створення (новіші)</option>
+                     <option value="DateCreated (Oldest)">Дата створення (старіші)</option>
+                     <option value="DeliveryDate (Newest)">Дата доставки (новіші)</option>
+                     <option value="DeliveryDate (Oldest)">Дата доставки (старіші)</option>
                      <option value="City (A-Z)">Місто (А-Я)</option>
                      <option value="City (Z-A)">Місто (Я-А)</option>
                      <option value="Cost (Highest)">Вартість (найвища)</option>

@@ -108,6 +108,27 @@ body.dark {
   background-color: #1b2b35 !important;
 }
 
+/* Prevent native tap highlight glitches and focus box artifacts on mobile Android/WebView */
+* {
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+input, textarea, select {
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Custom clean selection styles to prevent OS-level rendering corruption during selection */
+::selection {
+  background-color: rgba(220, 38, 38, 0.2) !important;
+  color: inherit !important;
+}
+
+::-moz-selection {
+  background-color: rgba(220, 38, 38, 0.2) !important;
+  color: inherit !important;
+}
+
+
 
 
 

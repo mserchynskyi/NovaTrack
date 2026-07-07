@@ -41,8 +41,8 @@ service cloud.firestore {
                      
        allow update: if isSignedIn()
                      && request.auth.uid == userId
-                     && isValidUserAccount(incoming(), request.auth.uid)
-                     && incoming().userId == existing().userId; // Immutable
+                     && (!('userId' in incoming()) || incoming().userId == request.auth.uid)
+                     && (!('userId' in existing()) || !('userId' in incoming()) || incoming().userId == existing().userId);
                      
        allow delete: if isSignedIn() 
                      && request.auth.uid == userId;
@@ -59,8 +59,9 @@ service cloud.firestore {
                      
        allow update: if isSignedIn()
                      && request.auth.uid == userId
-                     && isValidSubscription(incoming(), request.auth.uid)
-                     && incoming().userId == existing().userId; // Immutable
+                     && (!('userId' in incoming()) || incoming().userId == request.auth.uid)
+                     && (!('userId' in existing()) || !('userId' in incoming()) || incoming().userId == existing().userId)
+                     && (!('status' in incoming()) || incoming().status in ['trial', 'active', 'expired', 'none']);
                      
        allow delete: if isSignedIn()
                      && request.auth.uid == userId;
