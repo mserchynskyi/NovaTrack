@@ -108,24 +108,21 @@ body.dark {
   background-color: #1b2b35 !important;
 }
 
-/* Prevent native tap highlight glitches and focus box artifacts on mobile Android/WebView */
-* {
+/* Avoid setting -webkit-tap-highlight-color on * or inputs/textareas, as it triggers a severe rendering bug in Android WebView that draws solid black background boxes under selection handles and copy/paste menus. */
+a, button, [role="button"], .cursor-pointer {
   -webkit-tap-highlight-color: transparent !important;
 }
 
-input, textarea, select {
-  -webkit-tap-highlight-color: transparent !important;
-}
-
-/* Custom clean selection styles to prevent OS-level rendering corruption during selection */
-::selection {
-  background-color: rgba(220, 38, 38, 0.2) !important;
-  color: inherit !important;
-}
-
-::-moz-selection {
-  background-color: rgba(220, 38, 38, 0.2) !important;
-  color: inherit !important;
+/* Limit custom selection styling to desktop (pointer: fine) devices. On mobile/touch devices, we let the OS handle the selection to prevent black-box rendering corruption around selection handles and action overlays. */
+@media (pointer: fine) {
+  ::selection {
+    background-color: rgba(220, 38, 38, 0.2) !important;
+    color: inherit !important;
+  }
+  ::-moz-selection {
+    background-color: rgba(220, 38, 38, 0.2) !important;
+    color: inherit !important;
+  }
 }
 
 
