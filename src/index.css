@@ -71,7 +71,6 @@ html, body {
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  -webkit-overflow-scrolling: touch;
 }
 
 #root {
@@ -89,7 +88,6 @@ html, body {
   bottom: 0 !important;
   display: flex !important;
   flex-direction: column !important;
-  -webkit-overflow-scrolling: touch;
 }
 
 html {
