@@ -1579,7 +1579,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
 
     return createPortal(
         <div 
-           className="fixed -top-12 -bottom-24 inset-x-0 bg-[#0c0d10]/95 backdrop-blur-md z-[100000] flex items-center justify-center p-0 sm:p-2 overflow-hidden sm:overflow-y-auto no-scrollbar"
+           className="fixed inset-0 bg-[#0c0d10]/95 backdrop-blur-md z-[100000] flex items-center justify-center p-0 sm:p-2 overflow-hidden sm:overflow-y-auto no-scrollbar"
            onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             {/* Unified View */}

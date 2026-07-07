@@ -156,7 +156,7 @@ export function AccountsModal({ isOpen, onClose, accounts, onSave, initialTab = 
 
   return createPortal(
     <div 
-      className="fixed -top-12 -bottom-24 inset-x-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-0 sm:p-4"
+      className="fixed inset-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-0 sm:p-4"
       onClick={onClose}
     >
       <div 
