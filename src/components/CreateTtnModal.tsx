@@ -1673,7 +1673,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: '100%' }}
                             transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-                            className="absolute inset-0 bg-[var(--bg-main)] z-50 flex flex-col font-sans"
+                            className="absolute inset-0 bg-[var(--bg-main)] z-50 flex flex-col font-sans pt-safe sm:pt-0"
                         >
                             {/* Fixed Header */}
                             <div className="px-5 py-4 border-b border-[var(--border-color)]/40 flex items-center justify-between bg-[var(--bg-main)] shrink-0">
@@ -1732,7 +1732,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: '100%' }}
                             transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-                            className="absolute inset-0 bg-[var(--bg-main)] z-50 flex flex-col font-sans"
+                            className="absolute inset-0 bg-[var(--bg-main)] z-50 flex flex-col font-sans pt-safe sm:pt-0"
                         >
                             {/* Fixed Header */}
                             <div className="px-5 py-4 border-b border-[var(--border-color)]/40 flex items-center justify-between bg-[var(--bg-main)] shrink-0">
