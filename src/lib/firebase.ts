@@ -8,12 +8,12 @@ setLogLevel('error');
 
 const app = initializeApp(firebaseConfig);
 
+export const auth = getAuth(app);
+
 // Initialize Firestore with explicit offline persistence enabled for improved mobile sync
 export const db = initializeFirestore(app, {
     localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})
 });
-
-export const auth = getAuth(app);
 
 export const loginWithEmail = async (email: string, pass: string) => {
     await signInWithEmailAndPassword(auth, email, pass);

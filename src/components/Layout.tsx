@@ -2,13 +2,11 @@ import React, { ReactNode, useState, useEffect, useRef } from 'react';
 import { Home, MapPin, User, Package as Box, LogOut, Plus, FileText, X, Search, Globe, Copy, Check, Barcode, RefreshCw, Key, CreditCard, Scale, MessageCircle } from 'lucide-react';
 import { useAuth } from '../lib/AuthContext';
 import { searchCities, getWarehouses } from '../lib/np-api';
-import { useSubscription } from '../lib/useSubscription';
 
 interface LayoutProps {
   children: ReactNode;
   onManageAccounts: () => void;
   onManageApiKeys: () => void;
-  onManageSubscription?: () => void;
   onAddTtn: () => void;
   onCreateTtn?: () => void;
   onRefresh?: () => void;
@@ -22,7 +20,6 @@ export function Layout({
   children, 
   onManageAccounts, 
   onManageApiKeys, 
-  onManageSubscription, 
   onAddTtn, 
   onCreateTtn, 
   onRefresh, 
@@ -32,7 +29,6 @@ export function Layout({
   onGoToDashboard,
 }: LayoutProps) {
   const { user, logout } = useAuth();
-  const { subscription, daysLeft } = useSubscription();
 
   // Scroll and Pull to refresh state
   const mainRef = useRef<HTMLDivElement>(null);
@@ -234,24 +230,8 @@ export function Layout({
              </div>
              <span className="font-bold text-lg tracking-tight">МультиПошта</span>
          </div>
-
-         {subscription && (
-             <div onClick={onManageSubscription} className="mx-4 mb-4 p-3 bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]/50 rounded-xl cursor-pointer transition-all flex items-center justify-between text-left group">
-                <div className="flex items-center gap-2.5 min-w-0">
-                   <div className="p-1.5 rounded-lg bg-red-500/10 text-[#e33745]">
-                      <CreditCard className="w-3.5 h-3.5" />
-                   </div>
-                   <div className="min-w-0">
-                      <div className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Підписка</div>
-                      <div className="text-[11px] font-semibold text-[var(--text-main)] truncate mt-0.5">
-                         {subscription.status === 'trial' ? 'Пробний період' : `Активна до ${subscription.activeEndDate ? new Date(subscription.activeEndDate).toLocaleDateString('uk-UA') : ''}`}
-                      </div>
-                   </div>
-                </div>
-             </div>
-          )}
          
-         <nav className="flex-1 overflow-y-auto no-scrollbar px-4 space-y-1.5 mt-2 pb-4">
+<nav className="flex-1 overflow-y-auto no-scrollbar px-4 space-y-1.5 mt-2 pb-4">
              <div onClick={onGoToDashboard} className="flex items-center gap-3 px-3 py-2.5 bg-[var(--bg-active-alpha)] rounded-lg text-[var(--text-main)] cursor-pointer font-medium text-sm">
                 <Home className="w-4 h-4" />
                 Посилки
@@ -397,11 +377,11 @@ export function Layout({
       {/* Map modal for branch locator */}
       {isMapOpen && (
         <div 
-          className="fixed inset-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-0 sm:p-4"
+          className="fixed inset-0 bg-black/85 backdrop-blur-md z-[100010] flex items-center justify-center p-0 sm:p-4"
           onClick={() => setIsMapOpen(false)}
         >
           <div 
-            className="bg-[var(--bg-nav)] text-[var(--text-main)] w-full max-w-[480px] h-[100dvh] sm:h-[85vh] sm:max-h-[650px] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 pt-safe sm:pt-0"
+            className="bg-[var(--bg-nav)] text-[var(--text-main)] w-full max-w-[480px] h-[100dvh] sm:h-[85vh] sm:max-h-[650px] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 pt-safe pb-safe sm:pt-0 sm:pb-0"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -558,11 +538,11 @@ export function Layout({
       {/* Legal Info modal */}
       {isLegalInfoOpen && (
         <div 
-          className="fixed inset-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-0 sm:p-4"
+          className="fixed inset-0 bg-black/85 backdrop-blur-md z-[100010] flex items-center justify-center p-0 sm:p-4"
           onClick={() => setIsLegalInfoOpen(false)}
         >
           <div 
-            className="bg-[var(--bg-nav)] text-[var(--text-main)] w-full max-w-[540px] h-[100dvh] sm:h-[70vh] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 pt-safe sm:pt-0"
+            className="bg-[var(--bg-nav)] text-[var(--text-main)] w-full max-w-[540px] h-[100dvh] sm:h-[70vh] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 pt-safe pb-safe sm:pt-0 sm:pb-0"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}

@@ -8,12 +8,9 @@ import { AccountsModal } from './components/AccountsModal';
 import { Onboarding } from './components/Onboarding';
 import { AddTtnModal } from './components/AddTtnModal';
 import { CreateTtnModal } from './components/CreateTtnModal';
-import { SubscriptionModal } from './components/SubscriptionModal';
 import { useAuth } from './lib/AuthContext';
 import { AuthScreen } from './components/AuthScreen';
 import { useTheme } from './lib/useTheme';
-import { useSubscription } from './lib/useSubscription';
-import { SubscriptionPaywall } from './components/SubscriptionPaywall';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 import { Parcel } from './types';
 
@@ -26,35 +23,23 @@ export default function App() {
     }
 
     const { user } = useAuth();
-    const { subscription, loading: subLoading, activateSubscription, isAccessAllowed } = useSubscription();
-    const { accounts, saveAccounts, manualTtns, saveManualTtns, isLoaded } = useAccounts();
-    const { parcels, loading, error, refresh, lastRefresh } = useDashboardData(accounts, manualTtns, (newTtns) => {
-        const updated = [...manualTtns];
+    const { accounts, saveAccounts, manualTtns, saveManualTtns, autoTtns, saveAutoTtns, isLoaded } = useAccounts();
+    const { parcels, loading, error, refresh, lastRefresh } = useDashboardData(accounts, manualTtns, autoTtns, (newTtns) => {
+        const updated = [...autoTtns];
         let changed = false;
         newTtns.forEach(newTtn => {
-            if (!updated.some(item => item.ttn === newTtn)) {
-                updated.push({ ttn: newTtn });
+            if (!updated.some(item => item.ttn === newTtn.ttn)) {
+                updated.push({ ttn: newTtn.ttn, accountId: newTtn.accountId });
                 changed = true;
             }
         });
         if (changed) {
-            saveManualTtns(updated);
+            saveAutoTtns(updated);
         }
     });
 
-    useEffect(() => {
-        if (!user) return;
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('payment') === 'success') {
-            activateSubscription(params.get('order') || undefined).then(() => {
-                const newUrl = window.location.origin + window.location.pathname;
-                window.history.replaceState({}, document.title, newUrl);
-            });
-        }
-    }, [user]);
 
     const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
-    const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
     const [accountsModalTab, setAccountsModalTab] = useState<'profile' | 'api'>('api');
     const [isAddTtnModalOpen, setIsAddTtnModalOpen] = useState(false);
     const [isCreateTtnModalOpen, setIsCreateTtnModalOpen] = useState(false);
@@ -64,7 +49,6 @@ export default function App() {
 
     const closeAllModals = () => {
         setIsAccountsModalOpen(false);
-        setIsSubscriptionModalOpen(false);
         setIsAddTtnModalOpen(false);
         setIsCreateTtnModalOpen(false);
         setIsMapOpen(false);
@@ -77,10 +61,6 @@ export default function App() {
         setIsAccountsModalOpen(true);
     };
 
-    const openSubscriptionModal = () => {
-        closeAllModals();
-        setIsSubscriptionModalOpen(true);
-    };
 
     const openAddTtnModal = () => {
         closeAllModals();
@@ -97,7 +77,7 @@ export default function App() {
         setIsMapOpen(true);
     };
 
-    if (!isLoaded || subLoading) {
+    if (!isLoaded) {
         return (
             <div className="flex bg-[var(--bg-main)] h-full w-full overflow-hidden items-center justify-center p-4 antialiased">
                 <div className="flex flex-col items-center">
@@ -122,15 +102,11 @@ export default function App() {
         return <AuthScreen />;
     }
 
-    if (!isAccessAllowed()) {
-        return <SubscriptionPaywall />;
-    }
 
     return (
         <Layout 
             onManageAccounts={() => openAccountsModal('profile')}
             onManageApiKeys={() => openAccountsModal('api')}
-            onManageSubscription={openSubscriptionModal}
             onAddTtn={openAddTtnModal}
             onCreateTtn={openCreateTtnModal}
             onRefresh={() => refresh(true)}
@@ -155,9 +131,11 @@ export default function App() {
                      onRefresh={refresh} 
                      lastRefresh={lastRefresh} 
                      onDeleteManualTtn={(ttn) => {
-                         const updated = manualTtns.filter(item => item.ttn !== ttn);
-                         saveManualTtns(updated);
-                     }}
+                          const updatedManual = manualTtns.filter(item => item.ttn !== ttn);
+                          saveManualTtns(updatedManual);
+                          const updatedAuto = autoTtns.filter(item => item.ttn !== ttn);
+                          saveAutoTtns(updatedAuto);
+                      }}
                      onUpdateManualTtn={(ttn, phone, accountId, afterpaymentSum, afterpaymentType, prolongDate, prolongDays) => {
                          const updated = manualTtns.map(item => {
                              if (item.ttn === ttn) {
@@ -171,12 +149,12 @@ export default function App() {
                      onAutoSelectClear={() => setAutoSelectTtn(null)}
                      selectedParcel={selectedParcel}
                      onSelectParcel={setSelectedParcel}
-                     onAddManualTtn={(rawTtn) => {
+                     onAddManualTtn={(rawTtn, accountId) => {
                          const ttn = rawTtn.trim();
                          // Avoid adding duplicates
                          let needsRefresh = false;
                          if (!manualTtns.some(m => m.ttn === ttn)) {
-                             saveManualTtns([...manualTtns, { ttn }]);
+                             saveManualTtns([...manualTtns, { ttn, accountId }]);
                              needsRefresh = true;
                          } else if (!parcels.some(p => p.ttn === ttn)) {
                              needsRefresh = true;
@@ -198,10 +176,6 @@ export default function App() {
                 initialTab={accountsModalTab}
            />
 
-           <SubscriptionModal 
-                isOpen={isSubscriptionModalOpen}
-                onClose={() => setIsSubscriptionModalOpen(false)}
-           />
 
            <AddTtnModal
                 isOpen={isAddTtnModalOpen}
@@ -225,9 +199,9 @@ export default function App() {
                 isOpen={isCreateTtnModalOpen}
                 onClose={() => setIsCreateTtnModalOpen(false)}
                 accounts={accounts}
-                onTtnCreated={(newTtn) => {
+                onTtnCreated={(newTtn, accountId) => {
                     if (!manualTtns.some(m => m.ttn === newTtn)) {
-                        saveManualTtns([...manualTtns, { ttn: newTtn }]);
+                        saveManualTtns([...manualTtns, { ttn: newTtn, accountId }]);
                     }
                     setAutoSelectTtn(newTtn);
                 }}

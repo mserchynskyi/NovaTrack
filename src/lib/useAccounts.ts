@@ -13,6 +13,12 @@ export interface ManualTtn {
   afterpaymentType?: 'Money' | 'PaymentControl' | 'None';
   prolongDate?: string;
   prolongDays?: number;
+  isAutoAdded?: boolean;
+}
+
+export interface AutoTtn {
+  ttn: string;
+  accountId?: string;
 }
 
 function getEncryptionKey(uid: string): string {
@@ -68,6 +74,16 @@ function mergeManualTtns(local: ManualTtn[], remote: ManualTtn[]): ManualTtn[] {
     return merged;
 }
 
+function mergeAutoTtns(local: AutoTtn[], remote: AutoTtn[]): AutoTtn[] {
+    const merged = [...remote];
+    for (const loc of local) {
+        if (!merged.some(rem => rem.ttn === loc.ttn)) {
+            merged.push(loc);
+        }
+    }
+    return merged;
+}
+
 export function useAccounts() {
     const { user, loading: authLoading } = useAuth();
     
@@ -82,6 +98,14 @@ export function useAccounts() {
 
     const [manualTtns, setManualTtns] = useState<ManualTtn[]>(() => {
         const saved = localStorage.getItem('np_manual_ttns');
+        if (saved) {
+            try { return JSON.parse(saved); } catch (e) {}
+        }
+        return [];
+    });
+
+    const [autoTtns, setAutoTtns] = useState<AutoTtn[]>(() => {
+        const saved = localStorage.getItem('np_auto_ttns');
         if (saved) {
             try { return JSON.parse(saved); } catch (e) {}
         }
@@ -111,21 +135,27 @@ export function useAccounts() {
                         apiKey: decryptApiKey(acc.apiKey, user.uid)
                     }));
                     const firestoreManual = data.manualTtns || [];
+                    const firestoreAuto = data.autoTtns || [];
 
                     if (!hasSyncedBefore) {
                         // First time syncing this account on this device. Migrate local data.
                         const savedLocally = localStorage.getItem('np_accounts');
                         const savedManualLocally = localStorage.getItem('np_manual_ttns');
+                        const savedAutoLocally = localStorage.getItem('np_auto_ttns');
                         const initialLocalAccounts: NpAccount[] = savedLocally ? JSON.parse(savedLocally) : [];
                         const initialLocalManual: ManualTtn[] = savedManualLocally ? JSON.parse(savedManualLocally) : [];
+                        const initialLocalAuto: AutoTtn[] = savedAutoLocally ? JSON.parse(savedAutoLocally) : [];
 
                         const mergedAccounts = mergeAccounts(initialLocalAccounts, firestoreAccounts);
                         const mergedManual = mergeManualTtns(initialLocalManual, firestoreManual);
+                        const mergedAuto = mergeAutoTtns(initialLocalAuto, firestoreAuto);
 
                         setAccounts(mergedAccounts);
                         setManualTtns(mergedManual);
+                        setAutoTtns(mergedAuto);
                         localStorage.setItem('np_accounts', JSON.stringify(mergedAccounts));
                         localStorage.setItem('np_manual_ttns', JSON.stringify(mergedManual));
+                        localStorage.setItem('np_auto_ttns', JSON.stringify(mergedAuto));
                         localStorage.setItem(syncKey, 'true'); // Prevents further merges that resurrect deleted items
 
                         try {
@@ -136,7 +166,8 @@ export function useAccounts() {
                             await setDoc(docRef, { 
                                 userId: user.uid, 
                                 tokens: encryptedAccounts, 
-                                manualTtns: mergedManual 
+                                manualTtns: mergedManual,
+                                autoTtns: mergedAuto
                             }, { merge: true });
                         } catch (err) {
                             console.error("Firestore initial merge failed:", err);
@@ -145,19 +176,24 @@ export function useAccounts() {
                         // Already synced previously. Accept Firestore as the absolute source of truth.
                         setAccounts(firestoreAccounts);
                         setManualTtns(firestoreManual);
+                        setAutoTtns(firestoreAuto);
                         localStorage.setItem('np_accounts', JSON.stringify(firestoreAccounts));
                         localStorage.setItem('np_manual_ttns', JSON.stringify(firestoreManual));
+                        localStorage.setItem('np_auto_ttns', JSON.stringify(firestoreAuto));
                     }
                 } else {
                     // Document doesn't exist on Firestore (newly registered user)
                     if (!hasSyncedBefore) {
                         const savedLocally = localStorage.getItem('np_accounts');
                         const savedManualLocally = localStorage.getItem('np_manual_ttns');
+                        const savedAutoLocally = localStorage.getItem('np_auto_ttns');
                         const initialLocalAccounts: NpAccount[] = savedLocally ? JSON.parse(savedLocally) : [];
                         const initialLocalManual: ManualTtn[] = savedManualLocally ? JSON.parse(savedManualLocally) : [];
+                        const initialLocalAuto: AutoTtn[] = savedAutoLocally ? JSON.parse(savedAutoLocally) : [];
 
                         setAccounts(initialLocalAccounts);
                         setManualTtns(initialLocalManual);
+                        setAutoTtns(initialLocalAuto);
                         localStorage.setItem(syncKey, 'true');
 
                         try {
@@ -168,7 +204,8 @@ export function useAccounts() {
                             await setDoc(docRef, { 
                                 userId: user.uid, 
                                 tokens: encryptedAccounts, 
-                                manualTtns: initialLocalManual 
+                                manualTtns: initialLocalManual,
+                                autoTtns: initialLocalAuto
                             });
                         } catch (err) {
                             console.error("Failed to create initial firestore doc:", err);
@@ -198,6 +235,12 @@ export function useAccounts() {
                 try { setManualTtns(JSON.parse(savedManual)); } catch (e) {}
             } else {
                 setManualTtns([]);
+            }
+            const savedAuto = localStorage.getItem('np_auto_ttns');
+            if (savedAuto) {
+                try { setAutoTtns(JSON.parse(savedAuto)); } catch (e) {}
+            } else {
+                setAutoTtns([]);
             }
             setIsLoaded(true);
         }
@@ -247,11 +290,33 @@ export function useAccounts() {
         }
     };
 
+    const saveAutoTtns = async (newAutoTtns: AutoTtn[]) => {
+        const sanitizedAuto = newAutoTtns.map(t => {
+            const sanitized: AutoTtn = { ttn: t.ttn };
+            if (t.accountId !== undefined) sanitized.accountId = t.accountId;
+            return sanitized;
+        });
+
+        setAutoTtns(sanitizedAuto);
+        localStorage.setItem('np_auto_ttns', JSON.stringify(sanitizedAuto));
+        
+        if (user) {
+            try {
+                const docRef = doc(db, 'userAccounts', user.uid);
+                await setDoc(docRef, { userId: user.uid, autoTtns: sanitizedAuto }, { merge: true });
+            } catch (error) {
+                console.error("Failed to save auto TTNs to Firestore:", error);
+            }
+        }
+    };
+
     return { 
         accounts, 
         saveAccounts, 
         manualTtns, 
         saveManualTtns, 
+        autoTtns,
+        saveAutoTtns,
         isLoaded: isLoaded && !authLoading 
     };
 }

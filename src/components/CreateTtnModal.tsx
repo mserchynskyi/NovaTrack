@@ -43,7 +43,7 @@ interface CreateTtnModalProps {
     isOpen: boolean;
     onClose: () => void;
     accounts: NpAccount[];
-    onTtnCreated: (ttn: string) => void;
+    onTtnCreated: (ttn: string, accountId?: string) => void;
 }
 
 interface CubePlace {
@@ -638,14 +638,14 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
     return createPortal(
         <div 
             id="create-ttn-modal-overlay" 
-            className="fixed inset-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-0 sm:p-4 overflow-hidden sm:overflow-y-auto no-scrollbar"
+            className="fixed inset-0 bg-black/85 backdrop-blur-md z-[100010] flex items-center justify-center p-0 sm:p-4 overflow-hidden sm:overflow-y-auto no-scrollbar"
             onClick={onClose}
         >
             
             {/* Phone simulator boundary wrapper with exact colors shown in the screenshot */}
             <div 
                 id="create-ttn-phone-boundary" 
-                className="bg-[var(--bg-main)] text-[var(--text-main)] w-full max-w-lg lg:max-w-4xl sm:rounded-[32px] shadow-2xl flex flex-col h-[100dvh] sm:h-[85vh] sm:max-h-[880px] lg:h-[85vh] overflow-hidden border border-[var(--border-color)] relative font-sans pt-safe sm:pt-0"
+                className="bg-[var(--bg-main)] text-[var(--text-main)] w-full max-w-lg lg:max-w-4xl sm:rounded-[32px] shadow-2xl flex flex-col h-[100dvh] sm:h-[85vh] sm:max-h-[880px] lg:h-[85vh] overflow-hidden border border-[var(--border-color)] relative font-sans pt-safe pb-safe sm:pt-0 sm:pb-0"
                 onClick={(e) => e.stopPropagation()}
             >
                 
@@ -731,7 +731,7 @@ export function CreateTtnModal({ isOpen, onClose, accounts, onTtnCreated }: Crea
                             <button
                                 id="btn-close-success"
                                 onClick={() => {
-                                    onTtnCreated(successData.ttn);
+                                    onTtnCreated(successData.ttn, activeAccount?.id);
                                     onClose();
                                 }}
                                 className="w-full bg-[#e33745] hover:bg-red-700 text-[#ffffff] font-bold py-3.5 px-6 rounded-2xl text-xs transition-colors cursor-pointer uppercase tracking-wider"

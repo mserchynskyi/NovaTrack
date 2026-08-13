@@ -26,4 +26,5 @@ export interface Parcel {
   basisStatusCode?: string;
   basisChain?: any[];
   isManual?: boolean;
+  isAutoAdded?: boolean;
 }

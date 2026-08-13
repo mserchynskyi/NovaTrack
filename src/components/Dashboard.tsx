@@ -14,7 +14,7 @@ interface DashboardProps {
   onUpdateManualTtn?: (ttn: string, phone?: string, accountId?: string, afterpaymentSum?: number, afterpaymentType?: 'Money' | 'PaymentControl' | 'None', prolongDate?: string, prolongDays?: number) => void;
   autoSelectTtn?: string | null;
   onAutoSelectClear?: () => void;
-  onAddManualTtn?: (ttn: string) => void;
+  onAddManualTtn?: (ttn: string, accountId?: string) => void;
   accounts: NpAccount[];
   onCreateTtn?: () => void;
   selectedParcel?: Parcel | null;
@@ -465,7 +465,7 @@ export function Dashboard({
                               <span>
                                   {title} (ТТН <span 
                                       className="underline decoration-dashed cursor-pointer hover:text-yellow-700 transition" 
-                                      onClick={(e) => { e.stopPropagation(); onAddManualTtn?.(basis.ttn); }}
+                                      onClick={(e) => { e.stopPropagation(); onAddManualTtn?.(basis.ttn, parcel.accountId); }}
                                   >{basis.ttn}</span>):
                               </span>
                               <span className="font-bold">{basis.status || "Оформлюється"}</span>
@@ -572,7 +572,7 @@ export function Dashboard({
                                         <div className="font-semibold flex items-center gap-1.5 text-xs">
                                             {title} (ТТН <span 
                                                 className="underline decoration-dashed cursor-pointer hover:opacity-80 transition" 
-                                                onClick={(e) => { e.stopPropagation(); onAddManualTtn?.(basis.ttn); }}
+                                                onClick={(e) => { e.stopPropagation(); onAddManualTtn?.(basis.ttn, parcel.accountId); }}
                                             >{basis.ttn}</span>)
                                         </div>
                                         <div className="text-[11px] opacity-90 font-medium">
@@ -619,7 +619,7 @@ export function Dashboard({
               accounts={accounts}
               onRefresh={onRefresh}
               onClose={() => setSelectedParcel(null)} 
-              onDeleteManualTtn={selectedParcel.isManual ? () => {
+              onDeleteManualTtn={(selectedParcel.isManual || selectedParcel.isAutoAdded) ? () => {
                    onDeleteManualTtn(selectedParcel.ttn);
                    setSelectedParcel(null);
               } : undefined}

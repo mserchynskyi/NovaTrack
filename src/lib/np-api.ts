@@ -332,30 +332,48 @@ export async function fetchManualParcels(
     afterpaymentType?: 'Money' | 'PaymentControl' | 'None';
     prolongDate?: string;
     prolongDays?: number;
+    isAutoAdded?: boolean;
   }[],
   bypassCache = false
 ): Promise<Parcel[]> {
-  if (manualTtns.length === 0 || accounts.length === 0) return [];
+  if (manualTtns.length === 0) return [];
   const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
   // Group manualTtns by accountId. Fallback to accounts[0] if no accountId or not found.
-  const groupsAndKeys = new Map<string, { account: NpAccount; items: typeof manualTtns }>();
+  const groupsAndKeys = new Map<string, { account: NpAccount | null; items: typeof manualTtns }>();
   for (const item of manualTtns) {
-    let matchedAcc = item.accountId ? accounts.find(a => a.id === item.accountId) : undefined;
-    if (!matchedAcc) {
-      matchedAcc = accounts[0];
+    if (item.accountId === 'public') {
+      const accId = 'public';
+      if (!groupsAndKeys.has(accId)) {
+        groupsAndKeys.set(accId, { account: null, items: [] });
+      }
+      groupsAndKeys.get(accId)!.items.push(item);
+    } else {
+      let matchedAcc = item.accountId ? accounts.find(a => a.id === item.accountId) : undefined;
+      if (!matchedAcc && accounts.length > 0) {
+        matchedAcc = accounts[0];
+      }
+      
+      if (matchedAcc) {
+        const accId = matchedAcc.id;
+        if (!groupsAndKeys.has(accId)) {
+          groupsAndKeys.set(accId, { account: matchedAcc, items: [] });
+        }
+        groupsAndKeys.get(accId)!.items.push(item);
+      } else {
+        const accId = 'public';
+        if (!groupsAndKeys.has(accId)) {
+          groupsAndKeys.set(accId, { account: null, items: [] });
+        }
+        groupsAndKeys.get(accId)!.items.push(item);
+      }
     }
-    const accId = matchedAcc.id;
-    if (!groupsAndKeys.has(accId)) {
-      groupsAndKeys.set(accId, { account: matchedAcc, items: [] });
-    }
-    groupsAndKeys.get(accId)!.items.push(item);
   }
 
   const allParcels: Parcel[] = [];
 
   for (const [accId, group] of groupsAndKeys) {
-    const apiKey = group.account.apiKey;
+    const apiKey = group.account ? group.account.apiKey : "";
     const documentsQuery = group.items.map(item => ({
       DocumentNumber: item.ttn.trim(),
       Phone: item.phone ? item.phone.trim() : "",
@@ -514,11 +532,16 @@ export async function fetchManualParcels(
       let basisStatus = sortedChain.length > 0 ? sortedChain[sortedChain.length - 1].status : "";
       let basisStatusCode = sortedChain.length > 0 ? sortedChain[sortedChain.length - 1].statusCode : "";
 
+      const isAuto = !!item.isAutoAdded;
+
       return {
         ttn: item.ttn.trim(),
-        accountName: `${group.account.name} (ручна)`,
-        accountId: group.account.id,
-        isManual: true,
+        accountName: group.account 
+          ? (isAuto ? `${group.account.name}` : `${group.account.name} (ручна)`) 
+          : "Публічний API",
+        accountId: group.account ? group.account.id : "public",
+        isManual: !isAuto,
+        isAutoAdded: isAuto,
         status: getFriendlyStatus(statusInfo.Status || "У процесі оформлення", statusInfo.StatusCode || "0"),
         statusCode: statusInfo.StatusCode || "0",
         sender: statusInfo.SenderFullNameEW || statusInfo.SenderContactPerson || "Невідомий відправник",

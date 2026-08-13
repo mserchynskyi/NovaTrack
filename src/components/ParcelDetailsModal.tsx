@@ -73,9 +73,9 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
         const sc = cleanCity(senderCity);
         const rc = cleanCity(recipientCity);
         
-        let createdDate = new Date();
-        if (parcel.dateCreated) {
-            const parts = parcel.dateCreated.split(' ');
+        const parseNPDate = (dateStr: string): Date | null => {
+            if (!dateStr) return null;
+            const parts = dateStr.trim().split(' ');
             const dateParts = parts[0].split(/[./-]/);
             if (dateParts.length === 3) {
                 let day = 1;
@@ -92,18 +92,23 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
                     if (year < 100) year += 2000;
                 }
                 
+                let hour = 12;
+                let min = 0;
                 if (parts[1]) {
                     const timeParts = parts[1].split(':');
-                    const hour = parseInt(timeParts[0], 10) || 12;
-                    const min = parseInt(timeParts[1], 10) || 0;
-                    createdDate = new Date(year, month, day, hour, min);
-                } else {
-                    createdDate = new Date(year, month, day, 12, 0);
+                    hour = parseInt(timeParts[0], 10) || 12;
+                    min = parseInt(timeParts[1], 10) || 0;
                 }
+                return new Date(year, month, day, hour, min);
             }
-        } else {
-            createdDate.setDate(createdDate.getDate() - 2);
-        }
+            return null;
+        };
+
+        let createdDate = parseNPDate(parcel.dateCreated) || (() => {
+            const d = new Date();
+            d.setDate(d.getDate() - 2);
+            return d;
+        })();
         
         const formatDateKey = (date: Date) => {
             const d = String(date.getDate()).padStart(2, '0');
@@ -224,15 +229,9 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
 
         let deliveryTime = addHours(time8, seedOffset(1));
         if (parcel.actualDeliveryDate && code >= 7) {
-            const parts = parcel.actualDeliveryDate.split(' ');
-            const dateParts = parts[0].split(/[./-]/);
-            if (dateParts.length === 3) {
-                let year = parseInt(dateParts[2], 10);
-                if (year < 100) year += 2000;
-                const month = parseInt(dateParts[1], 10) - 1;
-                const day = parseInt(dateParts[0], 10);
-                const timeParts = (parts[1] || '16:30').split(':');
-                deliveryTime = new Date(year, month, day, parseInt(timeParts[0], 10), parseInt(timeParts[1], 10));
+            const parsed = parseNPDate(parcel.actualDeliveryDate);
+            if (parsed) {
+                deliveryTime = parsed;
             }
         }
         
@@ -388,7 +387,7 @@ export function ParcelDetailsModal({ parcel, accounts, onRefresh, onClose, onDel
     }, [parcel]);
 
     const handleDeleteTtn = async () => {
-        if (parcel.isManual) {
+        if (parcel.isManual || parcel.isAutoAdded) {
             if (onDeleteManualTtn) {
                 onDeleteManualTtn();
             }
